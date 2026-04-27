@@ -1,7 +1,9 @@
 # 🚀 API Checker - Modern API Testing Desktop Application
 
 A beautiful, modern Electron + React desktop application for API testing and management with a polished glassmorphism UI.
-
+<hr>
+<img width="1919" height="1008" alt="image" src="https://github.com/user-attachments/assets/dfdb3014-f837-4ba6-b915-829e2aa30f5b" />
+<hr>
 ## ✨ Features
 
 ### 🎯 Core Features
