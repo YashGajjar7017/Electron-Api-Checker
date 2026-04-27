@@ -6,9 +6,13 @@ const isPortOpen = (port) => {
   return new Promise((resolve) => {
     const net = require('net');
     const server = net.createServer();
-    server.once('error', () => resolve(false));
+    server.once('error', () => {
+      // Error means port is already in use (server is running)
+      resolve(false);
+    });
     server.once('listening', () => {
       server.close();
+      // Successfully listened means port was free (no server running)
       resolve(true);
     });
     server.listen(port, 'localhost');

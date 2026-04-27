@@ -23,6 +23,8 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  animation: slideInUp 0.5s ease-out;
+  position: relative;
 }
 
 .sidebar-panel {
@@ -32,8 +34,9 @@
 }
 
 .workspace-panel {
-  flex: 1.5;
+  flex: 1;
   min-width: 400px;
+  overflow: auto;
 }
 
 .response-panel {
@@ -42,30 +45,67 @@
   overflow-y: auto;
 }
 
-/* Responsive Breakpoints */
-@media (max-width: 1600px) {
-  .workspace-panel {
-    flex: 1.2;
-  }
-  .response-panel {
-    width: 350px;
-  }
+/* Resize Handle Styling */
+.resize-handle {
+  position: absolute;
+  background: transparent;
+  z-index: 100;
+  transition: opacity 0.2s ease;
 }
 
-@media (max-width: 1400px) {
-  .sidebar-panel {
-    width: 250px;
-  }
-  .response-panel {
-    width: 300px;
-  }
+.resize-handle-right {
+  right: -3px;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  opacity: 0;
 }
 
-@media (max-width: 1200px) {
-  .layout-container {
-    gap: 0.5rem;
-    padding: 0.5rem;
-  }
+.resize-handle-right::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(180deg, transparent 0%, var(--primary) 50%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.resize-handle-right:hover::after {
+  opacity: 0.8;
+}
+
+.resize-handle-left {
+  left: -3px;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  opacity: 0;
+}
+
+.resize-handle-left::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(180deg, transparent 0%, var(--primary) 50%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.resize-handle-left:hover::after {
+  opacity: 0.8;
+}
+
+.layout-container.resizing .sidebar-panel,
+.layout-container.resizing .response-panel {
+  user-select: none;
   
   .sidebar-panel {
     width: 220px;

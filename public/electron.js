@@ -16,8 +16,8 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1800,
     height: 1000,
-    minWidth: 1200,
-    minHeight: 800,
+    minWidth: 1280,
+    minHeight: 900,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -33,9 +33,10 @@ function createWindow() {
 
   mainWindow.loadURL(startUrl);
 
-  if (isDev) {
-    mainWindow.webContents.openDevTools();
-  }
+  // DevTools disabled - remove comment below to enable
+  // if (isDev) {
+  //   mainWindow.webContents.openDevTools();
+  // }
 
   mainWindow.on('closed', () => {
     mainWindow = null;
