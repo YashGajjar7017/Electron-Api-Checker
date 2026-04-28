@@ -6,4 +6,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadCollections: () => ipcRenderer.invoke('load-collections'),
   saveUser: (user) => ipcRenderer.invoke('save-user', user),
   loadUser: () => ipcRenderer.invoke('load-user'),
+  saveAPIs: (apis) => ipcRenderer.invoke('save-apis', apis),
+  loadAPIs: () => ipcRenderer.invoke('load-apis'),
+  sendRequest: (requestOptions) => ipcRenderer.invoke('send-request', requestOptions),
 });

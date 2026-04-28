@@ -3,6 +3,8 @@ const isDev = require('electron-is-dev');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const http = require('http');
+const https = require('https');
 
 let mainWindow;
 const dataPath = path.join(os.homedir(), '.api-checker');
@@ -102,6 +104,102 @@ ipcMain.handle('load-user', async () => {
   } catch (error) {
     return { success: false, error: error.message };
   }
+});
+
+ipcMain.handle('save-apis', async (event, apis) => {
+  try {
+    const filePath = path.join(dataPath, 'apis.json');
+    fs.writeFileSync(filePath, JSON.stringify(apis, null, 2));
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('load-apis', async () => {
+  try {
+    const filePath = path.join(dataPath, 'apis.json');
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath, 'utf-8');
+      return { success: true, data: JSON.parse(data) };
+    }
+    return { success: true, data: [] };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('send-request', async (event, requestOptions) => {
+  return new Promise((resolve) => {
+    try {
+      const { url, method, headers, body, sslOptions } = requestOptions;
+      const parsedUrl = new URL(url);
+      const isHttps = parsedUrl.protocol === 'https:';
+      const client = isHttps ? https : http;
+
+      const options = {
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port || (isHttps ? 443 : 80),
+        path: parsedUrl.pathname + parsedUrl.search,
+        method: method || 'GET',
+        headers: headers || {},
+        timeout: 30000,
+      };
+
+      // Handle SSL certificates if provided
+      if (isHttps && sslOptions) {
+        if (sslOptions.certFile && fs.existsSync(sslOptions.certFile)) {
+          options.cert = fs.readFileSync(sslOptions.certFile);
+        }
+        if (sslOptions.keyFile && fs.existsSync(sslOptions.keyFile)) {
+          options.key = fs.readFileSync(sslOptions.keyFile);
+        }
+        if (sslOptions.caFile && fs.existsSync(sslOptions.caFile)) {
+          options.ca = fs.readFileSync(sslOptions.caFile);
+        }
+      }
+
+      const req = client.request(options, (res) => {
+        let responseBody = '';
+        res.on('data', (chunk) => {
+          responseBody += chunk;
+        });
+        res.on('end', () => {
+          const responseHeaders = [];
+          for (const [key, value] of Object.entries(res.headers)) {
+            if (Array.isArray(value)) {
+              value.forEach((v) => responseHeaders.push([key, v]));
+            } else {
+              responseHeaders.push([key, value]);
+            }
+          }
+          resolve({
+            success: true,
+            status: res.statusCode,
+            statusText: res.statusMessage,
+            headers: responseHeaders,
+            body: responseBody,
+          });
+        });
+      });
+
+      req.on('error', (error) => {
+        resolve({ success: false, error: error.message });
+      });
+
+      req.on('timeout', () => {
+        req.destroy();
+        resolve({ success: false, error: 'Request timed out after 30 seconds' });
+      });
+
+      if (body && method !== 'GET' && method !== 'HEAD') {
+        req.write(body);
+      }
+      req.end();
+    } catch (error) {
+      resolve({ success: false, error: error.message });
+    }
+  });
 });
 
 // Create application menu

@@ -16,22 +16,39 @@ function App() {
   const [theme, setTheme] = useState('dark');
 
   useEffect(() => {
-    // Load user from Electron storage
-    const loadPersistedUser = async () => {
+    // Load persisted data from Electron storage
+    const loadPersistedData = async () => {
       try {
+        // Load user
         if (window.electronAPI && window.electronAPI.loadUser) {
-          const result = await window.electronAPI.loadUser();
-          if (result.success && result.data) {
-            loginUser(result.data);
+          const userResult = await window.electronAPI.loadUser();
+          if (userResult.success && userResult.data) {
+            loginUser(userResult.data);
+          }
+        }
+
+        // Load collections
+        if (window.electronAPI && window.electronAPI.loadCollections) {
+          const collectionsResult = await window.electronAPI.loadCollections();
+          if (collectionsResult.success && collectionsResult.data) {
+            useStore.getState().setCollections(collectionsResult.data);
+          }
+        }
+
+        // Load APIs
+        if (window.electronAPI && window.electronAPI.loadAPIs) {
+          const apisResult = await window.electronAPI.loadAPIs();
+          if (apisResult.success && apisResult.data) {
+            useStore.getState().setAPIs(apisResult.data);
           }
         }
       } catch (error) {
-        console.error('Failed to load user:', error);
+        console.error('Failed to load persisted data:', error);
       }
       setInitialized(true);
     };
 
-    loadPersistedUser();
+    loadPersistedData();
   }, [loginUser]);
 
   useEffect(() => {

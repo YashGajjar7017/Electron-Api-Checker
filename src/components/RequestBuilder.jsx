@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import useStore from '../store';
 import Editor from '@monaco-editor/react';
 import {
@@ -9,6 +9,7 @@ import {
   FiX,
   FiPlus,
 } from 'react-icons/fi';
+import OTPModal from './OTPModal';
 import '../styles/RequestBuilder.css';
 
 function RequestBuilder() {
@@ -21,6 +22,11 @@ function RequestBuilder() {
     addResponse,
     comparisonMode,
     apis,
+    collections,
+    sessionToken,
+    sessionTokenExpiry,
+    setSessionToken,
+    clearSessionToken,
   } = useStore();
 
   const [activeTab, setActiveTab] = useState('body');
@@ -43,6 +49,18 @@ function RequestBuilder() {
   const [newHeaderValue, setNewHeaderValue] = useState('');
   const [newParamKey, setNewParamKey] = useState('');
   const [newParamValue, setNewParamValue] = useState('');
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const pendingSendRef = useRef(false);
+
+  // Periodically check if session token has expired
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (sessionTokenExpiry && Date.now() > sessionTokenExpiry) {
+        clearSessionToken();
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [sessionTokenExpiry, clearSessionToken]);
 
   if (!currentAPI) {
     return (
@@ -131,29 +149,68 @@ function RequestBuilder() {
     return requestHeaders;
   };
 
-  const handleSendRequest = async () => {
+  // // Periodically check if session token has expired
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     if (sessionTokenExpiry && Date.now() > sessionTokenExpiry) {
+  //       clearSessionToken();
+  //     }
+  //   }, 5000);
+  //   return () => clearInterval(interval);
+  // }, [sessionTokenExpiry, clearSessionToken]);
+
+
+  const handleOtpVerify = (otp) => {
+    // Generate a session token from the OTP (simulated auth)
+    const token = `sess-${otp}-${Date.now()}`;
+    setSessionToken(token);
+    setShowOtpModal(false);
+    // If a request was pending, retry it
+    if (pendingSendRef.current) {
+      pendingSendRef.current = false;
+      executeRequest();
+    }
+  };
+
+  const executeRequest = async () => {
     setIsSending(true);
     handleUpdateAPI();
 
     try {
       const url = buildURL();
       const requestHeaders = buildRequestHeaders();
+
+      // Inject session token if available and not expired
+      if (sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry) {
+        requestHeaders['Authorization'] = `Bearer ${sessionToken}`;
+      }
+
+      const sslOptions =
+        authType === 'ssl'
+          ? { certFile, keyFile, caFile }
+          : undefined;
+
       const startTime = performance.now();
 
-      const response = await fetch(url, {
+      const result = await window.electronAPI.sendRequest({
+        url,
         method,
         headers: requestHeaders,
         body: ['GET', 'HEAD', 'DELETE'].includes(method) ? undefined : body,
+        sslOptions,
       });
 
       const responseTime = performance.now() - startTime;
-      const responseBody = await response.text();
-      let responseData;
 
+      if (!result.success) {
+        throw new Error(result.error || 'Request failed');
+      }
+
+      let responseData;
       try {
-        responseData = JSON.parse(responseBody);
+        responseData = JSON.parse(result.body);
       } catch {
-        responseData = responseBody;
+        responseData = result.body;
       }
 
       addResponse({
@@ -161,13 +218,13 @@ function RequestBuilder() {
         apiName,
         method,
         endpoint,
-        status: response.status,
-        statusText: response.statusText,
+        status: result.status,
+        statusText: result.statusText,
         responseTime: Math.round(responseTime),
-        responseSize: new Blob([responseBody]).size,
-        headers: Array.from(response.headers.entries()),
+        responseSize: new Blob([result.body]).size,
+        headers: result.headers,
         body: responseData,
-        rawBody: responseBody,
+        rawBody: result.body,
       });
     } catch (error) {
       addResponse({
@@ -181,6 +238,17 @@ function RequestBuilder() {
     }
 
     setIsSending(false);
+  };
+
+  const handleSendRequest = async () => {
+    // Check if session token is valid
+    const isTokenValid = sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry;
+    if (!isTokenValid) {
+      pendingSendRef.current = true;
+      setShowOtpModal(true);
+      return;
+    }
+    await executeRequest();
   };
 
   return (
@@ -256,6 +324,7 @@ function RequestBuilder() {
             title="Save API configuration"
           >
             <FiSave size={18} />
+            {isSending ? 'Save configuration...' : 'Save Data'}            
           </button>
         </div>
       </div>
@@ -489,6 +558,15 @@ function RequestBuilder() {
           </div>
         )}
       </div>
+
+      <OTPModal
+        isOpen={showOtpModal}
+        onVerify={handleOtpVerify}
+        onCancel={() => {
+          setShowOtpModal(false);
+          pendingSendRef.current = false;
+        }}
+      />
     </div>
   );
 }

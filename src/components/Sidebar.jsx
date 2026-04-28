@@ -18,18 +18,12 @@ function Sidebar() {
   const [newCollectionName, setNewCollectionName] = useState('');
   const [showNewCollection, setShowNewCollection] = useState(false);
 
+  // Auto-save apis when they change
   useEffect(() => {
-    // Load collections from electron storage
-    const loadCollections = async () => {
-      if (window.electronAPI && window.electronAPI.loadCollections) {
-        const result = await window.electronAPI.loadCollections();
-        if (result.success && result.data && result.data.length > 0) {
-          // Collections already loaded by store initialization
-        }
-      }
-    };
-    loadCollections();
-  }, []);
+    if (window.electronAPI && window.electronAPI.saveAPIs) {
+      window.electronAPI.saveAPIs(apis);
+    }
+  }, [apis]);
 
   const toggleFolder = (collectionId) => {
     const newExpanded = new Set(expandedFolders);

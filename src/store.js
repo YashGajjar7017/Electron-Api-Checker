@@ -80,6 +80,14 @@ const useStore = create(
     setComparisonResponses: (responses) =>
       set({ comparisonResponses: responses }),
 
+    // Session token state (OTP-based, 10 min expiry)
+    sessionToken: '',
+    sessionTokenExpiry: null,
+    setSessionToken: (token) =>
+      set({ sessionToken: token, sessionTokenExpiry: Date.now() + 10 * 60 * 1000 }),
+    clearSessionToken: () =>
+      set({ sessionToken: '', sessionTokenExpiry: null }),
+
     // Batch testing state
     isBatchTesting: false,
     batchResults: [],
