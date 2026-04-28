@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import useStore from '../store';
 import Editor from '@monaco-editor/react';
 import {
@@ -36,6 +36,9 @@ function RequestBuilder() {
   const [authTokenState, setAuthTokenLocal] = useState(
     currentAPI?.auth?.token || ''
   );
+  const [certFile, setCertFile] = useState(currentAPI?.auth?.certFile || '');
+  const [keyFile, setKeyFile] = useState(currentAPI?.auth?.keyFile || '');
+  const [caFile, setCaFile] = useState(currentAPI?.auth?.caFile || '');
   const [newHeaderKey, setNewHeaderKey] = useState('');
   const [newHeaderValue, setNewHeaderValue] = useState('');
   const [newParamKey, setNewParamKey] = useState('');
@@ -58,9 +61,19 @@ function RequestBuilder() {
       headers,
       params,
       body,
-      auth: { type: authType, token: authTokenState },
+      auth: {
+        type: authType,
+        token: authTokenState,
+        certFile,
+        keyFile,
+        caFile,
+      },
     };
     updateAPI(currentAPI.id, updatedAPI);
+    // Auto-save
+    if (window.electronAPI && window.electronAPI.saveCollections) {
+      window.electronAPI.saveCollections(collections);
+    }
   };
 
   const addHeader = () => {
@@ -363,23 +376,115 @@ function RequestBuilder() {
                 <option value="none">None</option>
                 <option value="bearer">Bearer Token</option>
                 <option value="basic">Basic Auth</option>
+                <option value="ssl">SSL/TLS Certificate</option>
               </select>
             </div>
 
-            {authType !== 'none' && (
+            {authType === 'bearer' && (
               <div className="form-group">
-                <label>Token</label>
+                <label>Bearer Token</label>
                 <input
                   type="password"
                   value={authTokenState}
                   onChange={(e) => setAuthTokenLocal(e.target.value)}
-                  placeholder="Enter your token or credentials"
+                  placeholder="Enter your bearer token"
                 />
               </div>
             )}
 
+            {authType === 'basic' && (
+              <div className="form-group">
+                <label>Credentials</label>
+                <input
+                  type="password"
+                  value={authTokenState}
+                  onChange={(e) => setAuthTokenLocal(e.target.value)}
+                  placeholder="Base64 encoded username:password"
+                />
+              </div>
+            )}
+
+            {authType === 'ssl' && (
+              <>
+                <div className="form-group">
+                  <label>Client Certificate (.pem)</label>
+                  <div className="file-input-wrapper">
+                    <input
+                      type="text"
+                      value={certFile}
+                      readOnly
+                      placeholder="Select client.pem file"
+                    />
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => document.getElementById('cert-upload').click()}
+                    >
+                      Browse
+                    </button>
+                    <input
+                      id="cert-upload"
+                      type="file"
+                      style={{ display: 'none' }}
+                      accept=".pem,.crt"
+                      onChange={(e) => setCertFile(e.target.files[0]?.path || '')}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Private Key (.pem)</label>
+                  <div className="file-input-wrapper">
+                    <input
+                      type="text"
+                      value={keyFile}
+                      readOnly
+                      placeholder="Select key.pem file"
+                    />
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => document.getElementById('key-upload').click()}
+                    >
+                      Browse
+                    </button>
+                    <input
+                      id="key-upload"
+                      type="file"
+                      style={{ display: 'none' }}
+                      accept=".pem,.key"
+                      onChange={(e) => setKeyFile(e.target.files[0]?.path || '')}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Root CA Certificate (.pem)</label>
+                  <div className="file-input-wrapper">
+                    <input
+                      type="text"
+                      value={caFile}
+                      readOnly
+                      placeholder="Select RootCA.pem file"
+                    />
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => document.getElementById('ca-upload').click()}
+                    >
+                      Browse
+                    </button>
+                    <input
+                      id="ca-upload"
+                      type="file"
+                      style={{ display: 'none' }}
+                      accept=".pem,.crt"
+                      onChange={(e) => setCaFile(e.target.files[0]?.path || '')}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
             <div className="info-box">
-              💡 Your auth tokens are only stored locally in your system.
+              💡 Your auth credentials and certificates are only stored locally in your system.
             </div>
           </div>
         )}

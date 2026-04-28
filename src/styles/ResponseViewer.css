@@ -282,3 +282,104 @@
     font-size: 0.75rem;
   }
 }
+
+.batch-selector-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 0.75rem;
+  padding: 1rem;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.batch-selector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  gap: 0.5rem;
+}
+
+.batch-selector-header h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.batch-selector-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.batch-selector-item {
+  display: flex;
+  align-items: center;
+}
+
+.batch-selector-item label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  flex: 1;
+}
+
+.batch-selector-item input[type='checkbox'] {
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.method-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  min-width: 40px;
+  text-align: center;
+}
+
+.method-get {
+  background: rgba(52, 168, 224, 0.2);
+  color: #34a8e0;
+}
+
+.method-post {
+  background: rgba(52, 211, 153, 0.2);
+  color: #34d399;
+}
+
+.method-put {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.method-delete {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.method-patch {
+  background: rgba(168, 85, 247, 0.2);
+  color: #a855f7;
+}
+
+.api-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 0 0 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.api-endpoint {
+  font-size: 0.85rem;
+  color: var(--text-tertiary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

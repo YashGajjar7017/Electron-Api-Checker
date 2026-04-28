@@ -311,6 +311,28 @@
   margin-top: auto;
 }
 
+.file-input-wrapper {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.file-input-wrapper input {
+  flex: 1;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-tertiary);
+  padding: 0.5rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: default;
+  pointer-events: none;
+}
+
+.file-input-wrapper button {
+  flex-shrink: 0;
+}
+
 @media (max-width: 1200px) {
   .method-endpoint {
     flex-direction: column;

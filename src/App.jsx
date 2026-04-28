@@ -32,7 +32,7 @@ function App() {
     };
 
     loadPersistedUser();
-  }, []);
+  }, [loginUser]);
 
   useEffect(() => {
     // Apply theme to document

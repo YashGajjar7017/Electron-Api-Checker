@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import useStore from '../store';
 import {
   FiCopy,
-  FiDownload,
   FiTrash2,
   FiChevronDown,
   FiPlay,
-  FiRefreshCw,
+  FiCheck,
 } from 'react-icons/fi';
 import '../styles/ResponseViewer.css';
 
@@ -16,20 +15,19 @@ function ResponseViewer() {
     clearResponseHistory,
     apis,
     addResponse,
-    isBatchTesting,
-    batchResults,
-    clearBatchResults,
-    addBatchResult,
     startBatchTesting,
     stopBatchTesting,
-    comparisonMode,
-    setComparisonResponses,
+    addBatchResult,
     serverUrl,
   } = useStore();
 
   const [expandedResponses, setExpandedResponses] = useState(new Set());
-  const [viewMode, setViewMode] = useState('pretty'); // 'pretty' or 'raw'
+  const [viewMode, setViewMode] = useState('pretty');
   const [isBatchRunning, setIsBatchRunning] = useState(false);
+  const [showBatchSelector, setShowBatchSelector] = useState(false);
+  const [selectedAPIs, setSelectedAPIs] = useState(
+    new Set(apis.map((api) => api.id))
+  );
 
   const toggleResponseExpand = (responseId) => {
     const newExpanded = new Set(expandedResponses);
@@ -56,20 +54,23 @@ function ResponseViewer() {
   };
 
   const runBatchTests = async () => {
-    if (apis.length === 0) {
-      alert('No APIs to test');
+    const apisToRun = apis.filter((api) => selectedAPIs.has(api.id));
+
+    if (apisToRun.length === 0) {
+      alert('Please select at least one API to test');
       return;
     }
 
     setIsBatchRunning(true);
     startBatchTesting();
-    clearBatchResults();
 
-    for (const api of apis) {
+    for (const api of apisToRun) {
       try {
         const headers = api.headers || {};
         if (api.auth?.type === 'bearer' && api.auth?.token) {
           headers['Authorization'] = `Bearer ${api.auth.token}`;
+        } else if (api.auth?.type === 'basic' && api.auth?.token) {
+          headers['Authorization'] = `Basic ${api.auth.token}`;
         }
 
         const url = serverUrl + api.endpoint;
@@ -108,6 +109,7 @@ function ResponseViewer() {
 
         addBatchResult(batchResult);
         addResponse(batchResult);
+        setExpandedResponses((prev) => new Set(prev).add(batchResult.id));
 
         // Add small delay between requests
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -145,15 +147,25 @@ function ResponseViewer() {
         <h3>Responses</h3>
         <div className="viewer-controls">
           {apis.length > 0 && (
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={runBatchTests}
-              disabled={isBatchRunning}
-              title="Run all APIs sequentially"
-            >
-              <FiPlay size={16} />
-              {isBatchRunning ? 'Running...' : 'Batch Test'}
-            </button>
+            <>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => setShowBatchSelector(!showBatchSelector)}
+                title="Select APIs to run"
+              >
+                <FiCheck size={16} />
+                Select APIs ({selectedAPIs.size}/{apis.length})
+              </button>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={runBatchTests}
+                disabled={isBatchRunning}
+                title="Run selected APIs sequentially"
+              >
+                <FiPlay size={16} />
+                {isBatchRunning ? 'Running...' : 'Batch Test'}
+              </button>
+            </>
           )}
 
           <button
@@ -174,6 +186,52 @@ function ResponseViewer() {
           )}
         </div>
       </div>
+
+      {showBatchSelector && apis.length > 0 && (
+        <div className="batch-selector-panel">
+          <div className="batch-selector-header">
+            <h4>Select APIs to Test</h4>
+            <button
+              className="btn btn-sm"
+              onClick={() => setSelectedAPIs(new Set(apis.map((a) => a.id)))}
+            >
+              Select All
+            </button>
+            <button
+              className="btn btn-sm"
+              onClick={() => setSelectedAPIs(new Set())}
+            >
+              Deselect All
+            </button>
+          </div>
+          <div className="batch-selector-list">
+            {apis.map((api) => (
+              <div key={api.id} className="batch-selector-item">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={selectedAPIs.has(api.id)}
+                    onChange={(e) => {
+                      const newSelected = new Set(selectedAPIs);
+                      if (e.target.checked) {
+                        newSelected.add(api.id);
+                      } else {
+                        newSelected.delete(api.id);
+                      }
+                      setSelectedAPIs(newSelected);
+                    }}
+                  />
+                  <span className={`method-badge method-${api.method.toLowerCase()}`}>
+                    {api.method}
+                  </span>
+                  <span className="api-name">{api.name}</span>
+                  <span className="api-endpoint">{api.endpoint}</span>
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="responses-list">
         {responseHistory.length > 0 ? (

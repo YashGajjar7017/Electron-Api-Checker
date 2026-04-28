@@ -53,12 +53,20 @@ function Sidebar() {
       setNewCollectionName('');
       setShowNewCollection(false);
 
-      // Save to electron storage
+      // Auto-save to electron storage
       if (window.electronAPI && window.electronAPI.saveCollections) {
-        window.electronAPI.saveCollections([...collections, collection]);
+        const allCollections = [...collections, collection];
+        window.electronAPI.saveCollections(allCollections);
       }
     }
   };
+
+  // Auto-save collections when they change
+  useEffect(() => {
+    if (collections.length > 0 && window.electronAPI && window.electronAPI.saveCollections) {
+      window.electronAPI.saveCollections(collections);
+    }
+  }, [collections]);
 
   const handleAddAPI = (collectionId) => {
     const api = {
@@ -79,10 +87,10 @@ function Sidebar() {
   const handleDeleteCollection = (collectionId) => {
     if (window.confirm('Delete this collection?')) {
       deleteCollection(collectionId);
+      const updated = collections.filter((c) => c.id !== collectionId);
+      // Auto-save after deletion
       if (window.electronAPI && window.electronAPI.saveCollections) {
-        window.electronAPI.saveCollections(
-          collections.filter((c) => c.id !== collectionId)
-        );
+        window.electronAPI.saveCollections(updated);
       }
     }
   };
