@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, screen } = require('electron');
 const isDev = require('electron-is-dev');
 const path = require('path');
 const fs = require('fs');
@@ -15,9 +15,13 @@ if (!fs.existsSync(dataPath)) {
 }
 
 function createWindow() {
+  // Get the primary display's work area (screen size minus taskbar)
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
+  
   mainWindow = new BrowserWindow({
-    width: 1800,
-    height: 1000,
+    width: Math.round(width * 0.95),
+    height: Math.round(height * 0.95),
     minWidth: 1280,
     minHeight: 900,
     webPreferences: {
@@ -143,7 +147,7 @@ ipcMain.handle('send-request', async (event, requestOptions) => {
         path: parsedUrl.pathname + parsedUrl.search,
         method: method || 'GET',
         headers: headers || {},
-        timeout: 30000,
+        timeout: 60000,
       };
 
       // Handle SSL certificates if provided
@@ -189,12 +193,61 @@ ipcMain.handle('send-request', async (event, requestOptions) => {
 
       req.on('timeout', () => {
         req.destroy();
-        resolve({ success: false, error: 'Request timed out after 30 seconds' });
+        resolve({ success: false, error: 'Request timed out after 60 seconds' });
       });
 
       if (body && method !== 'GET' && method !== 'HEAD') {
         req.write(body);
       }
+      req.end();
+    } catch (error) {
+      resolve({ success: false, error: error.message });
+    }
+  });
+});
+
+// Ping handler - simple connectivity test
+ipcMain.handle('ping-server', async (event, serverUrl) => {
+  return new Promise((resolve) => {
+    try {
+      let url = serverUrl;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'http://' + url;
+      }
+      
+      const parsedUrl = new URL(url);
+      const isHttps = parsedUrl.protocol === 'https:';
+      const client = isHttps ? https : http;
+      
+      const options = {
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port || (isHttps ? 443 : 80),
+        path: '/',
+        method: 'GET',
+        timeout: 5000,
+      };
+      
+      const startTime = Date.now();
+      const req = client.request(options, (res) => {
+        const responseTime = Date.now() - startTime;
+        req.destroy();
+        resolve({
+          success: true,
+          status: res.statusCode,
+          responseTime,
+          message: `Server responded in ${responseTime}ms`,
+        });
+      });
+      
+      req.on('error', (error) => {
+        resolve({ success: false, error: error.message });
+      });
+      
+      req.on('timeout', () => {
+        req.destroy();
+        resolve({ success: false, error: 'Connection timeout (5s)' });
+      });
+      
       req.end();
     } catch (error) {
       resolve({ success: false, error: error.message });

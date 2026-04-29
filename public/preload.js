@@ -9,4 +9,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveAPIs: (apis) => ipcRenderer.invoke('save-apis', apis),
   loadAPIs: () => ipcRenderer.invoke('load-apis'),
   sendRequest: (requestOptions) => ipcRenderer.invoke('send-request', requestOptions),
+  pingServer: (serverUrl) => ipcRenderer.invoke('ping-server', serverUrl),
 });

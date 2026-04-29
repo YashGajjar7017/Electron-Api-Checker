@@ -141,8 +141,8 @@
 }
 
 .tab.active {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   color: white;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   box-shadow: var(--shadow-md);
 }
 

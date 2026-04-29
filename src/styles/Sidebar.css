@@ -21,6 +21,15 @@
   color: var(--text-primary);
 }
 
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.header-actions label {
+  cursor: pointer;
+}
+
 .collections-list {
   flex: 1;
   overflow-y: auto;

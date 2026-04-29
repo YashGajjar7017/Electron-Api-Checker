@@ -1,13 +1,13 @@
-# API Checker Enhancement TODO
+# Fix Import / Remove Data Bug — Implementation TODO
 
-## Plan Approved — Implementation Steps
+## Plan Approved
 
-- [x] 1. Update `public/electron.js` — Add IPC handlers: `send-request`, `save-apis`, `load-apis`
-- [x] 2. Update `public/preload.js` — Expose `sendRequest`, `saveAPIs`, `loadAPIs`
-- [x] 3. Update `src/store.js` — Add `sessionToken`, `sessionTokenExpiry`, `setSessionToken`, `clearSessionToken`
-- [x] 4. Update `src/App.jsx` — Load `collections` and `apis` from disk on startup
-- [x] 5. Update `src/components/Sidebar.jsx` — Auto-save `apis`, ensure collections load into store
-- [x] 6. Create `src/components/OTPModal.jsx` — OTP input dialog component
-- [x] 7. Create `src/styles/OTPModal.css` — Styles for OTP modal
-- [x] 8. Update `src/components/RequestBuilder.jsx` — Use IPC for requests, integrate OTP flow
+- [x] 1. Update `src/components/Sidebar.jsx`
+  - Add per-API delete button (trash icon) next to each API item.
+  - Fix `handleFileImport` to **replace** APIs in the target collection instead of appending.
+  - Add `window.confirm` before replacing collection data on import.
+  - Wrap individual `JSON.parse` calls for `headers`, `params`, `auth` in `try/catch` so one bad row doesn't crash the whole import.
+  - Ensure `window.electronAPI.saveAPIs` is called after bulk API changes.
+- [x] 2. Verify `src/store.js` exposes `deleteAPI` and `setAPIs` correctly.
+- [x] 3. Test import flow and single-API deletion.
 

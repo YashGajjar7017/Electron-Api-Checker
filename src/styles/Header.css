@@ -122,6 +122,49 @@
   border-color: var(--error);
 }
 
+.ping-btn {
+  position: relative;
+}
+
+.ping-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ping-btn .spinning {
+  animation: spin 1s linear infinite;
+}
+
+.ping-status {
+  font-size: 0.8rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  font-weight: 600;
+  animation: slideInRight 0.3s ease-out;
+}
+
+.ping-status.success {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.ping-status.error {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 1200px) {
   .header {
     flex-direction: column;

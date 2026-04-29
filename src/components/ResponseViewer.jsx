@@ -22,7 +22,7 @@ function ResponseViewer() {
   } = useStore();
 
   const [expandedResponses, setExpandedResponses] = useState(new Set());
-  const [viewMode, setViewMode] = useState('pretty');
+  const [responseTabs, setResponseTabs] = useState({});
   const [isBatchRunning, setIsBatchRunning] = useState(false);
   const [showBatchSelector, setShowBatchSelector] = useState(false);
   const [selectedAPIs, setSelectedAPIs] = useState(
@@ -53,6 +53,10 @@ function ResponseViewer() {
     return 'default';
   };
 
+  const setResponseTab = (responseId, tab) => {
+    setResponseTabs((prev) => ({ ...prev, [responseId]: tab }));
+  };
+
   const runBatchTests = async () => {
     const apisToRun = apis.filter((api) => selectedAPIs.has(api.id));
 
@@ -76,22 +80,24 @@ function ResponseViewer() {
         const url = serverUrl + api.endpoint;
         const startTime = performance.now();
 
-        const response = await fetch(url, {
+        const result = await window.electronAPI.sendRequest({
+          url,
           method: api.method,
           headers,
-          body: ['GET', 'HEAD', 'DELETE'].includes(api.method)
-            ? undefined
-            : api.body,
+          body: ['GET', 'HEAD', 'DELETE'].includes(api.method) ? undefined : api.body,
         });
 
         const responseTime = performance.now() - startTime;
-        const responseBody = await response.text();
+
+        if (!result.success) {
+          throw new Error(result.error || 'Request failed');
+        }
 
         let responseData;
         try {
-          responseData = JSON.parse(responseBody);
+          responseData = JSON.parse(result.body);
         } catch {
-          responseData = responseBody;
+          responseData = result.body;
         }
 
         const batchResult = {
@@ -99,12 +105,14 @@ function ResponseViewer() {
           apiName: api.name,
           method: api.method,
           endpoint: api.endpoint,
-          status: response.status,
-          statusText: response.statusText,
+          status: result.status,
+          statusText: result.statusText,
           responseTime: Math.round(responseTime),
-          responseSize: new Blob([responseBody]).size,
+          responseSize: new Blob([result.body]).size,
+          headers: result.headers,
           body: responseData,
-          success: response.ok,
+          rawBody: result.body,
+          success: result.status >= 200 && result.status < 300,
         };
 
         addBatchResult(batchResult);
@@ -124,6 +132,7 @@ function ResponseViewer() {
           success: false,
         };
         addBatchResult(batchResult);
+        addResponse(batchResult);
       }
     }
 
@@ -168,12 +177,7 @@ function ResponseViewer() {
             </>
           )}
 
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => setViewMode(viewMode === 'pretty' ? 'raw' : 'pretty')}
-          >
-            {viewMode === 'pretty' ? 'Raw' : 'Pretty'}
-          </button>
+
 
           {responseHistory.length > 0 && (
             <button
@@ -283,8 +287,8 @@ function ResponseViewer() {
                         <div className="headers-section">
                           <h4>Response Headers</h4>
                           <div className="headers-list">
-                            {response.headers.map(([key, value]) => (
-                              <div key={key} className="header-row">
+                            {response.headers.map(([key, value], idx) => (
+                              <div key={`${key}-${idx}`} className="header-row">
                                 <span className="key">{key}:</span>
                                 <span className="value">{value}</span>
                               </div>
@@ -293,28 +297,76 @@ function ResponseViewer() {
                         </div>
                       )}
 
-                      <div className="body-section">
-                        <div className="body-header">
-                          <h4>Response Body</h4>
-                          <button
-                            className="copy-btn"
-                            onClick={() =>
-                              copyToClipboard(
-                                viewMode === 'raw'
-                                  ? response.rawBody
-                                  : response.body
-                              )
-                            }
-                            title="Copy to clipboard"
-                          >
-                            <FiCopy size={16} />
-                          </button>
-                        </div>
-                        <pre className="response-code">
-                          {viewMode === 'pretty'
-                            ? renderJSON(response.body)
-                            : response.rawBody || JSON.stringify(response.body)}
-                        </pre>
+                      <div className="response-tabs">
+                        {['Output', 'Raw', 'Error'].map((tab) => {
+                          if (tab === 'Error' && !response.error) return null;
+                          const activeTab = responseTabs[response.id] || 'Output';
+                          return (
+                            <button
+                              key={tab}
+                              className={`tab ${activeTab === tab ? 'active' : ''}`}
+                              onClick={() => setResponseTab(response.id, tab)}
+                            >
+                              {tab}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="tab-content">
+                        {(responseTabs[response.id] || 'Output') === 'Output' && (
+                          <div className="body-section">
+                            <div className="body-header">
+                              <h4>Response Body</h4>
+                              <button
+                                className="copy-btn"
+                                onClick={() => copyToClipboard(response.body)}
+                                title="Copy to clipboard"
+                              >
+                                <FiCopy size={16} />
+                              </button>
+                            </div>
+                            <pre className="response-code">
+                              {renderJSON(response.body)}
+                            </pre>
+                          </div>
+                        )}
+
+                        {(responseTabs[response.id] || 'Output') === 'Raw' && (
+                          <div className="body-section">
+                            <div className="body-header">
+                              <h4>Raw Response</h4>
+                              <button
+                                className="copy-btn"
+                                onClick={() => copyToClipboard(response.rawBody)}
+                                title="Copy to clipboard"
+                              >
+                                <FiCopy size={16} />
+                              </button>
+                            </div>
+                            <pre className="response-code raw">
+                              {response.rawBody || JSON.stringify(response.body)}
+                            </pre>
+                          </div>
+                        )}
+
+                        {(responseTabs[response.id] || 'Output') === 'Error' && response.error && (
+                          <div className="body-section">
+                            <div className="body-header">
+                              <h4>Error Details</h4>
+                              <button
+                                className="copy-btn"
+                                onClick={() => copyToClipboard(response.error)}
+                                title="Copy to clipboard"
+                              >
+                                <FiCopy size={16} />
+                              </button>
+                            </div>
+                            <pre className="response-code error">
+                              {response.error}
+                            </pre>
+                          </div>
+                        )}
                       </div>
                     </>
                   )}

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import useStore from '../store';
-import { FiPlus, FiFolder, FiTrash2, FiEdit2, FiChevronDown } from 'react-icons/fi';
+import { FiPlus, FiFolder, FiTrash2, FiEdit2, FiChevronDown, FiUpload } from 'react-icons/fi';
 import '../styles/Sidebar.css';
 
 function Sidebar() {
@@ -10,6 +10,9 @@ function Sidebar() {
     deleteCollection,
     apis,
     addAPI,
+    updateAPI,
+    deleteAPI,
+    setAPIs,
     setCurrentAPI,
     currentAPI,
   } = useStore();
@@ -17,6 +20,8 @@ function Sidebar() {
   const [expandedFolders, setExpandedFolders] = useState(new Set());
   const [newCollectionName, setNewCollectionName] = useState('');
   const [showNewCollection, setShowNewCollection] = useState(false);
+  const [editingApiId, setEditingApiId] = useState(null);
+  const [editApiName, setEditApiName] = useState('');
 
   // Auto-save apis when they change
   useEffect(() => {
@@ -89,21 +94,175 @@ function Sidebar() {
     }
   };
 
+  const startEditApiName = (api, e) => {
+    e.stopPropagation();
+    setEditingApiId(api.id);
+    setEditApiName(api.name);
+  };
+
+  const saveApiName = (apiId) => {
+    if (editApiName.trim()) {
+      updateAPI(apiId, { name: editApiName.trim() });
+    }
+    setEditingApiId(null);
+    setEditApiName('');
+  };
+
+  const handleDeleteAPI = (apiId, e) => {
+    e.stopPropagation();
+    if (window.confirm('Delete this API?')) {
+      deleteAPI(apiId);
+      if (currentAPI?.id === apiId) {
+        setCurrentAPI(null);
+      }
+    }
+  };
+
   const getCollectionAPIs = (collectionId) => {
     return apis.filter((api) => api.collectionId === collectionId);
+  };
+
+  const handleFileImport = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      let parsedData = [];
+
+      if (file.name.endsWith('.json')) {
+        const jsonData = JSON.parse(text);
+        parsedData = Array.isArray(jsonData) ? jsonData : [jsonData];
+      } else if (file.name.endsWith('.csv')) {
+        // Parse CSV
+        const lines = text.trim().split('\n');
+        const headers = lines[0].split(',').map((h) => h.trim());
+        for (let i = 1; i < lines.length; i++) {
+          const values = lines[i].split(',').map((v) => v.trim());
+          const obj = {};
+          headers.forEach((header, idx) => {
+            obj[header] = values[idx];
+          });
+          parsedData.push(obj);
+        }
+      }
+
+      if (parsedData.length === 0) {
+        alert('No data found in file');
+        e.target.value = '';
+        return;
+      }
+
+      // Create or select collection
+      let targetCollection = collections[0];
+      if (!targetCollection) {
+        const newCollection = {
+          id: Math.random().toString(36).substr(2, 9),
+          name: `Imported ${file.name.split('.')[0]}`,
+          apis: [],
+          createdAt: new Date(),
+        };
+        addCollection(newCollection);
+        targetCollection = newCollection;
+      }
+
+      // Confirm replacement if collection already has APIs
+      const existingCount = apis.filter((api) => api.collectionId === targetCollection.id).length;
+      if (existingCount > 0) {
+        const confirmed = window.confirm(
+          `This collection already has ${existingCount} API(s). Replace them with imported data?`
+        );
+        if (!confirmed) {
+          e.target.value = '';
+          return;
+        }
+      }
+
+      // Build imported APIs with safe parsing
+      const importedAPIs = parsedData.map((item, idx) => {
+        let headers = {};
+        let params = {};
+        let auth = { type: 'none', token: '' };
+
+        if (item.headers) {
+          if (typeof item.headers === 'string') {
+            try { headers = JSON.parse(item.headers); } catch { headers = {}; }
+          } else {
+            headers = item.headers;
+          }
+        }
+
+        if (item.params) {
+          if (typeof item.params === 'string') {
+            try { params = JSON.parse(item.params); } catch { params = {}; }
+          } else {
+            params = item.params;
+          }
+        }
+
+        if (item.auth) {
+          if (typeof item.auth === 'string') {
+            try { auth = JSON.parse(item.auth); } catch { auth = { type: 'none', token: '' }; }
+          } else {
+            auth = item.auth;
+          }
+        }
+
+        return {
+          id: Math.random().toString(36).substr(2, 9),
+          collectionId: targetCollection.id,
+          name: item.name || item.endpoint || `Imported API ${idx + 1}`,
+          method: item.method || 'GET',
+          endpoint: item.endpoint || '/',
+          headers,
+          params,
+          body: item.body || '',
+          auth,
+        };
+      });
+
+      // Replace APIs: keep APIs from other collections, add imported ones
+      const remainingAPIs = apis.filter((api) => api.collectionId !== targetCollection.id);
+      const newAPIs = [...remainingAPIs, ...importedAPIs];
+      setAPIs(newAPIs);
+
+      // Explicitly persist (auto-save useEffect will also fire, but this is immediate)
+      if (window.electronAPI && window.electronAPI.saveAPIs) {
+        window.electronAPI.saveAPIs(newAPIs);
+      }
+
+      setExpandedFolders((prev) => new Set(prev).add(targetCollection.id));
+
+      alert(`Successfully imported ${importedAPIs.length} APIs from ${file.name}`);
+    } catch (error) {
+      alert(`Error importing file: ${error.message}`);
+    }
+
+    e.target.value = '';
   };
 
   return (
     <div className="sidebar glass-lg">
       <div className="sidebar-header">
         <h2>Collections</h2>
-        <button
-          className="btn btn-primary btn-sm"
-          onClick={() => setShowNewCollection(!showNewCollection)}
-          title="Add new collection"
-        >
-          <FiPlus size={16} />
-        </button>
+        <div className="header-actions">
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={() => setShowNewCollection(!showNewCollection)}
+            title="Add new collection"
+          >
+            <FiPlus size={16} />
+          </button>
+          <label className="btn btn-secondary btn-sm" title="Import JSON or CSV">
+            <FiUpload size={16} />
+            <input
+              type="file"
+              accept=".json,.csv"
+              onChange={handleFileImport}
+              style={{ display: 'none' }}
+            />
+          </label>
+        </div>
       </div>
 
       {showNewCollection && (
@@ -183,7 +342,40 @@ function Sidebar() {
                       <span className={`method-badge method-${api.method.toLowerCase()}`}>
                         {api.method}
                       </span>
-                      <span className="api-name">{api.name}</span>
+                      {editingApiId === api.id ? (
+                        <input
+                          type="text"
+                          className="api-rename-input"
+                          value={editApiName}
+                          onChange={(e) => setEditApiName(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') saveApiName(api.id);
+                            if (e.key === 'Escape') {
+                              setEditingApiId(null);
+                              setEditApiName('');
+                            }
+                          }}
+                          onBlur={() => saveApiName(api.id)}
+                          autoFocus
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : (
+                        <span className="api-name">{api.name}</span>
+                      )}
+                      <button
+                        className="api-rename-btn"
+                        onClick={(e) => startEditApiName(api, e)}
+                        title="Rename API"
+                      >
+                        <FiEdit2 size={12} />
+                      </button>
+                      <button
+                        className="api-rename-btn danger"
+                        onClick={(e) => handleDeleteAPI(api.id, e)}
+                        title="Delete API"
+                      >
+                        <FiTrash2 size={12} />
+                      </button>
                     </div>
                   ))}
                 </div>

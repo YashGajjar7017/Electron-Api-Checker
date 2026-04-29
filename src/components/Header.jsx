@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import useStore from '../store';
-import { FiLogOut, FiMenu, FiPlay, FiSettings } from 'react-icons/fi';
+import { FiLogOut, FiMenu, FiPlay, FiSettings, FiWifi, FiWifiOff } from 'react-icons/fi';
 import '../styles/Header.css';
 
 function Header({ onThemeChange, currentTheme }) {
+  const [pinging, setPinging] = useState(false);
+  const [pingStatus, setPingStatus] = useState(null);
+  
   const { user, logoutUser, serverUrl, setServerUrl, runBatchTests } = useStore(
     (state) => ({
       user: state.user,
@@ -25,8 +28,42 @@ function Header({ onThemeChange, currentTheme }) {
   const handleServerUrlChange = (e) => {
     const newUrl = e.target.value;
     setServerUrl(newUrl);
+    setPingStatus(null);
     if (window.electronAPI && window.electronAPI.saveCollections) {
       // Could save server config here
+    }
+  };
+
+  const handlePing = async () => {
+    if (!serverUrl.trim()) {
+      alert('Please enter a server URL');
+      return;
+    }
+
+    setPinging(true);
+    setPingStatus(null);
+
+    try {
+      const result = await window.electronAPI.pingServer(serverUrl);
+      if (result.success) {
+        setPingStatus({
+          type: 'success',
+          message: `✓ Connected (${result.responseTime}ms)`,
+        });
+      } else {
+        setPingStatus({
+          type: 'error',
+          message: `✗ Connection failed: ${result.error}`,
+        });
+      }
+    } catch (error) {
+      setPingStatus({
+        type: 'error',
+        message: `✗ Error: ${error.message}`,
+      });
+    } finally {
+      setPinging(false);
+      setTimeout(() => setPingStatus(null), 5000);
     }
   };
 
@@ -46,7 +83,7 @@ function Header({ onThemeChange, currentTheme }) {
             type="text"
             value={serverUrl}
             onChange={handleServerUrlChange}
-            placeholder="http://localhost:3000"
+            placeholder="http://192.168.4.1"
             className="url-input"
           />
         </div>
@@ -56,6 +93,20 @@ function Header({ onThemeChange, currentTheme }) {
         <div className="user-info">
           <span className="user-email">{user?.email}</span>
         </div>
+
+        <button
+          className={`header-btn ping-btn ${pingStatus?.type}`}
+          onClick={handlePing}
+          disabled={pinging}
+          title="Test server connectivity"
+        >
+          {pinging ? <FiWifi size={18} className="spinning" /> : <FiWifi size={18} />}
+        </button>
+        {pingStatus && (
+          <span className={`ping-status ${pingStatus.type}`}>
+            {pingStatus.message}
+          </span>
+        )}
 
         <button
           className="header-btn"

@@ -42,6 +42,39 @@ function App() {
             useStore.getState().setAPIs(apisResult.data);
           }
         }
+
+        // Create default Auth API if no APIs exist
+        const state = useStore.getState();
+        if (state.apis.length === 0) {
+          const defaultCollection = {
+            id: Math.random().toString(36).substr(2, 9),
+            name: 'Default',
+            apis: [],
+            createdAt: new Date(),
+          };
+          state.addCollection(defaultCollection);
+          if (window.electronAPI && window.electronAPI.saveCollections) {
+            window.electronAPI.saveCollections([defaultCollection]);
+          }
+
+          const authApi = {
+            id: Math.random().toString(36).substr(2, 9),
+            collectionId: defaultCollection.id,
+            name: 'Auth',
+            method: 'POST',
+            endpoint: '/api/v1/auth/login',
+            headers: { 'Content-Type': 'application/json' },
+            params: {},
+            body: JSON.stringify({ username: '', password: '' }, null, 2),
+            auth: { type: 'none', token: '' },
+            skipOtp: true,
+          };
+          state.addAPI(authApi);
+          state.setCurrentAPI(authApi);
+          if (window.electronAPI && window.electronAPI.saveAPIs) {
+            window.electronAPI.saveAPIs([authApi]);
+          }
+        }
       } catch (error) {
         console.error('Failed to load persisted data:', error);
       }

@@ -45,6 +45,7 @@ function RequestBuilder() {
   const [certFile, setCertFile] = useState(currentAPI?.auth?.certFile || '');
   const [keyFile, setKeyFile] = useState(currentAPI?.auth?.keyFile || '');
   const [caFile, setCaFile] = useState(currentAPI?.auth?.caFile || '');
+  const [skipOtp, setSkipOtp] = useState(currentAPI?.skipOtp || false);
   const [newHeaderKey, setNewHeaderKey] = useState('');
   const [newHeaderValue, setNewHeaderValue] = useState('');
   const [newParamKey, setNewParamKey] = useState('');
@@ -86,6 +87,7 @@ function RequestBuilder() {
         keyFile,
         caFile,
       },
+      skipOtp,
     };
     updateAPI(currentAPI.id, updatedAPI);
     // Auto-save
@@ -241,6 +243,11 @@ function RequestBuilder() {
   };
 
   const handleSendRequest = async () => {
+    // Skip OTP for APIs marked with skipOtp (e.g. Auth endpoint)
+    if (currentAPI?.skipOtp) {
+      await executeRequest();
+      return;
+    }
     // Check if session token is valid
     const isTokenValid = sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry;
     if (!isTokenValid) {
@@ -551,6 +558,17 @@ function RequestBuilder() {
                 </div>
               </>
             )}
+
+            <div className="form-group checkbox-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={skipOtp}
+                  onChange={(e) => setSkipOtp(e.target.checked)}
+                />
+                <span>Skip OTP for this API (e.g. Auth endpoint)</span>
+              </label>
+            </div>
 
             <div className="info-box">
               💡 Your auth credentials and certificates are only stored locally in your system.
