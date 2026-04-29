@@ -5,11 +5,10 @@ import AuthScreen from './components/AuthScreen';
 import MainLayout from './components/MainLayout';
 
 function App() {
-  const { isAuthenticated, loginUser, loadUser: loadUserFromStore } = useStore(
+  const { isAuthenticated, loginUser } = useStore(
     (state) => ({
       isAuthenticated: state.isAuthenticated,
       loginUser: state.loginUser,
-      loadUser: state.user,
     })
   );
   const [initialized, setInitialized] = useState(false);

@@ -1,0 +1,287 @@
+/**
+ * Backend Server for API Checker
+ * Runs alongside the Electron app and provides:
+ * - API proxy/forwarding
+ * - Data caching
+ * - Authentication
+ * - Request history
+ */
+
+const express = require('express');
+const cors = require('cors');
+const axios = require('axios');
+const path = require('path');
+const fs = require('fs');
+const os = require('os');
+
+const app = express();
+let PORT = 5000;
+
+// Middleware
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Data directory
+const dataDir = path.join(os.homedir(), '.api-checker-server');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+// Request history storage
+let requestHistory = [];
+const MAX_HISTORY = 100;
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date(),
+    port: PORT,
+  });
+});
+
+// Get request history
+app.get('/api/history', (req, res) => {
+  res.json({ history: requestHistory });
+});
+
+// Clear request history
+app.delete('/api/history', (req, res) => {
+  requestHistory = [];
+  res.json({ message: 'History cleared' });
+});
+
+// Proxy API request
+app.post('/api/proxy', async (req, res) => {
+  try {
+    const {
+      url,
+      method = 'GET',
+      headers = {},
+      data = null,
+      params = {},
+      timeout = 30000,
+    } = req.body;
+
+    if (!url) {
+      return res.status(400).json({ error: 'URL is required' });
+    }
+
+    const startTime = Date.now();
+
+    try {
+      const response = await axios({
+        url,
+        method,
+        headers: {
+          ...headers,
+          'User-Agent': 'API-Checker/1.0',
+        },
+        data,
+        params,
+        timeout,
+        validateStatus: () => true, // Don't throw on any status
+      });
+
+      const duration = Date.now() - startTime;
+
+      const historyEntry = {
+        id: Math.random().toString(36).substr(2, 9),
+        timestamp: new Date(),
+        url,
+        method,
+        status: response.status,
+        duration,
+        size: JSON.stringify(response.data).length,
+      };
+
+      requestHistory.unshift(historyEntry);
+      if (requestHistory.length > MAX_HISTORY) {
+        requestHistory.pop();
+      }
+
+      res.json({
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+        data: response.data,
+        duration,
+        timestamp: new Date(),
+      });
+    } catch (axiosError) {
+      const duration = Date.now() - startTime;
+      res.status(500).json({
+        error: axiosError.message,
+        duration,
+        timestamp: new Date(),
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Import Postman collection
+app.post('/api/import/postman', (req, res) => {
+  try {
+    const { collection } = req.body;
+    if (!collection) {
+      return res.status(400).json({ error: 'Collection is required' });
+    }
+
+    const collectionPath = path.join(dataDir, `collection-${Date.now()}.json`);
+    fs.writeFileSync(collectionPath, JSON.stringify(collection, null, 2));
+
+    res.json({
+      message: 'Collection imported successfully',
+      path: collectionPath,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Export data
+app.get('/api/export', (req, res) => {
+  try {
+    const exportData = {
+      history: requestHistory,
+      exportedAt: new Date(),
+    };
+
+    res.json(exportData);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Save API preset
+app.post('/api/presets', (req, res) => {
+  try {
+    const { name, api } = req.body;
+    if (!name || !api) {
+      return res.status(400).json({ error: 'Name and API data required' });
+    }
+
+    const presetsFile = path.join(dataDir, 'presets.json');
+    let presets = [];
+
+    if (fs.existsSync(presetsFile)) {
+      presets = JSON.parse(fs.readFileSync(presetsFile, 'utf-8'));
+    }
+
+    const newPreset = {
+      id: Math.random().toString(36).substr(2, 9),
+      name,
+      api,
+      createdAt: new Date(),
+    };
+
+    presets.push(newPreset);
+    fs.writeFileSync(presetsFile, JSON.stringify(presets, null, 2));
+
+    res.json({ message: 'Preset saved', preset: newPreset });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get presets
+app.get('/api/presets', (req, res) => {
+  try {
+    const presetsFile = path.join(dataDir, 'presets.json');
+    let presets = [];
+
+    if (fs.existsSync(presetsFile)) {
+      presets = JSON.parse(fs.readFileSync(presetsFile, 'utf-8'));
+    }
+
+    res.json({ presets });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete preset
+app.delete('/api/presets/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const presetsFile = path.join(dataDir, 'presets.json');
+
+    if (!fs.existsSync(presetsFile)) {
+      return res.status(404).json({ error: 'No presets found' });
+    }
+
+    let presets = JSON.parse(fs.readFileSync(presetsFile, 'utf-8'));
+    presets = presets.filter((p) => p.id !== id);
+
+    fs.writeFileSync(presetsFile, JSON.stringify(presets, null, 2));
+
+    res.json({ message: 'Preset deleted' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Server info endpoint
+app.get('/api/info', (req, res) => {
+  res.json({
+    name: 'API Checker Backend',
+    version: '1.0.0',
+    port: PORT,
+    uptime: process.uptime(),
+    platform: process.platform,
+    nodeVersion: process.version,
+    dataDir,
+  });
+});
+
+// Start server
+const startServer = (preferredPort = 5000) => {
+  PORT = preferredPort;
+  const server = app.listen(PORT, 'localhost', () => {
+    console.log(`
+╔════════════════════════════════════════════╗
+║   API Checker Backend Server Running       ║
+╠════════════════════════════════════════════╣
+║ Port: ${PORT}                                 ║
+║ URL: http://localhost:${PORT}                ║
+║ Health: http://localhost:${PORT}/health      ║
+╚════════════════════════════════════════════╝
+    `);
+
+    // Send port info to parent process (Electron)
+    if (process.send) {
+      process.send({ type: 'server-started', port: PORT });
+    }
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`Port ${PORT} is in use, trying ${PORT + 1}...`);
+      startServer(PORT + 1);
+    } else {
+      console.error('Server error:', err);
+    }
+  });
+
+  return server;
+};
+
+// Start the server
+startServer();
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully...');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully...');
+  process.exit(0);
+});
+
+module.exports = app;

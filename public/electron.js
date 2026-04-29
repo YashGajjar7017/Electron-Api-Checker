@@ -5,13 +5,75 @@ const fs = require('fs');
 const os = require('os');
 const http = require('http');
 const https = require('https');
+const { spawn } = require('child_process');
 
 let mainWindow;
+let backendServer;
+let backendPort = null;
 const dataPath = path.join(os.homedir(), '.api-checker');
 
 // Ensure data directory exists
 if (!fs.existsSync(dataPath)) {
   fs.mkdirSync(dataPath, { recursive: true });
+}
+
+// Launch backend server
+function launchBackendServer() {
+  return new Promise((resolve) => {
+    try {
+      const backendPath = isDev
+        ? path.join(__dirname, '../src/server/backend.js')
+        : path.join(__dirname, '../src/server/backend.js');
+
+      // Only launch if backend exists
+      if (!fs.existsSync(backendPath)) {
+        console.log('Backend server not found, skipping...');
+        resolve(null);
+        return;
+      }
+
+      console.log('Launching backend server...');
+      backendServer = spawn('node', [backendPath], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        detached: false,
+      });
+
+      let output = '';
+
+      backendServer.stdout.on('data', (data) => {
+        output += data.toString();
+        console.log('[Backend]', data.toString());
+
+        // Extract port from server output
+        const portMatch = output.match(/Port: (\d+)/);
+        if (portMatch && !backendPort) {
+          backendPort = parseInt(portMatch[1]);
+          console.log(`Backend server started on port ${backendPort}`);
+          resolve(backendPort);
+        }
+      });
+
+      backendServer.stderr.on('data', (data) => {
+        console.error('[Backend Error]', data.toString());
+      });
+
+      backendServer.on('error', (err) => {
+        console.error('Failed to start backend:', err);
+        resolve(null);
+      });
+
+      // Timeout if server doesn't start within 10 seconds
+      setTimeout(() => {
+        if (!backendPort) {
+          console.warn('Backend server startup timeout');
+          resolve(null);
+        }
+      }, 10000);
+    } catch (error) {
+      console.error('Error launching backend:', error);
+      resolve(null);
+    }
+  });
 }
 
 function createWindow() {
@@ -31,6 +93,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
     },
     icon: path.join(__dirname, 'icon.png'),
+    show: false, // Don't show until ready
   });
 
   const startUrl = isDev
@@ -38,6 +101,11 @@ function createWindow() {
     : `file://${path.join(__dirname, '../build/index.html')}`;
 
   mainWindow.loadURL(startUrl);
+
+  // Show window when ready
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+  });
 
   // DevTools disabled - remove comment below to enable
   // if (isDev) {
@@ -49,9 +117,25 @@ function createWindow() {
   });
 }
 
-app.on('ready', createWindow);
+app.on('ready', async () => {
+  // Launch backend server first
+  await launchBackendServer();
+  
+  // Then create the window
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
+  // Kill backend server if it's running
+  if (backendServer) {
+    console.log('Stopping backend server...');
+    try {
+      backendServer.kill();
+    } catch (error) {
+      console.error('Error killing backend:', error);
+    }
+  }
+
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -253,6 +337,15 @@ ipcMain.handle('ping-server', async (event, serverUrl) => {
       resolve({ success: false, error: error.message });
     }
   });
+});
+
+// Get backend server info
+ipcMain.handle('get-backend-info', async () => {
+  return {
+    port: backendPort,
+    url: backendPort ? `http://localhost:${backendPort}` : null,
+    status: backendServer ? 'running' : 'stopped',
+  };
 });
 
 // Create application menu

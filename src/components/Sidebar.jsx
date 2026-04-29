@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import useStore from '../store';
 import { FiPlus, FiFolder, FiTrash2, FiEdit2, FiChevronDown, FiUpload } from 'react-icons/fi';
+import parsePostmanCollection from '../utils/postmanParser';
 import '../styles/Sidebar.css';
 
 function Sidebar() {
@@ -12,7 +13,6 @@ function Sidebar() {
     addAPI,
     updateAPI,
     deleteAPI,
-    setAPIs,
     setCurrentAPI,
     currentAPI,
   } = useStore();
@@ -128,114 +128,107 @@ function Sidebar() {
 
     try {
       const text = await file.text();
-      let parsedData = [];
+      const jsonData = JSON.parse(text);
 
-      if (file.name.endsWith('.json')) {
-        const jsonData = JSON.parse(text);
-        parsedData = Array.isArray(jsonData) ? jsonData : [jsonData];
-      } else if (file.name.endsWith('.csv')) {
-        // Parse CSV
-        const lines = text.trim().split('\n');
-        const headers = lines[0].split(',').map((h) => h.trim());
-        for (let i = 1; i < lines.length; i++) {
-          const values = lines[i].split(',').map((v) => v.trim());
-          const obj = {};
-          headers.forEach((header, idx) => {
-            obj[header] = values[idx];
-          });
-          parsedData.push(obj);
-        }
+      // Check if this is a Postman collection
+      const isPostmanCollection = jsonData.info && jsonData.item && Array.isArray(jsonData.item);
+
+      let collectionName = file.name.split('.')[0];
+      if (isPostmanCollection) {
+        collectionName = jsonData.info.name || collectionName;
       }
 
-      if (parsedData.length === 0) {
-        alert('No data found in file');
+      // Create new collection for import
+      const newCollection = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: `${collectionName} (${new Date().toLocaleDateString()})`,
+        apis: [],
+        createdAt: new Date(),
+      };
+      addCollection(newCollection);
+
+      let importedAPIs = [];
+
+      if (isPostmanCollection) {
+        // Parse Postman collection
+        const parsedAPIs = parsePostmanCollection(jsonData);
+        importedAPIs = parsedAPIs.map((api) => ({
+          ...api,
+          id: Math.random().toString(36).substr(2, 9),
+          collectionId: newCollection.id,
+        }));
+      } else if (Array.isArray(jsonData)) {
+        // Handle array of objects
+        importedAPIs = jsonData.map((item, idx) => {
+          let headers = {};
+          let params = {};
+          let auth = { type: 'none', token: '' };
+
+          if (item.headers) {
+            if (typeof item.headers === 'string') {
+              try { headers = JSON.parse(item.headers); } catch { headers = {}; }
+            } else {
+              headers = item.headers;
+            }
+          }
+
+          if (item.params) {
+            if (typeof item.params === 'string') {
+              try { params = JSON.parse(item.params); } catch { params = {}; }
+            } else {
+              params = item.params;
+            }
+          }
+
+          if (item.auth) {
+            if (typeof item.auth === 'string') {
+              try { auth = JSON.parse(item.auth); } catch { auth = { type: 'none', token: '' }; }
+            } else {
+              auth = item.auth;
+            }
+          }
+
+          return {
+            id: Math.random().toString(36).substr(2, 9),
+            collectionId: newCollection.id,
+            name: item.name || item.endpoint || `Imported API ${idx + 1}`,
+            method: item.method || 'GET',
+            endpoint: item.endpoint || '/',
+            headers,
+            params,
+            body: item.body || '',
+            auth,
+          };
+        });
+      }
+
+      if (importedAPIs.length === 0) {
+        alert('No APIs found in file');
         e.target.value = '';
         return;
       }
 
-      // Create or select collection
-      let targetCollection = collections[0];
-      if (!targetCollection) {
-        const newCollection = {
-          id: Math.random().toString(36).substr(2, 9),
-          name: `Imported ${file.name.split('.')[0]}`,
-          apis: [],
-          createdAt: new Date(),
-        };
-        addCollection(newCollection);
-        targetCollection = newCollection;
+      // Add all imported APIs
+      importedAPIs.forEach((api) => addAPI(api));
+
+      // Persist to storage
+      if (window.electronAPI && window.electronAPI.saveCollections) {
+        window.electronAPI.saveCollections([...collections, newCollection]);
       }
-
-      // Confirm replacement if collection already has APIs
-      const existingCount = apis.filter((api) => api.collectionId === targetCollection.id).length;
-      if (existingCount > 0) {
-        const confirmed = window.confirm(
-          `This collection already has ${existingCount} API(s). Replace them with imported data?`
-        );
-        if (!confirmed) {
-          e.target.value = '';
-          return;
-        }
-      }
-
-      // Build imported APIs with safe parsing
-      const importedAPIs = parsedData.map((item, idx) => {
-        let headers = {};
-        let params = {};
-        let auth = { type: 'none', token: '' };
-
-        if (item.headers) {
-          if (typeof item.headers === 'string') {
-            try { headers = JSON.parse(item.headers); } catch { headers = {}; }
-          } else {
-            headers = item.headers;
-          }
-        }
-
-        if (item.params) {
-          if (typeof item.params === 'string') {
-            try { params = JSON.parse(item.params); } catch { params = {}; }
-          } else {
-            params = item.params;
-          }
-        }
-
-        if (item.auth) {
-          if (typeof item.auth === 'string') {
-            try { auth = JSON.parse(item.auth); } catch { auth = { type: 'none', token: '' }; }
-          } else {
-            auth = item.auth;
-          }
-        }
-
-        return {
-          id: Math.random().toString(36).substr(2, 9),
-          collectionId: targetCollection.id,
-          name: item.name || item.endpoint || `Imported API ${idx + 1}`,
-          method: item.method || 'GET',
-          endpoint: item.endpoint || '/',
-          headers,
-          params,
-          body: item.body || '',
-          auth,
-        };
-      });
-
-      // Replace APIs: keep APIs from other collections, add imported ones
-      const remainingAPIs = apis.filter((api) => api.collectionId !== targetCollection.id);
-      const newAPIs = [...remainingAPIs, ...importedAPIs];
-      setAPIs(newAPIs);
-
-      // Explicitly persist (auto-save useEffect will also fire, but this is immediate)
       if (window.electronAPI && window.electronAPI.saveAPIs) {
-        window.electronAPI.saveAPIs(newAPIs);
+        const allAPIs = [...apis, ...importedAPIs];
+        window.electronAPI.saveAPIs(allAPIs);
       }
 
-      setExpandedFolders((prev) => new Set(prev).add(targetCollection.id));
+      setExpandedFolders((prev) => new Set(prev).add(newCollection.id));
 
       alert(`Successfully imported ${importedAPIs.length} APIs from ${file.name}`);
+      if (importedAPIs.length > 0) {
+        setCurrentAPI(importedAPIs[0]);
+      }
     } catch (error) {
       alert(`Error importing file: ${error.message}`);
+      console.error('Import error:', error);
     }
 
     e.target.value = '';

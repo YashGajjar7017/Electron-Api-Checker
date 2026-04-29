@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import useStore from '../store';
 import Sidebar from './Sidebar';
 import RequestBuilder from './RequestBuilder';
 import ResponseViewer from './ResponseViewer';

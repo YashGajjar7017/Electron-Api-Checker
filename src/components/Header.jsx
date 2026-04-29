@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
 import useStore from '../store';
-import { FiLogOut, FiMenu, FiPlay, FiSettings, FiWifi, FiWifiOff } from 'react-icons/fi';
+import { FiLogOut, FiWifi } from 'react-icons/fi';
+import BackendStatus from './BackendStatus';
 import '../styles/Header.css';
 
 function Header({ onThemeChange, currentTheme }) {
   const [pinging, setPinging] = useState(false);
   const [pingStatus, setPingStatus] = useState(null);
   
-  const { user, logoutUser, serverUrl, setServerUrl, runBatchTests } = useStore(
+  const { user, logoutUser, serverUrl, setServerUrl } = useStore(
     (state) => ({
       user: state.user,
       logoutUser: state.logoutUser,
       serverUrl: state.serverUrl,
       setServerUrl: state.setServerUrl,
-      apis: state.apis,
-      isBatchTesting: state.isBatchTesting,
     })
   );
 
@@ -90,6 +89,8 @@ function Header({ onThemeChange, currentTheme }) {
       </div>
 
       <div className="header-right">
+        <BackendStatus />
+        
         <div className="user-info">
           <span className="user-email">{user?.email}</span>
         </div>

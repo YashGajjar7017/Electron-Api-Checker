@@ -3,7 +3,6 @@ import useStore from '../store';
 import Editor from '@monaco-editor/react';
 import {
   FiSend,
-  FiCopy,
   FiSave,
   FiEdit2,
   FiX,
@@ -17,12 +16,8 @@ function RequestBuilder() {
     currentAPI,
     updateAPI,
     serverUrl,
-    authToken,
-    setAuthToken,
     addResponse,
-    comparisonMode,
     apis,
-    collections,
     sessionToken,
     sessionTokenExpiry,
     setSessionToken,
@@ -53,6 +48,25 @@ function RequestBuilder() {
   const [showOtpModal, setShowOtpModal] = useState(false);
   const pendingSendRef = useRef(false);
 
+  // Sync form state when currentAPI changes
+  useEffect(() => {
+    if (currentAPI) {
+      setApiName(currentAPI.name || '');
+      setMethod(currentAPI.method || 'GET');
+      setEndpoint(currentAPI.endpoint || '');
+      setHeaders(currentAPI.headers || {});
+      setParams(currentAPI.params || {});
+      setBody(currentAPI.body || '');
+      setAuthType(currentAPI.auth?.type || 'none');
+      setAuthTokenLocal(currentAPI.auth?.token || '');
+      setCertFile(currentAPI.auth?.certFile || '');
+      setKeyFile(currentAPI.auth?.keyFile || '');
+      setCaFile(currentAPI.auth?.caFile || '');
+      setSkipOtp(currentAPI.skipOtp || false);
+      setIsEditingName(false);
+    }
+  }, [currentAPI?.id]); // Only sync when the API ID changes, not the entire object
+
   // Periodically check if session token has expired
   useEffect(() => {
     const interval = setInterval(() => {
@@ -62,6 +76,43 @@ function RequestBuilder() {
     }, 5000);
     return () => clearInterval(interval);
   }, [sessionTokenExpiry, clearSessionToken]);
+
+  // Auto-save API configuration with debounce
+  useEffect(() => {
+    if (!currentAPI?.id) return;
+
+    const timeoutId = setTimeout(() => {
+      const updatedAPI = {
+        ...currentAPI,
+        name: apiName,
+        method,
+        endpoint,
+        headers,
+        params,
+        body,
+        auth: {
+          type: authType,
+          token: authTokenState,
+          certFile,
+          keyFile,
+          caFile,
+        },
+        skipOtp,
+      };
+      
+      updateAPI(currentAPI.id, updatedAPI);
+      
+      // Auto-save to electron storage
+      if (window.electronAPI && window.electronAPI.saveAPIs) {
+        const updatedAPIs = apis.map(api => 
+          api.id === currentAPI.id ? updatedAPI : api
+        );
+        window.electronAPI.saveAPIs(updatedAPIs);
+      }
+    }, 1500); // Save after 1.5 seconds of inactivity
+
+    return () => clearTimeout(timeoutId);
+  }, [apiName, method, endpoint, headers, params, body, authType, authTokenState, certFile, keyFile, caFile, skipOtp, currentAPI.id, updateAPI, apis]);
 
   if (!currentAPI) {
     return (
@@ -90,9 +141,9 @@ function RequestBuilder() {
       skipOtp,
     };
     updateAPI(currentAPI.id, updatedAPI);
-    // Auto-save
-    if (window.electronAPI && window.electronAPI.saveCollections) {
-      window.electronAPI.saveCollections(collections);
+    // Auto-save to electron storage
+    if (window.electronAPI && window.electronAPI.saveAPIs) {
+      window.electronAPI.saveAPIs(apis);
     }
   };
 

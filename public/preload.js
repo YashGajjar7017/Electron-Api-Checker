@@ -10,4 +10,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadAPIs: () => ipcRenderer.invoke('load-apis'),
   sendRequest: (requestOptions) => ipcRenderer.invoke('send-request', requestOptions),
   pingServer: (serverUrl) => ipcRenderer.invoke('ping-server', serverUrl),
+  getBackendInfo: () => ipcRenderer.invoke('get-backend-info'),
 });
