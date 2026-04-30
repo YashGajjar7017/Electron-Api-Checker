@@ -387,7 +387,7 @@ function Sidebar() {
                 </div>
               </div>
 
-              {expandedFolders.has(collection.id) && (
+{expandedFolders.has(collection.id) && (
                 <div className="api-list">
                   {getCollectionAPIs(collection.id).map((api) => (
                     <div
@@ -397,43 +397,50 @@ function Sidebar() {
                       }`}
                       onClick={() => setCurrentAPI(api)}
                     >
-                      <span className={`method-badge method-${api.method.toLowerCase()}`}>
-                        {api.method}
-                      </span>
-                      {editingApiId === api.id ? (
-                        <input
-                          type="text"
-                          className="api-rename-input"
-                          value={editApiName}
-                          onChange={(e) => setEditApiName(e.target.value)}
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') saveApiName(api.id);
-                            if (e.key === 'Escape') {
-                              setEditingApiId(null);
-                              setEditApiName('');
-                            }
-                          }}
-                          onBlur={() => saveApiName(api.id)}
-                          autoFocus
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      ) : (
-                        <span className="api-name">{api.name}</span>
-                      )}
-                      <button
-                        className="api-rename-btn"
-                        onClick={(e) => startEditApiName(api, e)}
-                        title="Rename API"
-                      >
-                        <FiEdit2 size={12} />
-                      </button>
-                      <button
-                        className="api-rename-btn danger"
-                        onClick={(e) => handleDeleteAPI(api.id, e)}
-                        title="Delete API"
-                      >
-                        <FiTrash2 size={12} />
-                      </button>
+                      <div className="api-item-header">
+                        <span className={`method-badge method-${api.method.toLowerCase()}`}>
+                          {api.method}
+                        </span>
+                        {editingApiId === api.id ? (
+                          <input
+                            type="text"
+                            className="api-rename-input"
+                            value={editApiName}
+                            onChange={(e) => setEditApiName(e.target.value)}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') saveApiName(api.id);
+                              if (e.key === 'Escape') {
+                                setEditingApiId(null);
+                                setEditApiName('');
+                              }
+                            }}
+                            onBlur={() => saveApiName(api.id)}
+                            autoFocus
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        ) : (
+                          <span className="api-name">{api.name}</span>
+                        )}
+                        <div className="api-item-actions">
+                          <button
+                            className="api-rename-btn"
+                            onClick={(e) => startEditApiName(api, e)}
+                            title="Rename API"
+                          >
+                            <FiEdit2 size={12} />
+                          </button>
+                          <button
+                            className="api-rename-btn danger"
+                            onClick={(e) => handleDeleteAPI(api.id, e)}
+                            title="Delete API"
+                          >
+                            <FiTrash2 size={12} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="api-item-details">
+                        <span className="api-item-endpoint">{api.endpoint}</span>
+                      </div>
                     </div>
                   ))}
                 </div>

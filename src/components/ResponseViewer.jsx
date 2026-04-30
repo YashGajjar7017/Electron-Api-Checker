@@ -6,6 +6,8 @@ import {
   FiChevronDown,
   FiPlay,
   FiCheck,
+  FiDownload,
+  FiSave,
 } from 'react-icons/fi';
 import '../styles/ResponseViewer.css';
 
@@ -57,7 +59,7 @@ function ResponseViewer() {
     setResponseTabs((prev) => ({ ...prev, [responseId]: tab }));
   };
 
-  const runBatchTests = async () => {
+const runBatchTests = async () => {
     const apisToRun = apis.filter((api) => selectedAPIs.has(api.id));
 
     if (apisToRun.length === 0) {
@@ -140,6 +142,56 @@ function ResponseViewer() {
     setIsBatchRunning(false);
   };
 
+  // Export batch results to JSON or CSV
+  const exportBatchResults = (format) => {
+    if (responseHistory.length === 0) {
+      alert('No results to export');
+      return;
+    }
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    let data, filename, mimeType;
+
+    if (format === 'json') {
+      // Export as JSON
+      data = JSON.stringify(responseHistory, null, 2);
+      filename = `batch-test-results-${timestamp}.json`;
+      mimeType = 'application/json';
+    } else {
+      // Export as CSV
+      const headers = ['#', 'API Name', 'Method', 'Endpoint', 'Status', 'Status Text', 'Response Time (ms)', 'Response Size (KB)', 'Success', 'Error'];
+      const rows = responseHistory.map((r, i) => [
+        i + 1,
+        r.apiName || '',
+        r.method || '',
+        r.endpoint || '',
+        r.status || 0,
+        r.statusText || '',
+        r.responseTime || 0,
+        r.responseSize ? (r.responseSize / 1024).toFixed(2) : '0.00',
+        r.success ? 'Yes' : 'No',
+        r.error || ''
+      ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(','));
+
+      data = [headers.join(','), ...rows].join('\n');
+      filename = `batch-test-results-${timestamp}.csv`;
+      mimeType = 'text/csv';
+    }
+
+    // Create and download the file
+    const blob = new Blob([data], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    alert(`Batch results exported to ${filename}`);
+  };
+
   const renderJSON = (data) => {
     try {
       const json =
@@ -203,14 +255,32 @@ function ResponseViewer() {
 
 
 
-          {responseHistory.length > 0 && (
-            <button
-              className="btn btn-danger btn-sm"
-              onClick={clearResponseHistory}
-              title="Clear all responses"
-            >
-              <FiTrash2 size={16} />
-            </button>
+{responseHistory.length > 0 && (
+            <>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => exportBatchResults('json')}
+                title="Export results to JSON"
+              >
+                <FiDownload size={16} />
+                JSON
+              </button>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => exportBatchResults('csv')}
+                title="Export results to CSV"
+              >
+                <FiDownload size={16} />
+                CSV
+              </button>
+              <button
+                className="btn btn-danger btn-sm"
+                onClick={clearResponseHistory}
+                title="Clear all responses"
+              >
+                <FiTrash2 size={16} />
+              </button>
+            </>
           )}
         </div>
       </div>

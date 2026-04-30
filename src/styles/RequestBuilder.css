@@ -153,11 +153,11 @@
   border-bottom: 2px solid transparent;
 }
 
-.tab:hover {
+.tabs:hover {
   color: var(--text-primary);
 }
 
-.tab.active {
+.tabs.active {
   color: var(--primary);
   border-bottom-color: var(--primary);
 }
