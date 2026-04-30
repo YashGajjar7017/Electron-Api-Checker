@@ -8,6 +8,9 @@ import {
   FiX,
   FiPlus,
   FiTrash2,
+  FiPlay,
+  FiRefreshCw,
+  FiSettings,
 } from 'react-icons/fi';
 import OTPModal from './OTPModal';
 import '../styles/RequestBuilder.css';
@@ -51,9 +54,20 @@ const [activeTab, setActiveTab] = useState('params');
   const [newParamValue, setNewParamValue] = useState('');
   const [showOtpModal, setShowOtpModal] = useState(false);
   const pendingSendRef = useRef(false);
-  const [docs, setDocs] = useState(currentAPI?.docs || '');
+const [docs, setDocs] = useState(currentAPI?.docs || '');
 
-  // Sync form state when currentAPI changes
+  // Automation state
+  const [automationEnabled, setAutomationEnabled] = useState(currentAPI?.automation?.enabled || false);
+  const [automationVariable, setAutomationVariable] = useState(currentAPI?.automation?.variable || '{{id}}');
+  const [automationStart, setAutomationStart] = useState(currentAPI?.automation?.start || 1);
+  const [automationEnd, setAutomationEnd] = useState(currentAPI?.automation?.end || 10);
+  const [automationStep, setAutomationStep] = useState(currentAPI?.automation?.step || 1);
+  const [automationPadding, setAutomationPadding] = useState(currentAPI?.automation?.padding || 0);
+  const [automationDelay, setAutomationDelay] = useState(currentAPI?.automation?.delay || 500);
+  const [isAutomating, setIsAutomating] = useState(false);
+  const [automationProgress, setAutomationProgress] = useState({ current: 0, total: 0, results: [] });
+
+// Sync form state when currentAPI changes
   useEffect(() => {
     if (currentAPI) {
       setApiName(currentAPI.name || '');
@@ -69,6 +83,14 @@ const [activeTab, setActiveTab] = useState('params');
       setCaFile(currentAPI.auth?.caFile || '');
       setSkipOtp(currentAPI.skipOtp || false);
       setIsEditingName(false);
+      // Sync automation state
+      setAutomationEnabled(currentAPI.automation?.enabled || false);
+      setAutomationVariable(currentAPI.automation?.variable || '{{id}}');
+      setAutomationStart(currentAPI.automation?.start || 1);
+      setAutomationEnd(currentAPI.automation?.end || 10);
+      setAutomationStep(currentAPI.automation?.step || 1);
+      setAutomationPadding(currentAPI.automation?.padding || 0);
+      setAutomationDelay(currentAPI.automation?.delay || 500);
     }
   }, [currentAPI?.id]); // Only sync when the API ID changes, not the entire object
 
@@ -82,7 +104,7 @@ const [activeTab, setActiveTab] = useState('params');
     return () => clearInterval(interval);
   }, [sessionTokenExpiry, clearSessionToken]);
 
-  // Auto-save API configuration with debounce
+// Auto-save API configuration with debounce
   useEffect(() => {
     if (!currentAPI?.id) return;
 
@@ -103,6 +125,15 @@ const [activeTab, setActiveTab] = useState('params');
           caFile,
         },
         skipOtp,
+        automation: {
+          enabled: automationEnabled,
+          variable: automationVariable,
+          start: automationStart,
+          end: automationEnd,
+          step: automationStep,
+          padding: automationPadding,
+          delay: automationDelay,
+        },
       };
       
       updateAPI(currentAPI.id, updatedAPI);
@@ -117,7 +148,7 @@ const [activeTab, setActiveTab] = useState('params');
     }, 1500); // Save after 1.5 seconds of inactivity
 
     return () => clearTimeout(timeoutId);
-}, [apiName, method, endpoint, headers, params, body, authType, authTokenState, certFile, keyFile, caFile, skipOtp, currentAPI?.id, updateAPI, apis]);
+}, [apiName, method, endpoint, headers, params, body, authType, authTokenState, certFile, keyFile, caFile, skipOtp, automationEnabled, automationVariable, automationStart, automationEnd, automationStep, automationPadding, automationDelay, currentAPI?.id, updateAPI, apis]);
 
   if (!currentAPI) {
     return (
@@ -428,7 +459,7 @@ const handleUpdateAPI = () => {
       </div>
 
 <div className="tabs">
-        {['params', 'headers', 'body', 'auth', 'docs', 'scripts', 'settings'].map((tab) => (
+        {['params', 'headers', 'body', 'auth', 'docs', 'scripts', 'automation', 'settings'].map((tab) => (
           <button
             key={tab}
             className={`tab ${activeTab === tab ? 'active' : ''}`}
@@ -804,7 +835,7 @@ const handleUpdateAPI = () => {
           </div>
         )}
 
-        {activeTab === 'scripts' && (
+{activeTab === 'scripts' && (
           <div className="scripts-editor">
             <div className="form-group">
               <label>Pre-request Script (JavaScript)</label>
@@ -848,6 +879,282 @@ const handleUpdateAPI = () => {
                 }}
               />
             </div>
+          </div>
+        )}
+
+        {activeTab === 'automation' && (
+          <div className="automation-config">
+            <div className="automation-header">
+              <h4>Automation Settings</h4>
+              <p className="automation-description">
+                Configure automated requests with incrementing values. Use {"{{variable}}"} in your endpoint or params.
+              </p>
+            </div>
+            
+            <div className="form-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={automationEnabled}
+                  onChange={(e) => {
+                    setAutomationEnabled(e.target.checked);
+                    if (currentAPI) {
+                      updateAPI(currentAPI.id, { 
+                        ...currentAPI, 
+                        automation: { 
+                          ...currentAPI.automation, 
+                          enabled: e.target.checked 
+                        } 
+                      });
+                    }
+                  }}
+                />
+                <span>Enable Automation</span>
+              </label>
+            </div>
+
+            <div className="form-group">
+              <label>Variable Placeholder</label>
+              <input
+                type="text"
+                value={automationVariable}
+                onChange={(e) => setAutomationVariable(e.target.value)}
+                placeholder="{{id}}"
+                disabled={!automationEnabled}
+              />
+              <small className="form-hint">Use {"{{id}}"} or {"{{page}}"} - will be replaced with incrementing value</small>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Start Value</label>
+                <input
+                  type="number"
+                  value={automationStart}
+                  onChange={(e) => setAutomationStart(parseInt(e.target.value) || 1)}
+                  disabled={!automationEnabled}
+                />
+              </div>
+              <div className="form-group">
+                <label>End Value</label>
+                <input
+                  type="number"
+                  value={automationEnd}
+                  onChange={(e) => setAutomationEnd(parseInt(e.target.value) || 10)}
+                  disabled={!automationEnabled}
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Step</label>
+                <input
+                  type="number"
+                  value={automationStep}
+                  onChange={(e) => setAutomationStep(parseInt(e.target.value) || 1)}
+                  disabled={!automationEnabled}
+                />
+              </div>
+              <div className="form-group">
+                <label>Zero Padding</label>
+                <input
+                  type="number"
+                  value={automationPadding}
+                  onChange={(e) => setAutomationPadding(parseInt(e.target.value) || 0)}
+                  disabled={!automationEnabled}
+                  min="0"
+                  max="10"
+                />
+                <small className="form-hint">e.g., 2 = 01, 02, 03</small>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Delay Between Requests (ms)</label>
+              <input
+                type="number"
+                value={automationDelay}
+                onChange={(e) => setAutomationDelay(parseInt(e.target.value) || 500)}
+                disabled={!automationEnabled}
+                min="0"
+              />
+            </div>
+
+            <div className="automation-preview">
+              <h5>Preview</h5>
+              <div className="preview-list">
+                {automationEnabled && (
+                  <>
+                    {Array.from({ length: Math.min(5, automationEnd - automationStart + 1) }, (_, i) => {
+                      const value = automationStart + (i * automationStep);
+                      const paddedValue = automationPadding > 0 
+                        ? String(value).padStart(automationPadding, '0') 
+                        : value;
+                      const previewEndpoint = endpoint.replace(new RegExp(automationVariable.replace('{{', '\\{{').replace('}}', '\\}}'), 'g'), paddedValue);
+                      return (
+                        <div key={i} className="preview-item">
+                          <span className="preview-value">{value}</span>
+                          <span className="preview-url">{serverUrl}{previewEndpoint}</span>
+                        </div>
+                      );
+                    })}
+                    {automationEnd - automationStart + 1 > 5 && (
+                      <div className="preview-more">...and {automationEnd - automationStart + 1 - 5} more</div>
+                    )}
+                  </>
+                )}
+                {!automationEnabled && <p className="preview-empty">Enable automation to see preview</p>}
+              </div>
+            </div>
+
+            <div className="automation-actions">
+              <button
+                className="btn btn-primary"
+                disabled={!automationEnabled || isAutomating}
+                onClick={async () => {
+                  if (!automationVariable || !endpoint.includes(automationVariable)) {
+                    alert(`Please include ${automationVariable} in your endpoint URL`);
+                    return;
+                  }
+                  
+                  setIsAutomating(true);
+                  const results = [];
+                  const totalRuns = Math.ceil((automationEnd - automationStart) / automationStep) + 1;
+                  setAutomationProgress({ current: 0, total: totalRuns, results: [] });
+                  
+                  for (let i = automationStart; i <= automationEnd; i += automationStep) {
+                    const currentProgress = Math.ceil((i - automationStart) / automationStep);
+                    setAutomationProgress({ 
+                      current: currentProgress, 
+                      total: totalRuns, 
+                      results 
+                    });
+                    
+                    try {
+                      const paddedValue = automationPadding > 0 
+                        ? String(i).padStart(automationPadding, '0') 
+                        : i;
+                      
+                      // Build URL with replaced variable
+                      let url = serverUrl + endpoint.replace(
+                        new RegExp(automationVariable.replace('{{', '\\{{').replace('}}', '\\}}'), 'g'), 
+                        paddedValue
+                      );
+                      
+                      const queryParams = new URLSearchParams(params).toString();
+                      if (queryParams) {
+                        // Replace variable in params too
+                        const processedParams = queryParams.replace(
+                          new RegExp(automationVariable.replace('{{', '\\{{').replace('}}', '\\}}'), 'g'),
+                          paddedValue
+                        );
+                        url += '?' + processedParams;
+                      }
+                      
+                      const requestHeaders = buildRequestHeaders();
+                      
+                      // Inject session token if available and not expired
+                      if (sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry) {
+                        requestHeaders['Authorization'] = `Bearer ${sessionToken}`;
+                      }
+
+                      const sslOptions = authType === 'ssl' ? { certFile, keyFile, caFile } : undefined;
+
+                      const startTime = performance.now();
+                      
+                      const result = await window.electronAPI.sendRequest({
+                        url,
+                        method,
+                        headers: requestHeaders,
+                        body: ['GET', 'HEAD', 'DELETE'].includes(method) ? undefined : body,
+                        sslOptions,
+                      });
+                      
+                      const responseTime = performance.now() - startTime;
+
+                      let responseData;
+                      try {
+                        responseData = JSON.parse(result.body);
+                      } catch {
+                        responseData = result.body;
+                      }
+
+                      const resultObj = {
+                        id: Math.random().toString(36).substr(2, 9),
+                        apiName: `${apiName} #${paddedValue}`,
+                        method,
+                        endpoint: endpoint.replace(automationVariable, paddedValue),
+                        status: result.status || 0,
+                        statusText: result.statusText || '',
+                        responseTime: Math.round(responseTime),
+                        responseSize: result.body ? new Blob([result.body]).size : 0,
+                        headers: result.headers || {},
+                        body: responseData,
+                        rawBody: result.body,
+                        timestamp: new Date(),
+                      };
+                      
+                      results.push(resultObj);
+                      addResponse(resultObj);
+                      
+                      setAutomationProgress({ 
+                        current: currentProgress, 
+                        total: totalRuns, 
+                        results 
+                      });
+                      
+                      // Add delay between requests
+                      if (i + automationStep <= automationEnd) {
+                        await new Promise(resolve => setTimeout(resolve, automationDelay));
+                      }
+                    } catch (error) {
+                      const errorResult = {
+                        id: Math.random().toString(36).substr(2, 9),
+                        apiName: `${apiName} #${i}`,
+                        method,
+                        endpoint: endpoint.replace(automationVariable, String(i)),
+                        error: error.message,
+                        status: 0,
+                        timestamp: new Date(),
+                      };
+                      results.push(errorResult);
+                      addResponse(errorResult);
+                    }
+                  }
+                  
+                  setIsAutomating(false);
+                  setAutomationProgress({ current: 0, total: 0, results: [] });
+                }}
+              >
+                <FiPlay size={18} />
+                {isAutomating ? `Running ${automationProgress.current}/${automationProgress.total}...` : 'Run Automation'}
+              </button>
+              
+              {isAutomating && (
+                <button
+                  className="btn btn-danger"
+                  onClick={() => setIsAutomating(false)}
+                >
+                  <FiX size={18} />
+                  Stop
+                </button>
+              )}
+            </div>
+
+            {isAutomating && (
+              <div className="automation-progress">
+                <div className="progress-bar">
+                  <div 
+                    className="progress-fill" 
+                    style={{ width: `${(automationProgress.current / automationProgress.total) * 100}%` }}
+                  />
+                </div>
+                <span className="progress-text">
+                  {automationProgress.current} / {automationProgress.total} requests completed
+                </span>
+              </div>
+            )}
           </div>
         )}
 
