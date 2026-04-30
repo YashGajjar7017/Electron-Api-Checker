@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import useStore from '../store';
-import { FiPlus, FiFolder, FiTrash2, FiEdit2, FiChevronDown, FiUpload } from 'react-icons/fi';
+import { FiPlus, FiFolder, FiTrash2, FiEdit2, FiChevronDown, FiUpload, FiCopy, FiDownload } from 'react-icons/fi';
 import parsePostmanCollection from '../utils/postmanParser';
 import '../styles/Sidebar.css';
 
@@ -92,6 +92,57 @@ function Sidebar() {
         window.electronAPI.saveCollections(updated);
       }
     }
+  };
+
+  const handleDuplicateCollection = (collection, e) => {
+    e.stopPropagation();
+    const newCollection = {
+      ...collection,
+      id: Math.random().toString(36).substr(2, 9),
+      name: `${collection.name} (Copy)`,
+      createdAt: new Date(),
+    };
+    addCollection(newCollection);
+
+    // Duplicate all APIs in this collection
+    const collectionAPIs = getCollectionAPIs(collection.id);
+    collectionAPIs.forEach((api) => {
+      addAPI({
+        ...api,
+        id: Math.random().toString(36).substr(2, 9),
+        collectionId: newCollection.id,
+      });
+    });
+
+    // Auto-save
+    if (window.electronAPI && window.electronAPI.saveCollections) {
+      window.electronAPI.saveCollections([...collections, newCollection]);
+    }
+  };
+
+  const handleExportCollection = (collection, e) => {
+    e.stopPropagation();
+    const collectionAPIs = getCollectionAPIs(collection.id);
+    const exportData = {
+      collection: {
+        name: collection.name,
+        createdAt: collection.createdAt,
+        apiCount: collectionAPIs.length,
+      },
+      apis: collectionAPIs,
+      exportedAt: new Date(),
+    };
+
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${collection.name.replace(/\s+/g, '_')}_${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const startEditApiName = (api, e) => {
@@ -311,6 +362,20 @@ function Sidebar() {
                     title="Add API"
                   >
                     <FiPlus size={14} />
+                  </button>
+                  <button
+                    className="action-btn"
+                    onClick={(e) => handleDuplicateCollection(collection, e)}
+                    title="Duplicate collection"
+                  >
+                    <FiCopy size={14} />
+                  </button>
+                  <button
+                    className="action-btn"
+                    onClick={(e) => handleExportCollection(collection, e)}
+                    title="Export collection"
+                  >
+                    <FiDownload size={14} />
                   </button>
                   <button
                     className="action-btn danger"

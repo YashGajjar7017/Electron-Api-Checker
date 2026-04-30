@@ -237,6 +237,28 @@
 
 .body-header h4 {
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.data-format {
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--primary);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Courier', monospace;
+}
+
+.headers-list.expanded {
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--bg-secondary);
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
 }
 
 .copy-btn {

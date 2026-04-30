@@ -1,13 +1,1 @@
-# Fix Import / Remove Data Bug — Implementation TODO
-
-## Plan Approved
-
-- [x] 1. Update `src/components/Sidebar.jsx`
-  - Add per-API delete button (trash icon) next to each API item.
-  - Fix `handleFileImport` to **replace** APIs in the target collection instead of appending.
-  - Add `window.confirm` before replacing collection data on import.
-  - Wrap individual `JSON.parse` calls for `headers`, `params`, `auth` in `try/catch` so one bad row doesn't crash the whole import.
-  - Ensure `window.electronAPI.saveAPIs` is called after bulk API changes.
-- [x] 2. Verify `src/store.js` exposes `deleteAPI` and `setAPIs` correctly.
-- [x] 3. Test import flow and single-API deletion.
-
+# Runtime Error Fixed ✅\n\n**Summary:** Added `?.` chaining to RequestBuilder auto-save useEffect to prevent `null.id` crash.\n\n**Electron Dev Workflow:**\n1. `npm run electron-dev` → Starts React dev server (localhost:3000) + waits + launches Electron (recommended, no browser popup)\n2. `npm start` → React dev server only (browser opens automatically)\n3. `npm run electron` → Electron app (requires dev server running first)\n\n**Status:** Backend launched on port 5000. Electron window should now load React app without errors.\n\n**Verification:**\n- No console errors\n- Select APIs → no crashes\n- Auto-save works\n\nAll fixed and ready!

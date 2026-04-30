@@ -32,6 +32,21 @@ if (!fs.existsSync(dataDir)) {
 let requestHistory = [];
 const MAX_HISTORY = 100;
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    name: 'API Checker Backend',
+    version: '1.0.0',
+    message: 'Backend server is running',
+    endpoints: {
+      health: '/health',
+      proxy: 'POST /api/proxy',
+      history: 'GET /api/history',
+      info: 'GET /api/info',
+    },
+  });
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({
@@ -87,6 +102,29 @@ app.post('/api/proxy', async (req, res) => {
 
       const duration = Date.now() - startTime;
 
+      // Parse response data
+      let parsedData = response.data;
+      let dataFormat = typeof response.data;
+      
+      try {
+        if (typeof response.data === 'string') {
+          // Try to parse as JSON
+          try {
+            parsedData = JSON.parse(response.data);
+            dataFormat = 'json';
+          } catch (e) {
+            // Check if it's HTML
+            if (response.data.includes('<!DOCTYPE') || response.data.includes('<html')) {
+              dataFormat = 'html';
+            } else {
+              dataFormat = 'text';
+            }
+          }
+        }
+      } catch (parseErr) {
+        console.log('Could not parse response data');
+      }
+
       const historyEntry = {
         id: Math.random().toString(36).substr(2, 9),
         timestamp: new Date(),
@@ -106,20 +144,25 @@ app.post('/api/proxy', async (req, res) => {
         status: response.status,
         statusText: response.statusText,
         headers: response.headers,
-        data: response.data,
+        data: parsedData,
+        rawData: response.data,
+        dataFormat,
         duration,
+        size: JSON.stringify(response.data).length,
         timestamp: new Date(),
+        success: response.status >= 200 && response.status < 300,
       });
     } catch (axiosError) {
       const duration = Date.now() - startTime;
       res.status(500).json({
         error: axiosError.message,
         duration,
+        success: false,
         timestamp: new Date(),
       });
     }
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message, success: false });
   }
 });
 

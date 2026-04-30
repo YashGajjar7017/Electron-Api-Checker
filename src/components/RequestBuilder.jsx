@@ -112,7 +112,7 @@ function RequestBuilder() {
     }, 1500); // Save after 1.5 seconds of inactivity
 
     return () => clearTimeout(timeoutId);
-  }, [apiName, method, endpoint, headers, params, body, authType, authTokenState, certFile, keyFile, caFile, skipOtp, currentAPI.id, updateAPI, apis]);
+}, [apiName, method, endpoint, headers, params, body, authType, authTokenState, certFile, keyFile, caFile, skipOtp, currentAPI?.id, updateAPI, apis]);
 
   if (!currentAPI) {
     return (
@@ -194,11 +194,26 @@ function RequestBuilder() {
 
   const buildRequestHeaders = () => {
     const requestHeaders = { ...headers };
+    
+    // Set Authorization header based on auth type
     if (authType === 'bearer' && authTokenState) {
       requestHeaders['Authorization'] = `Bearer ${authTokenState}`;
     } else if (authType === 'basic' && authTokenState) {
       requestHeaders['Authorization'] = `Basic ${authTokenState}`;
     }
+    
+    // Ensure Content-Type is set for POST/PUT/PATCH requests with body
+    const hasBody = body && ['POST', 'PUT', 'PATCH'].includes(method);
+    if (hasBody && !requestHeaders['Content-Type']) {
+      // Default to JSON if no content type is set
+      if (body.trim().startsWith('{') || body.trim().startsWith('[')) {
+        requestHeaders['Content-Type'] = 'application/json';
+      } else if (body.includes('=') && !body.includes('{')) {
+        // Likely URL-encoded data
+        requestHeaders['Content-Type'] = 'application/x-www-form-urlencoded';
+      }
+    }
+    
     return requestHeaders;
   };
 

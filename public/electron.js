@@ -1,16 +1,18 @@
 const { app, BrowserWindow, Menu, ipcMain, screen } = require('electron');
-const isDev = require('electron-is-dev');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const http = require('http');
 const https = require('https');
+const { pathToFileURL } = require('url');
 const { spawn } = require('child_process');
 
 let mainWindow;
 let backendServer;
 let backendPort = null;
 const dataPath = path.join(os.homedir(), '.api-checker');
+const devServerUrl = 'http://localhost:3000';
+const isDev = !app.isPackaged;
 
 // Ensure data directory exists
 if (!fs.existsSync(dataPath)) {
@@ -21,7 +23,7 @@ if (!fs.existsSync(dataPath)) {
 function launchBackendServer() {
   return new Promise((resolve) => {
     try {
-      const backendPath = isDev
+      const backendPath = !app.isPackaged
         ? path.join(__dirname, '../src/server/backend.js')
         : path.join(__dirname, '../src/server/backend.js');
 
@@ -76,44 +78,282 @@ function launchBackendServer() {
   });
 }
 
-function createWindow() {
+function isUrlAvailable(url) {
+  return new Promise((resolve) => {
+    const request = http.get(url, (response) => {
+      response.resume();
+      resolve(response.statusCode >= 200 && response.statusCode < 500);
+    });
+
+    request.on('error', () => resolve(false));
+    request.setTimeout(1500, () => {
+      request.destroy();
+      resolve(false);
+    });
+  });
+}
+
+async function getStartUrl() {
+  // In development, always try dev server first with longer wait
+  if (!app.isPackaged) {
+    console.log('Development mode - waiting for dev server...');
+    for (let i = 0; i < 30; i++) {
+      if (await isUrlAvailable(devServerUrl)) {
+        console.log('Dev server is available!');
+        return devServerUrl;
+      }
+      // Wait 1 second between checks
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    console.log('Dev server not available after 30 seconds');
+  }
+
+  // Production: Use built files
+  if (app.isPackaged) {
+    const builtIndexPath = path.join(__dirname, '../build/index.html');
+    if (fs.existsSync(builtIndexPath)) {
+      console.log('Loading built app from:', builtIndexPath);
+      return pathToFileURL(builtIndexPath).toString();
+    }
+  }
+
+  // Fallback to public/index.html
+  const publicIndexPath = path.join(__dirname, './index.html');
+  if (fs.existsSync(publicIndexPath)) {
+    console.log('Loading from public:', publicIndexPath);
+    return pathToFileURL(publicIndexPath).toString();
+  }
+
+  console.log('No suitable app found, returning dev server URL');
+  return devServerUrl;
+}
+
+async function createWindow() {
   // Get the primary display's work area (screen size minus taskbar)
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width, height } = primaryDisplay.workAreaSize;
   
   mainWindow = new BrowserWindow({
-    width: Math.round(width * 0.95),
-    height: Math.round(height * 0.95),
-    minWidth: 1280,
-    minHeight: 900,
+    width: Math.round(width * 0.98),
+    height: Math.round(height * 0.98),
+    x: Math.round(width * 0.01),
+    y: Math.round(height * 0.01),
+    minWidth: 1024,
+    minHeight: 768,
+    maxWidth: width,
+    maxHeight: height,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
       preload: path.join(__dirname, 'preload.js'),
+      sandbox: true,
     },
     icon: path.join(__dirname, 'icon.png'),
     show: false, // Don't show until ready
   });
 
-  const startUrl = isDev
-    ? 'http://localhost:3000'
-    : `file://${path.join(__dirname, '../build/index.html')}`;
+  // Maximize window on launch
+  mainWindow.maximize();
 
-  mainWindow.loadURL(startUrl);
+  const startUrl = await getStartUrl();
+  console.log('Loading URL:', startUrl);
 
-  // Show window when ready
+  try {
+    await mainWindow.loadURL(startUrl);
+  } catch (error) {
+    console.error('Failed to load URL:', error);
+    // Try fallback
+    const fallbackUrl = devServerUrl;
+    try {
+      await mainWindow.loadURL(fallbackUrl);
+    } catch (fallbackError) {
+      console.error('Fallback also failed:', fallbackError);
+    }
+  }
+
+  // Prevent external links from opening in browser
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('http:') || url.startsWith('https:')) {
+      // Open external links in default browser, not in Electron window
+      require('electron').shell.openExternal(url);
+      return { action: 'deny' };
+    }
+    return { action: 'allow' };
+  });
+
+  // Handle ready-to-show or show after short delay
   mainWindow.once('ready-to-show', () => {
+    console.log('Window ready to show');
     mainWindow.show();
   });
 
-  // DevTools disabled - remove comment below to enable
-  // if (isDev) {
-  //   mainWindow.webContents.openDevTools();
-  // }
+  // Fallback: show window after 2 seconds if ready-to-show doesn't fire
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isVisible()) {
+      console.log('Forcing window to show after timeout');
+      mainWindow.show();
+    }
+  }, 2000);
+
+  // Open DevTools in development
+  if (isDev) {
+    // Delay opening devtools to avoid conflicts
+    setTimeout(() => {
+      mainWindow.webContents.openDevTools({ mode: 'detach' });
+    }, 1000);
+  }
+
+  // Handle errors
+  mainWindow.webContents.on('crashed', () => {
+    console.error('Renderer process crashed');
+    mainWindow.reload();
+  });
+
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.error('Failed to load page:', errorCode, errorDescription);
+  });
+
+  // Handle window resize to refresh layout
+  mainWindow.on('resized', () => {
+    if (mainWindow) {
+      mainWindow.webContents.send('window-resized');
+    }
+  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
+  });
+}
+
+// Create App Menu
+function createAppMenu() {
+  const template = [
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Exit',
+          accelerator: 'CmdOrCtrl+Q',
+          click: () => {
+            app.quit();
+          },
+        },
+      ],
+    },
+    {
+      label: 'View',
+      submenu: [
+        {
+          label: 'Reload',
+          accelerator: 'CmdOrCtrl+R',
+          click: () => {
+            if (mainWindow) mainWindow.reload();
+          },
+        },
+        {
+          label: 'Force Reload',
+          accelerator: 'CmdOrCtrl+Shift+R',
+          click: () => {
+            if (mainWindow) mainWindow.webContents.reloadIgnoringCache();
+          },
+        },
+        { type: 'separator' },
+        {
+          label: 'Zoom In',
+          accelerator: 'CmdOrCtrl+Plus',
+          click: () => {
+            if (mainWindow) {
+              const zoomFactor = mainWindow.webContents.getZoomFactor();
+              mainWindow.webContents.setZoomFactor(zoomFactor + 0.1);
+            }
+          },
+        },
+        {
+          label: 'Zoom Out',
+          accelerator: 'CmdOrCtrl+Minus',
+          click: () => {
+            if (mainWindow) {
+              const zoomFactor = mainWindow.webContents.getZoomFactor();
+              mainWindow.webContents.setZoomFactor(zoomFactor - 0.1);
+            }
+          },
+        },
+        {
+          label: 'Reset Zoom',
+          accelerator: 'CmdOrCtrl+0',
+          click: () => {
+            if (mainWindow) mainWindow.webContents.setZoomFactor(1);
+          },
+        },
+        { type: 'separator' },
+        {
+          label: 'Fullscreen',
+          accelerator: 'F11',
+          click: () => {
+            if (mainWindow) mainWindow.setFullScreen(!mainWindow.isFullScreen());
+          },
+        },
+        {
+          label: 'Toggle DevTools',
+          accelerator: 'CmdOrCtrl+Shift+I',
+          click: () => {
+            if (mainWindow) mainWindow.webContents.toggleDevTools();
+          },
+        },
+      ],
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { label: 'Undo', accelerator: 'CmdOrCtrl+Z', role: 'undo' },
+        { label: 'Redo', accelerator: 'CmdOrCtrl+Y', role: 'redo' },
+        { type: 'separator' },
+        { label: 'Cut', accelerator: 'CmdOrCtrl+X', role: 'cut' },
+        { label: 'Copy', accelerator: 'CmdOrCtrl+C', role: 'copy' },
+        { label: 'Paste', accelerator: 'CmdOrCtrl+V', role: 'paste' },
+        { label: 'Select All', accelerator: 'CmdOrCtrl+A', role: 'selectAll' },
+      ],
+    },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'About API Checker',
+          click: () => {
+            const { dialog } = require('electron');
+            dialog.showMessageBox(mainWindow, {
+              type: 'info',
+              title: 'About API Checker',
+              message: 'API Checker',
+              detail: `Version: 1.0.0\n\nA modern desktop application for API testing and management.\n\nPort: ${backendPort || '3000'}`,
+            });
+          },
+        },
+      ],
+    },
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+}
+
+// Register Global Keyboard Shortcuts
+function registerGlobalShortcuts() {
+  const { globalShortcut } = require('electron');
+
+  // Reload app
+  globalShortcut.register('CmdOrCtrl+R', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.reload();
+    }
+  });
+
+  // DevTools toggle
+  globalShortcut.register('CmdOrCtrl+Shift+I', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.toggleDevTools();
+    }
   });
 }
 
@@ -121,8 +361,12 @@ app.on('ready', async () => {
   // Launch backend server first
   await launchBackendServer();
   
-  // Then create the window
-  createWindow();
+  // Create the window
+  await createWindow();
+  
+  // Setup menu and shortcuts
+  createAppMenu();
+  registerGlobalShortcuts();
 });
 
 app.on('window-all-closed', () => {
@@ -234,6 +478,38 @@ ipcMain.handle('send-request', async (event, requestOptions) => {
         timeout: 60000,
       };
 
+      // Prepare body and set proper headers
+      let requestBody = body;
+      let contentLength = 0;
+
+      if (body && method !== 'GET' && method !== 'HEAD') {
+        // Handle different body types
+        if (typeof body === 'string') {
+          requestBody = body;
+          contentLength = Buffer.byteLength(body, 'utf-8');
+          
+          // Set Content-Type if not already set
+          if (!options.headers['Content-Type']) {
+            // Try to detect JSON
+            if (body.trim().startsWith('{') || body.trim().startsWith('[')) {
+              options.headers['Content-Type'] = 'application/json';
+            }
+          }
+        } else if (typeof body === 'object') {
+          // Convert object to JSON string
+          requestBody = JSON.stringify(body);
+          contentLength = Buffer.byteLength(requestBody, 'utf-8');
+          if (!options.headers['Content-Type']) {
+            options.headers['Content-Type'] = 'application/json';
+          }
+        }
+
+        // Always set Content-Length
+        if (contentLength > 0) {
+          options.headers['Content-Length'] = contentLength;
+        }
+      }
+
       // Handle SSL certificates if provided
       if (isHttps && sslOptions) {
         if (sslOptions.certFile && fs.existsSync(sslOptions.certFile)) {
@@ -272,6 +548,7 @@ ipcMain.handle('send-request', async (event, requestOptions) => {
       });
 
       req.on('error', (error) => {
+        console.error('Request error:', error.message);
         resolve({ success: false, error: error.message });
       });
 
@@ -280,11 +557,13 @@ ipcMain.handle('send-request', async (event, requestOptions) => {
         resolve({ success: false, error: 'Request timed out after 60 seconds' });
       });
 
-      if (body && method !== 'GET' && method !== 'HEAD') {
-        req.write(body);
+      // Write body if present
+      if (requestBody && method !== 'GET' && method !== 'HEAD') {
+        req.write(requestBody);
       }
       req.end();
     } catch (error) {
+      console.error('Send request handler error:', error);
       resolve({ success: false, error: error.message });
     }
   });
@@ -348,7 +627,117 @@ ipcMain.handle('get-backend-info', async () => {
   };
 });
 
-// Create application menu
+// Open URL in default browser
+ipcMain.handle('open-external-url', async (event, url) => {
+  try {
+    require('electron').shell.openExternal(url);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Export data to file
+ipcMain.handle('export-data', async (event, data, filename) => {
+  try {
+    const { dialog } = require('electron');
+    const result = await dialog.showSaveDialog(mainWindow, {
+      defaultPath: filename || 'api-checker-export.json',
+      filters: [
+        { name: 'JSON Files', extensions: ['json'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+    });
+
+    if (!result.canceled && result.filePath) {
+      fs.writeFileSync(result.filePath, JSON.stringify(data, null, 2));
+      return { success: true, path: result.filePath };
+    }
+    return { success: false, error: 'Export canceled' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Import data from file
+ipcMain.handle('import-data', async (event) => {
+  try {
+    const { dialog } = require('electron');
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile'],
+      filters: [
+        { name: 'JSON Files', extensions: ['json'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+    });
+
+    if (!result.canceled && result.filePaths.length > 0) {
+      const data = fs.readFileSync(result.filePaths[0], 'utf-8');
+      return { success: true, data: JSON.parse(data) };
+    }
+    return { success: false, error: 'Import canceled' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Clear app cache
+ipcMain.handle('clear-cache', async (event) => {
+  try {
+    if (mainWindow) {
+      await mainWindow.webContents.session.clearCache();
+    }
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Get app version and info
+ipcMain.handle('get-app-info', async () => {
+  return {
+    version: '1.0.0',
+    platform: process.platform,
+    nodeVersion: process.version,
+    electronVersion: process.versions.electron,
+    dataPath,
+  };
+});
+
+// Open file dialog
+ipcMain.handle('open-file-dialog', async (event) => {
+  try {
+    const { dialog } = require('electron');
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile'],
+      filters: [
+        { name: 'JSON Files', extensions: ['json'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+    });
+
+    if (!result.canceled && result.filePaths.length > 0) {
+      return { success: true, path: result.filePaths[0] };
+    }
+    return { success: false, error: 'No file selected' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Get system info
+ipcMain.handle('get-system-info', async () => {
+  const osModule = require('os');
+  return {
+    platform: process.platform,
+    arch: process.arch,
+    cpus: osModule.cpus().length,
+    memory: Math.round(osModule.totalmem() / 1024 / 1024),
+    freeMemory: Math.round(osModule.freemem() / 1024 / 1024),
+  };
+});
+
+// Create application menu (old template - keeping for backward compatibility)
 const template = [
   {
     label: 'File',

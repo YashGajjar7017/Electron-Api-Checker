@@ -18,6 +18,10 @@ function App() {
     // Load persisted data from Electron storage
     const loadPersistedData = async () => {
       try {
+        // Check if we're in Electron environment
+        const isElectron = window.electronAPI && typeof window.electronAPI.loadUser === 'function';
+        console.log('Loading persisted data... Electron:', isElectron);
+        
         // Load user
         if (window.electronAPI && window.electronAPI.loadUser) {
           const userResult = await window.electronAPI.loadUser();
@@ -84,8 +88,9 @@ function App() {
   }, [loginUser]);
 
   useEffect(() => {
-    // Apply theme to document
+    // Apply theme to document immediately
     const root = document.documentElement;
+    root.classList.add('dark-theme'); // Default to dark theme
     if (theme === 'dark') {
       root.classList.add('dark-theme');
       root.classList.remove('light-theme');
@@ -101,6 +106,7 @@ function App() {
         <div className="loader">
           <div className="spinner"></div>
           <p>Loading API Checker...</p>
+          <p style={{ fontSize: '12px', marginTop: '10px', opacity: 0.7 }}>Initializing data & services</p>
         </div>
       </div>
     );

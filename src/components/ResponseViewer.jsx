@@ -150,6 +150,30 @@ function ResponseViewer() {
     }
   };
 
+  const renderDataFormat = (data, format) => {
+    if (format === 'json') {
+      return renderJSON(data);
+    } else if (format === 'html') {
+      return `[HTML Content - ${typeof data === 'string' ? data.length : 0} bytes]`;
+    } else if (format === 'xml') {
+      return data;
+    } else {
+      return String(data);
+    }
+  };
+
+  const getDataFormatLabel = (format) => {
+    const labels = {
+      json: 'JSON',
+      html: 'HTML',
+      xml: 'XML',
+      text: 'Text',
+      string: 'String',
+      object: 'Object',
+    };
+    return labels[format] || format;
+  };
+
   return (
     <div className="response-viewer glass-lg">
       <div className="viewer-header">
@@ -298,7 +322,7 @@ function ResponseViewer() {
                       )}
 
                       <div className="response-tabs">
-                        {['Output', 'Raw', 'Error'].map((tab) => {
+                        {['Output', 'Raw', 'Headers', 'Error'].map((tab) => {
                           if (tab === 'Error' && !response.error) return null;
                           const activeTab = responseTabs[response.id] || 'Output';
                           return (
@@ -317,7 +341,7 @@ function ResponseViewer() {
                         {(responseTabs[response.id] || 'Output') === 'Output' && (
                           <div className="body-section">
                             <div className="body-header">
-                              <h4>Response Body</h4>
+                              <h4>Response Body {response.dataFormat && <span className="data-format">{getDataFormatLabel(response.dataFormat)}</span>}</h4>
                               <button
                                 className="copy-btn"
                                 onClick={() => copyToClipboard(response.body)}
@@ -327,7 +351,7 @@ function ResponseViewer() {
                               </button>
                             </div>
                             <pre className="response-code">
-                              {renderJSON(response.body)}
+                              {renderDataFormat(response.body, response.dataFormat)}
                             </pre>
                           </div>
                         )}
@@ -338,16 +362,33 @@ function ResponseViewer() {
                               <h4>Raw Response</h4>
                               <button
                                 className="copy-btn"
-                                onClick={() => copyToClipboard(response.rawBody)}
+                                onClick={() => copyToClipboard(response.rawBody || response.body)}
                                 title="Copy to clipboard"
                               >
                                 <FiCopy size={16} />
                               </button>
                             </div>
                             <pre className="response-code raw">
-                              {response.rawBody || JSON.stringify(response.body)}
+                              {response.rawBody || JSON.stringify(response.body, null, 2)}
                             </pre>
                           </div>
+                        )}
+
+                        {(responseTabs[response.id] || 'Output') === 'Headers' && response.headers && (
+                          <div className="body-section">
+                            <div className="body-header">
+                              <h4>Response Headers</h4>
+                            </div>
+                            <div className="headers-list expanded">
+                              {Object.entries(response.headers).map(([key, value]) => (
+                                <div key={key} className="header-row">
+                                  <span className="key">{key}:</span>
+                                  <span className="value">{String(value)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                         )}
 
                         {(responseTabs[response.id] || 'Output') === 'Error' && response.error && (

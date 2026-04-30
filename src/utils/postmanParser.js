@@ -132,23 +132,29 @@ export const parsePostmanCollection = (collectionData) => {
     }
 
     if (bodyData.mode === 'formdata' && Array.isArray(bodyData.formdata)) {
-      const formData = {};
+      // Build FormData string format for URL encoding
+      const formDataParts = [];
       bodyData.formdata.forEach((item) => {
         if (!item.disabled && item.key) {
-          formData[item.key] = item.value || '';
+          const encodedKey = encodeURIComponent(item.key);
+          const encodedValue = encodeURIComponent(item.value || '');
+          formDataParts.push(`${encodedKey}=${encodedValue}`);
         }
       });
-      return JSON.stringify(formData, null, 2);
+      return formDataParts.join('&');
     }
 
     if (bodyData.mode === 'urlencoded' && Array.isArray(bodyData.urlencoded)) {
-      const encoded = {};
+      // Build URL-encoded string format
+      const encodedParts = [];
       bodyData.urlencoded.forEach((item) => {
         if (!item.disabled && item.key) {
-          encoded[item.key] = item.value || '';
+          const encodedKey = encodeURIComponent(item.key);
+          const encodedValue = encodeURIComponent(item.value || '');
+          encodedParts.push(`${encodedKey}=${encodedValue}`);
         }
       });
-      return JSON.stringify(encoded, null, 2);
+      return encodedParts.join('&');
     }
 
     return '';

@@ -5,17 +5,22 @@ const path = require('path');
 const isPortOpen = (port) => {
   return new Promise((resolve) => {
     const net = require('net');
-    const server = net.createServer();
-    server.once('error', () => {
-      // Error means port is already in use (server is running)
-      resolve(false);
-    });
-    server.once('listening', () => {
-      server.close();
-      // Successfully listened means port was free (no server running)
+    const socket = new net.Socket();
+
+    socket.setTimeout(1000);
+    socket.once('connect', () => {
+      socket.destroy();
       resolve(true);
     });
-    server.listen(port, 'localhost');
+    socket.once('error', () => {
+      socket.destroy();
+      resolve(false);
+    });
+    socket.once('timeout', () => {
+      socket.destroy();
+      resolve(false);
+    });
+    socket.connect(port, 'localhost');
   });
 };
 
@@ -24,13 +29,13 @@ const waitForPort = async (port, timeout = 30000) => {
   const startTime = Date.now();
   while (Date.now() - startTime < timeout) {
     if (await isPortOpen(port)) {
-      console.log(`Port ${port} is now open!`);
+      console.log(`Port ${port} is ready!`);
       return true;
     }
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
   console.error(`Timeout waiting for port ${port}`);
-  return false;
+  process.exit(1);
 };
 
 waitForPort(3000);
