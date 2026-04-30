@@ -7,14 +7,17 @@ import {
   FiEdit2,
   FiX,
   FiPlus,
+  FiTrash2,
 } from 'react-icons/fi';
 import OTPModal from './OTPModal';
 import '../styles/RequestBuilder.css';
 
 function RequestBuilder() {
-  const {
+const {
     currentAPI,
     updateAPI,
+    deleteAPI,
+    setCurrentAPI,
     serverUrl,
     addResponse,
     apis,
@@ -24,7 +27,7 @@ function RequestBuilder() {
     clearSessionToken,
   } = useStore();
 
-  const [activeTab, setActiveTab] = useState('body');
+const [activeTab, setActiveTab] = useState('params');
   const [isSending, setIsSending] = useState(false);
   const [apiName, setApiName] = useState(currentAPI?.name || '');
   const [isEditingName, setIsEditingName] = useState(false);
@@ -33,6 +36,7 @@ function RequestBuilder() {
   const [headers, setHeaders] = useState(currentAPI?.headers || {});
   const [params, setParams] = useState(currentAPI?.params || {});
   const [body, setBody] = useState(currentAPI?.body || '');
+  const [bodyType, setBodyType] = useState(currentAPI?.bodyType || 'none');
   const [authType, setAuthType] = useState(currentAPI?.auth?.type || 'none');
   const [authTokenState, setAuthTokenLocal] = useState(
     currentAPI?.auth?.token || ''
@@ -47,6 +51,7 @@ function RequestBuilder() {
   const [newParamValue, setNewParamValue] = useState('');
   const [showOtpModal, setShowOtpModal] = useState(false);
   const pendingSendRef = useRef(false);
+  const [docs, setDocs] = useState(currentAPI?.docs || '');
 
   // Sync form state when currentAPI changes
   useEffect(() => {
@@ -122,7 +127,7 @@ function RequestBuilder() {
     );
   }
 
-  const handleUpdateAPI = () => {
+const handleUpdateAPI = () => {
     const updatedAPI = {
       ...currentAPI,
       name: apiName,
@@ -144,6 +149,18 @@ function RequestBuilder() {
     // Auto-save to electron storage
     if (window.electronAPI && window.electronAPI.saveAPIs) {
       window.electronAPI.saveAPIs(apis);
+    }
+  };
+
+  const handleDeleteAPI = () => {
+    if (window.confirm(`Are you sure you want to delete "${apiName}"?`)) {
+      deleteAPI(currentAPI.id);
+      const updatedAPIs = apis.filter(api => api.id !== currentAPI.id);
+      // Auto-save to electron storage
+      if (window.electronAPI && window.electronAPI.saveAPIs) {
+        window.electronAPI.saveAPIs(updatedAPIs);
+      }
+      setCurrentAPI(null);
     }
   };
 
@@ -382,7 +399,7 @@ function RequestBuilder() {
           />
         </div>
 
-        <div className="builder-actions">
+<div className="builder-actions">
           <button
             className="btn btn-primary"
             onClick={handleSendRequest}
@@ -399,11 +416,19 @@ function RequestBuilder() {
             <FiSave size={18} />
             {isSending ? 'Save configuration...' : 'Save Data'}            
           </button>
+          <button
+            className="btn btn-danger"
+            onClick={handleDeleteAPI}
+            title="Delete this API"
+          >
+            <FiTrash2 size={18} />
+            Delete
+          </button>
         </div>
       </div>
 
-      <div className="tabs">
-        {['body', 'headers', 'params', 'auth'].map((tab) => (
+<div className="tabs">
+        {['params', 'headers', 'body', 'auth', 'docs', 'scripts', 'settings'].map((tab) => (
           <button
             key={tab}
             className={`tab ${activeTab === tab ? 'active' : ''}`}
@@ -415,21 +440,143 @@ function RequestBuilder() {
       </div>
 
       <div className="tab-content">
-        {activeTab === 'body' && (
+{activeTab === 'body' && (
           <div className="body-editor">
-            <div className="editor-label">Request Body (JSON)</div>
-            <Editor
-              height="100%"
-              defaultLanguage="json"
-              value={body}
-              onChange={(value) => setBody(value || '')}
-              theme="vs-dark"
-              options={{
-                minimap: { enabled: false },
-                scrollBeyondLastLine: false,
-                formatOnPaste: true,
-              }}
-            />
+            <div className="body-type-selector">
+              <label>Body Type:</label>
+              <select
+                value={bodyType}
+                onChange={(e) => setBodyType(e.target.value)}
+              >
+                <option value="none">None</option>
+                <option value="json">JSON</option>
+                <option value="form-data">Form Data</option>
+                <option value="x-www-form-urlencoded">x-www-form-urlencoded</option>
+                <option value="raw">Raw</option>
+                <option value="binary">Binary</option>
+                <option value="graphql">GraphQL</option>
+              </select>
+            </div>
+            {bodyType === 'none' && (
+              <div className="empty-body">
+                <p>This request does not have a body</p>
+              </div>
+            )}
+            {bodyType === 'json' && (
+              <Editor
+                height="100%"
+                defaultLanguage="json"
+                value={body}
+                onChange={(value) => setBody(value || '')}
+                theme="vs-dark"
+                options={{
+                  minimap: { enabled: false },
+                  scrollBeyondLastLine: false,
+                  formatOnPaste: true,
+                }}
+              />
+            )}
+            {(bodyType === 'raw' || bodyType === 'graphql') && (
+              <Editor
+                height="100%"
+                defaultLanguage={bodyType === 'graphql' ? 'graphql' : 'plaintext'}
+                value={body}
+                onChange={(value) => setBody(value || '')}
+                theme="vs-dark"
+                options={{
+                  minimap: { enabled: false },
+                  scrollBeyondLastLine: false,
+                }}
+              />
+            )}
+            {bodyType === 'form-data' && (
+              <div className="key-value-editor">
+                <div className="add-row">
+                  <input
+                    type="text"
+                    placeholder="Key"
+                    value={newParamKey}
+                    onChange={(e) => setNewParamKey(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Value"
+                    value={newParamValue}
+                    onChange={(e) => setNewParamValue(e.target.value)}
+                  />
+                  <button className="btn btn-primary btn-sm" onClick={addParam}>
+                    <FiPlus size={16} />
+                  </button>
+                </div>
+                <div className="rows-list">
+                  {Object.entries(params).map(([key, value]) => (
+                    <div key={key} className="row">
+                      <span className="key">{key}</span>
+                      <span className="value">{value}</span>
+                      <button
+                        className="btn-delete"
+                        onClick={() => removeParam(key)}
+                      >
+                        <FiX size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {bodyType === 'x-www-form-urlencoded' && (
+              <div className="key-value-editor">
+                <div className="editor-label">URL Encoded Body</div>
+                <div className="add-row">
+                  <input
+                    type="text"
+                    placeholder="Key"
+                    value={newParamKey}
+                    onChange={(e) => setNewParamKey(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Value"
+                    value={newParamValue}
+                    onChange={(e) => setNewParamValue(e.target.value)}
+                  />
+                  <button className="btn btn-primary btn-sm" onClick={addParam}>
+                    <FiPlus size={16} />
+                  </button>
+                </div>
+                <div className="rows-list">
+                  {Object.entries(params).map(([key, value]) => (
+                    <div key={key} className="row">
+                      <span className="key">{key}</span>
+                      <span className="value">{value}</span>
+                      <button
+                        className="btn-delete"
+                        onClick={() => removeParam(key)}
+                      >
+                        <FiX size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {bodyType === 'binary' && (
+              <div className="form-group">
+                <label>Select File</label>
+                <input
+                  type="file"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file && currentAPI) {
+                      updateAPI(currentAPI.id, {
+                        ...currentAPI,
+                        binaryFile: file.name,
+                      });
+                    }
+                  }}
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -636,8 +783,145 @@ function RequestBuilder() {
               </label>
             </div>
 
-            <div className="info-box">
+<div className="info-box">
               💡 Your auth credentials and certificates are only stored locally in your system.
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'docs' && (
+          <div className="docs-editor">
+            <div className="form-group">
+              <label>API Documentation</label>
+              <textarea
+                className="docs-textarea"
+                value={docs}
+                onChange={(e) => setDocs(e.target.value)}
+                placeholder="Enter API documentation, description, usage notes..."
+                rows={10}
+              />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'scripts' && (
+          <div className="scripts-editor">
+            <div className="form-group">
+              <label>Pre-request Script (JavaScript)</label>
+              <Editor
+                height="150px"
+                defaultLanguage="javascript"
+                value={currentAPI?.preRequestScript || ''}
+                onChange={(value) => {
+                  if (currentAPI) {
+                    updateAPI(currentAPI.id, { 
+                      ...currentAPI, 
+                      preRequestScript: value || '' 
+                    });
+                  }
+                }}
+                theme="vs-dark"
+                options={{
+                  minimap: { enabled: false },
+                  scrollBeyondLastLine: false,
+                }}
+              />
+            </div>
+            <div className="form-group">
+              <label>Test Script (JavaScript)</label>
+              <Editor
+                height="150px"
+                defaultLanguage="javascript"
+                value={currentAPI?.testScript || ''}
+                onChange={(value) => {
+                  if (currentAPI) {
+                    updateAPI(currentAPI.id, { 
+                      ...currentAPI, 
+                      testScript: value || '' 
+                    });
+                  }
+                }}
+                theme="vs-dark"
+                options={{
+                  minimap: { enabled: false },
+                  scrollBeyondLastLine: false,
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="settings-config">
+            <div className="form-group">
+              <label>Request Timeout (ms)</label>
+              <input
+                type="number"
+                value={currentAPI?.timeout || 30000}
+                onChange={(e) => {
+                  if (currentAPI) {
+                    updateAPI(currentAPI.id, { 
+                      ...currentAPI, 
+                      timeout: parseInt(e.target.value) || 30000 
+                    });
+                  }
+                }}
+                placeholder="30000"
+              />
+            </div>
+            <div className="form-group">
+              <label>Follow Redirects</label>
+              <select
+                value={currentAPI?.followRedirects !== false ? 'true' : 'false'}
+                onChange={(e) => {
+                  if (currentAPI) {
+                    updateAPI(currentAPI.id, { 
+                      ...currentAPI, 
+                      followRedirects: e.target.value === 'true' 
+                    });
+                  }
+                }}
+              >
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>SSL Verification</label>
+              <select
+                value={currentAPI?.sslVerify !== false ? 'true' : 'false'}
+                onChange={(e) => {
+                  if (currentAPI) {
+                    updateAPI(currentAPI.id, { 
+                      ...currentAPI, 
+                      sslVerify: e.target.value === 'true' 
+                    });
+                  }
+                }}
+              >
+                <option value="true">Enabled</option>
+                <option value="false">Disabled</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Response Format</label>
+              <select
+                value={currentAPI?.responseFormat || 'json'}
+                onChange={(e) => {
+                  if (currentAPI) {
+                    updateAPI(currentAPI.id, { 
+                      ...currentAPI, 
+                      responseFormat: e.target.value 
+                    });
+                  }
+                }}
+              >
+                <option value="json">JSON</option>
+                <option value="xml">XML</option>
+                <option value="text">Text</option>
+                <option value="html">HTML</option>
+                <option value="binary">Binary</option>
+              </select>
             </div>
           </div>
         )}

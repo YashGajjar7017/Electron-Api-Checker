@@ -113,10 +113,23 @@
 .builder-actions {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .builder-actions .btn {
   flex: 1;
+  min-width: 100px;
+}
+
+.builder-actions .btn.btn-danger {
+  background: transparent;
+  border: 1px solid var(--error);
+  color: var(--error);
+}
+
+.builder-actions .btn.btn-danger:hover {
+  background: var(--error);
+  color: white;
 }
 
 .tabs {
@@ -341,4 +354,104 @@
   .method-select {
     width: 100%;
   }
+}
+
+/* Body Type Selector */
+.body-type-selector {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.body-type-selector label {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.body-type-selector select {
+  flex: 1;
+  max-width: 200px;
+  padding: 0.5rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.empty-body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: var(--text-tertiary);
+}
+
+/* Docs Editor */
+.docs-editor {
+  padding: 1rem;
+}
+
+.docs-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 200px;
+}
+
+.docs-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* Scripts Editor */
+.scripts-editor {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Settings Config */
+.settings-config {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.settings-config .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.settings-config .form-group label {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.settings-config input,
+.settings-config select {
+  padding: 0.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+}
+
+.settings-config input:focus,
+.settings-config select:focus {
+  outline: none;
+  border-color: var(--primary);
 }

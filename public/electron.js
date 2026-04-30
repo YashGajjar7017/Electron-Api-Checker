@@ -197,12 +197,12 @@ async function createWindow() {
   }, 2000);
 
   // Open DevTools in development
-  if (isDev) {
-    // Delay opening devtools to avoid conflicts
-    setTimeout(() => {
-      mainWindow.webContents.openDevTools({ mode: 'detach' });
-    }, 1000);
-  }
+  // if (isDev) {
+  //   // Delay opening devtools to avoid conflicts
+  //   setTimeout(() => {
+  //     mainWindow.webContents.openDevTools({ mode: 'detach' });
+  //   }, 1000);
+  // }
 
   // Handle errors
   mainWindow.webContents.on('crashed', () => {
@@ -294,9 +294,9 @@ function createAppMenu() {
             if (mainWindow) mainWindow.setFullScreen(!mainWindow.isFullScreen());
           },
         },
-        {
+{
           label: 'Toggle DevTools',
-          accelerator: 'CmdOrCtrl+Shift+I',
+          accelerator: 'F12',
           click: () => {
             if (mainWindow) mainWindow.webContents.toggleDevTools();
           },
