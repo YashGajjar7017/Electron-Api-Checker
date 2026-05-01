@@ -82,6 +82,47 @@ app.get('/handOverToken:', (req, res) => {
   }
 });
 
+// Mock test endpoints for demonstration
+app.get('/api/endpoint', (req, res) => {
+  res.json({
+    message: 'Success! Test GET endpoint working',
+    timestamp: new Date(),
+    endpoint: '/api/endpoint',
+    method: 'GET',
+  });
+});
+
+app.post('/api/endpoint', (req, res) => {
+  res.json({
+    message: 'Success! Test POST endpoint working',
+    receivedData: req.body,
+    timestamp: new Date(),
+    endpoint: '/api/endpoint',
+    method: 'POST',
+  });
+});
+
+app.get('/api/login', (req, res) => {
+  // Mock login endpoint - generates OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  res.json({
+    message: 'Login OTP generated',
+    otp: otp,
+    expiresIn: 600, // 10 minutes
+    note: 'This is a mock endpoint - use any 6 digit code as OTP',
+  });
+});
+
+app.post('/api/verify-otp', (req, res) => {
+  // Mock OTP verification
+  res.json({
+    message: 'OTP verified successfully',
+    token: `sess-${Date.now()}`,
+    expiresIn: 3600,
+    user: { id: 1, email: 'user@example.com' },
+  });
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({

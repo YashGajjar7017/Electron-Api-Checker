@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import useStore from '../store';
-import { FiPlus, FiFolder, FiTrash2, FiEdit2, FiChevronDown, FiUpload, FiCopy, FiDownload, FiShuffle } from 'react-icons/fi';
+import { FiPlus, FiFolder, FiTrash2, FiEdit2, FiChevronDown, FiUpload, FiCopy, FiDownload, FiShuffle, FiChevronUp } from 'react-icons/fi';
 import parsePostmanCollection from '../utils/postmanParser';
 import '../styles/Sidebar.css';
 
@@ -173,6 +173,40 @@ function Sidebar() {
 
   const getCollectionAPIs = (collectionId) => {
     return apis.filter((api) => api.collectionId === collectionId);
+  };
+
+  const moveAPI = (apiId, direction) => {
+    const api = apis.find(a => a.id === apiId);
+    if (!api) return;
+
+    const collectionAPIs = getCollectionAPIs(api.collectionId);
+    const currentIndex = collectionAPIs.findIndex(a => a.id === apiId);
+    
+    if (direction === 'up' && currentIndex > 0) {
+      // Swap with previous
+      const temp = collectionAPIs[currentIndex];
+      collectionAPIs[currentIndex] = collectionAPIs[currentIndex - 1];
+      collectionAPIs[currentIndex - 1] = temp;
+    } else if (direction === 'down' && currentIndex < collectionAPIs.length - 1) {
+      // Swap with next
+      const temp = collectionAPIs[currentIndex];
+      collectionAPIs[currentIndex] = collectionAPIs[currentIndex + 1];
+      collectionAPIs[currentIndex + 1] = temp;
+    }
+
+    // Update the order by remapping API list
+    const sortedAPIs = [
+      ...apis.filter(a => a.collectionId !== api.collectionId),
+      ...collectionAPIs,
+    ];
+    
+    // Persist the new order
+    if (window.electronAPI && window.electronAPI.saveAPIs) {
+      window.electronAPI.saveAPIs(sortedAPIs);
+    }
+    
+    // Update store with new order
+    useStore.getState().setAPIs(sortedAPIs);
   };
 
   const handleFileImport = async (e) => {
@@ -415,60 +449,88 @@ function Sidebar() {
 
 {expandedFolders.has(collection.id) && (
                 <div className="api-list">
-                  {getCollectionAPIs(collection.id).map((api) => (
-                    <div
-                      key={api.id}
-                      className={`api-item ${
-                        currentAPI?.id === api.id ? 'active' : ''
-                      }`}
-                      onClick={() => setCurrentAPI(api)}
-                    >
-                      <div className="api-item-header">
-                        <span className={`method-badge method-${api.method.toLowerCase()}`}>
-                          {api.method}
-                        </span>
-                        {editingApiId === api.id ? (
-                          <input
-                            type="text"
-                            className="api-rename-input"
-                            value={editApiName}
-                            onChange={(e) => setEditApiName(e.target.value)}
-                            onKeyPress={(e) => {
-                              if (e.key === 'Enter') saveApiName(api.id);
-                              if (e.key === 'Escape') {
-                                setEditingApiId(null);
-                                setEditApiName('');
-                              }
-                            }}
-                            onBlur={() => saveApiName(api.id)}
-                            autoFocus
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        ) : (
-                          <span className="api-name">{api.name}</span>
-                        )}
-                        <div className="api-item-actions">
-                          <button
-                            className="api-rename-btn"
-                            onClick={(e) => startEditApiName(api, e)}
-                            title="Rename API"
-                          >
-                            <FiEdit2 size={12} />
-                          </button>
-                          <button
-                            className="api-rename-btn danger"
-                            onClick={(e) => handleDeleteAPI(api.id, e)}
-                            title="Delete API"
-                          >
-                            <FiTrash2 size={12} />
-                          </button>
+                  {getCollectionAPIs(collection.id).map((api, index) => {
+                    const collectionAPIs = getCollectionAPIs(collection.id);
+                    const isFirst = index === 0;
+                    const isLast = index === collectionAPIs.length - 1;
+                    
+                    return (
+                      <div
+                        key={api.id}
+                        className={`api-item ${
+                          currentAPI?.id === api.id ? 'active' : ''
+                        }`}
+                        onClick={() => setCurrentAPI(api)}
+                      >
+                        <div className="api-item-header">
+                          <span className={`method-badge method-${api.method.toLowerCase()}`}>
+                            {api.method}
+                          </span>
+                          {editingApiId === api.id ? (
+                            <input
+                              type="text"
+                              className="api-rename-input"
+                              value={editApiName}
+                              onChange={(e) => setEditApiName(e.target.value)}
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') saveApiName(api.id);
+                                if (e.key === 'Escape') {
+                                  setEditingApiId(null);
+                                  setEditApiName('');
+                                }
+                              }}
+                              onBlur={() => saveApiName(api.id)}
+                              autoFocus
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          ) : (
+                            <span className="api-name">{api.name}</span>
+                          )}
+                          <div className="api-item-actions">
+                            <button
+                              className="api-rename-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                moveAPI(api.id, 'up');
+                              }}
+                              disabled={isFirst}
+                              title="Move up"
+                            >
+                              <FiChevronUp size={12} />
+                            </button>
+                            <button
+                              className="api-rename-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                moveAPI(api.id, 'down');
+                              }}
+                              disabled={isLast}
+                              title="Move down"
+                            >
+                              <FiChevronDown size={12} />
+                            </button>
+                            <button
+                              className="api-rename-btn"
+                              onClick={(e) => startEditApiName(api, e)}
+                              title="Rename API"
+                            >
+                              <FiEdit2 size={12} />
+                            </button>
+                            <button
+                              className="api-rename-btn danger"
+                              onClick={(e) => handleDeleteAPI(api.id, e)}
+                              title="Delete API"
+                            >
+                              <FiTrash2 size={12} />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="api-item-details">
+                          <span className="api-item-endpoint">{api.endpoint}</span>
                         </div>
                       </div>
-                      <div className="api-item-details">
-                        <span className="api-item-endpoint">{api.endpoint}</span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

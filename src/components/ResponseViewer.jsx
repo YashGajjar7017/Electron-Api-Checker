@@ -8,7 +8,9 @@ import {
   FiCheck,
   FiDownload,
   FiSave,
+  FiMaximize2,
 } from 'react-icons/fi';
+import OutputModal from './OutputModal';
 import '../styles/ResponseViewer.css';
 
 function ResponseViewer() {

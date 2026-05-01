@@ -106,8 +106,8 @@ const useStore = create(
     currentAPI: null,
     setCurrentAPI: (api) => set({ currentAPI: api }),
 
-    // Server URL state
-    serverUrl: 'http://localhost:3000',
+    // Server URL state - default to localhost:5000 backend
+    serverUrl: 'http://localhost:5000',
     setServerUrl: (url) => set({ serverUrl: url }),
 
     // Auth token state

@@ -1,1 +1,11 @@
-# Runtime Error Fixed ✅\n\n**Summary:** Added `?.` chaining to RequestBuilder auto-save useEffect to prevent `null.id` crash.\n\n**Electron Dev Workflow:**\n1. `npm run electron-dev` → Starts React dev server (localhost:3000) + waits + launches Electron (recommended, no browser popup)\n2. `npm start` → React dev server only (browser opens automatically)\n3. `npm run electron` → Electron app (requires dev server running first)\n\n**Status:** Backend launched on port 5000. Electron window should now load React app without errors.\n\n**Verification:**\n- No console errors\n- Select APIs → no crashes\n- Auto-save works\n\nAll fixed and ready!
+# Implementation TODO - Automation Feature
+
+## Tasks:
+- [x] 1. Create TODO file for tracking
+- [x] 2. Add new "Automation" tab in RequestBuilder.jsx
+- [x] 3. Add automation settings state management
+- [x] 4. Add automation settings UI form
+- [x] 5. Implement "Run Automation" button functionality
+- [x] 6. Add styles for automation UI
+- [x] 7. Add auto-save for automation settings
+- [ ] 8. Verify browser loads without errors
