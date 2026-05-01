@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import useStore from '../store';
-import { FiPlus, FiFolder, FiTrash2, FiEdit2, FiChevronDown, FiUpload, FiCopy, FiDownload } from 'react-icons/fi';
+import { FiPlus, FiFolder, FiTrash2, FiEdit2, FiChevronDown, FiUpload, FiCopy, FiDownload, FiShuffle } from 'react-icons/fi';
 import parsePostmanCollection from '../utils/postmanParser';
 import '../styles/Sidebar.css';
 
@@ -15,6 +15,8 @@ function Sidebar() {
     deleteAPI,
     setCurrentAPI,
     currentAPI,
+    shuffleCollections,
+    shuffleAPIs,
   } = useStore();
 
   const [expandedFolders, setExpandedFolders] = useState(new Set());
@@ -297,6 +299,17 @@ function Sidebar() {
           >
             <FiPlus size={16} />
           </button>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => {
+              if (window.confirm('Shuffle all collections?')) {
+                shuffleCollections();
+              }
+            }}
+            title="Randomize collection order"
+          >
+            <FiShuffle size={16} />
+          </button>
           <label className="btn btn-secondary btn-sm" title="Import JSON or CSV">
             <FiUpload size={16} />
             <input
@@ -362,6 +375,19 @@ function Sidebar() {
                     title="Add API"
                   >
                     <FiPlus size={14} />
+                  </button>
+                  <button
+                    className="action-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`Shuffle APIs in "${collection.name}"?`)) {
+                        const collectionAPIs = apis.filter(a => a.collectionId === collection.id);
+                        shuffleAPIs();
+                      }
+                    }}
+                    title="Shuffle APIs in this collection"
+                  >
+                    <FiShuffle size={14} />
                   </button>
                   <button
                     className="action-btn"

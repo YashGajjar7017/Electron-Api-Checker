@@ -232,11 +232,28 @@ const handleUpdateAPI = () => {
   };
 
   const buildURL = () => {
-    let url = serverUrl + endpoint;
-    const queryParams = new URLSearchParams(params).toString();
-    if (queryParams) {
-      url += '?' + queryParams;
+    let url = endpoint;
+    
+    // If endpoint is a full URL (starts with http/https), use it directly
+    if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
+      // Otherwise, combine with serverUrl
+      url = serverUrl + endpoint;
     }
+    
+    // Handle params as URL query parameters
+    if (params && Object.keys(params).length > 0) {
+      const queryParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== '' && value !== null && value !== undefined) {
+          queryParams.append(key, value);
+        }
+      });
+      const queryString = queryParams.toString();
+      if (queryString) {
+        url += (url.includes('?') ? '&' : '?') + queryString;
+      }
+    }
+    
     return url;
   };
 
@@ -356,9 +373,19 @@ const handleUpdateAPI = () => {
     setIsSending(false);
   };
 
+  const shouldSkipOtp = () => {
+    // Auto-skip OTP for auth/login endpoints
+    const authKeywords = ['/login', '/auth', '/signin', '/authenticate'];
+    const isAuthEndpoint = authKeywords.some(keyword => 
+      endpoint.toLowerCase().includes(keyword) || 
+      apiName.toLowerCase().includes(keyword)
+    );
+    return skipOtp || isAuthEndpoint;
+  };
+
   const handleSendRequest = async () => {
-    // Skip OTP for APIs marked with skipOtp (e.g. Auth endpoint)
-    if (currentAPI?.skipOtp) {
+    // Skip OTP for APIs marked with skipOtp (e.g. Auth endpoint) or auto-detected auth endpoints
+    if (shouldSkipOtp()) {
       await executeRequest();
       return;
     }
@@ -1023,33 +1050,46 @@ const handleUpdateAPI = () => {
                   const totalRuns = Math.ceil((automationEnd - automationStart) / automationStep) + 1;
                   setAutomationProgress({ current: 0, total: totalRuns, results: [] });
                   
+                  // Track batched progress updates to reduce re-renders
+                  let batchedProgress = { current: 0, total: totalRuns, results: [] };
+                  let updateFrequency = Math.max(1, Math.floor(totalRuns / 10)); // Update 10 times max
+                  
                   for (let i = automationStart; i <= automationEnd; i += automationStep) {
-                    const currentProgress = Math.ceil((i - automationStart) / automationStep);
-                    setAutomationProgress({ 
-                      current: currentProgress, 
-                      total: totalRuns, 
-                      results 
-                    });
+                    const runIndex = Math.floor((i - automationStart) / automationStep);
+                    const currentProgress = runIndex + 1;
                     
                     try {
                       const paddedValue = automationPadding > 0 
                         ? String(i).padStart(automationPadding, '0') 
                         : i;
                       
-                      // Build URL with replaced variable
-                      let url = serverUrl + endpoint.replace(
+                      // Build URL with replaced variable - use our improved buildURL logic
+                      let url = endpoint.replace(
                         new RegExp(automationVariable.replace('{{', '\\{{').replace('}}', '\\}}'), 'g'), 
                         paddedValue
                       );
                       
-                      const queryParams = new URLSearchParams(params).toString();
-                      if (queryParams) {
-                        // Replace variable in params too
-                        const processedParams = queryParams.replace(
-                          new RegExp(automationVariable.replace('{{', '\\{{').replace('}}', '\\}}'), 'g'),
-                          paddedValue
-                        );
-                        url += '?' + processedParams;
+                      // If endpoint is not a full URL, prepend serverUrl
+                      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                        url = serverUrl + url;
+                      }
+                      
+                      // Handle params replacement
+                      if (params && Object.keys(params).length > 0) {
+                        const queryParams = new URLSearchParams();
+                        Object.entries(params).forEach(([key, value]) => {
+                          const processedValue = String(value).replace(
+                            new RegExp(automationVariable.replace('{{', '\\{{').replace('}}', '\\}}'), 'g'),
+                            paddedValue
+                          );
+                          if (processedValue !== '' && processedValue !== null) {
+                            queryParams.append(key, processedValue);
+                          }
+                        });
+                        const queryString = queryParams.toString();
+                        if (queryString) {
+                          url += (url.includes('?') ? '&' : '?') + queryString;
+                        }
                       }
                       
                       const requestHeaders = buildRequestHeaders();
@@ -1098,11 +1138,14 @@ const handleUpdateAPI = () => {
                       results.push(resultObj);
                       addResponse(resultObj);
                       
-                      setAutomationProgress({ 
-                        current: currentProgress, 
-                        total: totalRuns, 
-                        results 
-                      });
+                      // Batch progress updates to reduce re-renders
+                      if (currentProgress % updateFrequency === 0 || currentProgress === totalRuns) {
+                        setAutomationProgress({ 
+                          current: currentProgress, 
+                          total: totalRuns, 
+                          results 
+                        });
+                      }
                       
                       // Add delay between requests
                       if (i + automationStep <= automationEnd) {

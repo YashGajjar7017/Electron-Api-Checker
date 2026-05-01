@@ -1,6 +1,21 @@
 import create from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 
+// Helper function to auto-persist data
+const persistData = async (key, data) => {
+  if (window.electronAPI) {
+    try {
+      if (key === 'apis' && window.electronAPI.saveAPIs) {
+        await window.electronAPI.saveAPIs(data);
+      } else if (key === 'collections' && window.electronAPI.saveCollections) {
+        await window.electronAPI.saveCollections(data);
+      }
+    } catch (error) {
+      console.error(`Failed to persist ${key}:`, error);
+    }
+  }
+};
+
 const useStore = create(
   subscribeWithSelector((set, get) => ({
     // Auth state
@@ -14,38 +29,78 @@ const useStore = create(
     // Collections state
     collections: [],
     addCollection: (collection) =>
-      set((state) => ({
-        collections: [...state.collections, collection],
-      })),
+      set((state) => {
+        const newCollections = [...state.collections, collection];
+        persistData('collections', newCollections);
+        return { collections: newCollections };
+      }),
     updateCollection: (id, collection) =>
-      set((state) => ({
-        collections: state.collections.map((c) =>
+      set((state) => {
+        const newCollections = state.collections.map((c) =>
           c.id === id ? { ...c, ...collection } : c
-        ),
-      })),
+        );
+        persistData('collections', newCollections);
+        return { collections: newCollections };
+      }),
     deleteCollection: (id) =>
-      set((state) => ({
-        collections: state.collections.filter((c) => c.id !== id),
-      })),
-    setCollections: (collections) => set({ collections }),
+      set((state) => {
+        const newCollections = state.collections.filter((c) => c.id !== id);
+        persistData('collections', newCollections);
+        return { collections: newCollections };
+      }),
+    setCollections: (collections) => {
+      persistData('collections', collections);
+      set({ collections });
+    },
+    shuffleCollections: () =>
+      set((state) => {
+        const shuffled = [...state.collections];
+        // Fisher-Yates shuffle algorithm
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        persistData('collections', shuffled);
+        return { collections: shuffled };
+      }),
 
     // APIs state
     apis: [],
     addAPI: (api) =>
-      set((state) => ({
-        apis: [...state.apis, api],
-      })),
+      set((state) => {
+        const newApis = [...state.apis, api];
+        persistData('apis', newApis);
+        return { apis: newApis };
+      }),
     updateAPI: (id, api) =>
-      set((state) => ({
-        apis: state.apis.map((a) =>
+      set((state) => {
+        const newApis = state.apis.map((a) =>
           a.id === id ? { ...a, ...api } : a
-        ),
-      })),
+        );
+        persistData('apis', newApis);
+        return { apis: newApis };
+      }),
     deleteAPI: (id) =>
-      set((state) => ({
-        apis: state.apis.filter((a) => a.id !== id),
-      })),
-    setAPIs: (apis) => set({ apis }),
+      set((state) => {
+        const newApis = state.apis.filter((a) => a.id !== id);
+        persistData('apis', newApis);
+        return { apis: newApis };
+      }),
+    setAPIs: (apis) => {
+      persistData('apis', apis);
+      set({ apis });
+    },
+    shuffleAPIs: () =>
+      set((state) => {
+        const shuffled = [...state.apis];
+        // Fisher-Yates shuffle algorithm
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        persistData('apis', shuffled);
+        return { apis: shuffled };
+      }),
 
     // Current API state
     currentAPI: null,
@@ -62,12 +117,14 @@ const useStore = create(
     // Response history
     responseHistory: [],
     addResponse: (response) =>
-      set((state) => ({
-        responseHistory: [
-          ...state.responseHistory,
+      set((state) => {
+        // Keep only last 200 responses to avoid memory bloat
+        const newHistory = [
           { ...response, timestamp: new Date() },
-        ],
-      })),
+          ...state.responseHistory,
+        ].slice(0, 200);
+        return { responseHistory: newHistory };
+      }),
     clearResponseHistory: () => set({ responseHistory: [] }),
 
     // Comparison mode
@@ -88,16 +145,26 @@ const useStore = create(
     clearSessionToken: () =>
       set({ sessionToken: '', sessionTokenExpiry: null }),
 
-    // Batch testing state
+    // Batch testing state - enhanced with stats
     isBatchTesting: false,
     batchResults: [],
-    startBatchTesting: () => set({ isBatchTesting: true }),
+    batchStats: { total: 0, success: 0, failed: 0, avgResponseTime: 0 },
+    startBatchTesting: () => set({ isBatchTesting: true, batchResults: [], batchStats: { total: 0, success: 0, failed: 0, avgResponseTime: 0 } }),
     stopBatchTesting: () => set({ isBatchTesting: false }),
     addBatchResult: (result) =>
-      set((state) => ({
-        batchResults: [...state.batchResults, result],
-      })),
-    clearBatchResults: () => set({ batchResults: [] }),
+      set((state) => {
+        const newResults = [...state.batchResults, result];
+        const successful = newResults.filter(r => r.status >= 200 && r.status < 300).length;
+        const totalTime = newResults.reduce((sum, r) => sum + (r.responseTime || 0), 0);
+        const stats = {
+          total: newResults.length,
+          success: successful,
+          failed: newResults.length - successful,
+          avgResponseTime: Math.round(totalTime / newResults.length) || 0,
+        };
+        return { batchResults: newResults, batchStats: stats };
+      }),
+    clearBatchResults: () => set({ batchResults: [], batchStats: { total: 0, success: 0, failed: 0, avgResponseTime: 0 } }),
 
     // UI state
     selectedSidebar: null,

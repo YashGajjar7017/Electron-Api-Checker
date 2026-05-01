@@ -21,6 +21,8 @@ function ResponseViewer() {
     stopBatchTesting,
     addBatchResult,
     serverUrl,
+    batchStats,
+    isBatchTesting,
   } = useStore();
 
   const [expandedResponses, setExpandedResponses] = useState(new Set());
@@ -331,6 +333,32 @@ const runBatchTests = async () => {
         </div>
       )}
 
+      {batchStats && batchStats.total > 0 && (
+        <div className="batch-stats-panel">
+          <h4>Batch Test Statistics</h4>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <span className="stat-label">Total Requests</span>
+              <span className="stat-value">{batchStats.total}</span>
+            </div>
+            <div className="stat-card success">
+              <span className="stat-label">Successful</span>
+              <span className="stat-value">{batchStats.success}</span>
+              <span className="stat-percent">({Math.round((batchStats.success / batchStats.total) * 100)}%)</span>
+            </div>
+            <div className="stat-card error">
+              <span className="stat-label">Failed</span>
+              <span className="stat-value">{batchStats.failed}</span>
+              <span className="stat-percent">({Math.round((batchStats.failed / batchStats.total) * 100)}%)</span>
+            </div>
+            <div className="stat-card">
+              <span className="stat-label">Avg Response Time</span>
+              <span className="stat-value">{batchStats.avgResponseTime}ms</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="responses-list">
         {responseHistory.length > 0 ? (
           [...responseHistory].reverse().map((response, index) => (
@@ -458,7 +486,6 @@ const runBatchTests = async () => {
                               ))}
                             </div>
                           </div>
-                        )}
                         )}
 
                         {(responseTabs[response.id] || 'Output') === 'Error' && response.error && (

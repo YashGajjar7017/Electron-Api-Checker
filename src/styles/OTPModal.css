@@ -154,11 +154,13 @@
 
 .otp-cancel-btn {
   width: 100%;
-  color: rgba(255, 255, 255, 0.4);
+  color: white;
   font-size: 0.85rem;
+  background-color: green;
 }
 
 .otp-cancel-btn:hover {
   color: rgba(255, 255, 255, 0.7);
+  transition: all ease-in-out 1s;
 }
 

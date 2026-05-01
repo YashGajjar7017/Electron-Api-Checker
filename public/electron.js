@@ -465,6 +465,11 @@ ipcMain.handle('send-request', async (event, requestOptions) => {
   return new Promise((resolve) => {
     try {
       const { url, method, headers, body, sslOptions } = requestOptions;
+      
+      if (!url) {
+        return resolve({ success: false, error: 'URL is required' });
+      }
+      
       const parsedUrl = new URL(url);
       const isHttps = parsedUrl.protocol === 'https:';
       const client = isHttps ? https : http;
@@ -474,38 +479,39 @@ ipcMain.handle('send-request', async (event, requestOptions) => {
         port: parsedUrl.port || (isHttps ? 443 : 80),
         path: parsedUrl.pathname + parsedUrl.search,
         method: method || 'GET',
-        headers: headers || {},
+        headers: { ...headers } || {},
         timeout: 60000,
       };
 
       // Prepare body and set proper headers
-      let requestBody = body;
-      let contentLength = 0;
+      let requestBody = null;
+      let bodyToSend = body;
 
-      if (body && method !== 'GET' && method !== 'HEAD') {
+      // Handle body for POST/PUT/PATCH
+      if (bodyToSend && method && !['GET', 'HEAD', 'DELETE'].includes(method)) {
         // Handle different body types
-        if (typeof body === 'string') {
-          requestBody = body;
-          contentLength = Buffer.byteLength(body, 'utf-8');
+        if (typeof bodyToSend === 'string') {
+          requestBody = bodyToSend;
           
-          // Set Content-Type if not already set
+          // Auto-detect and set Content-Type if not already set
           if (!options.headers['Content-Type']) {
-            // Try to detect JSON
-            if (body.trim().startsWith('{') || body.trim().startsWith('[')) {
+            if (bodyToSend.trim().startsWith('{') || bodyToSend.trim().startsWith('[')) {
               options.headers['Content-Type'] = 'application/json';
+            } else if (bodyToSend.includes('=') && !bodyToSend.includes('{')) {
+              options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
             }
           }
-        } else if (typeof body === 'object') {
+        } else if (typeof bodyToSend === 'object') {
           // Convert object to JSON string
-          requestBody = JSON.stringify(body);
-          contentLength = Buffer.byteLength(requestBody, 'utf-8');
+          requestBody = JSON.stringify(bodyToSend);
           if (!options.headers['Content-Type']) {
             options.headers['Content-Type'] = 'application/json';
           }
         }
 
-        // Always set Content-Length
-        if (contentLength > 0) {
+        // Always set Content-Length for requests with body
+        if (requestBody) {
+          const contentLength = Buffer.byteLength(requestBody, 'utf-8');
           options.headers['Content-Length'] = contentLength;
         }
       }
@@ -523,6 +529,14 @@ ipcMain.handle('send-request', async (event, requestOptions) => {
         }
       }
 
+      console.log('Making request:', {
+        method: options.method,
+        url,
+        path: options.path,
+        headers: options.headers,
+        hasBody: !!requestBody,
+      });
+
       const req = client.request(options, (res) => {
         let responseBody = '';
         res.on('data', (chunk) => {
@@ -537,6 +551,13 @@ ipcMain.handle('send-request', async (event, requestOptions) => {
               responseHeaders.push([key, value]);
             }
           }
+          
+          console.log('Response received:', {
+            status: res.statusCode,
+            statusMessage: res.statusMessage,
+            bodyLength: responseBody.length,
+          });
+          
           resolve({
             success: true,
             status: res.statusCode,
@@ -558,7 +579,11 @@ ipcMain.handle('send-request', async (event, requestOptions) => {
       });
 
       // Write body if present
-      if (requestBody && method !== 'GET' && method !== 'HEAD') {
+      if (requestBody) {
+        console.log('Writing request body:', {
+          length: Buffer.byteLength(requestBody, 'utf-8'),
+          contentType: options.headers['Content-Type'],
+        });
         req.write(requestBody);
       }
       req.end();

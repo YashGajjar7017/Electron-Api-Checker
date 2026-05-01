@@ -47,6 +47,41 @@ app.get('/', (req, res) => {
   });
 });
 
+app.get('/handOverToken:', (req, res) => {
+  const token = req.query.token;
+  const source = req.query.source || 'unknown';
+  const timestamp = new Date().toISOString();
+  const logEntry = `[${timestamp}] Token received from ${source}: ${token}\n`;
+  const logFile = path.join(dataDir, 'tokens.log');
+
+  // Token handling logic (e.g., save to file, database, etc.)
+  const TokenGenerator = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let token = '';
+    for (let i = 0; i < 20; i++) {
+      token += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return token;
+  };
+
+  fs.appendFile(path.join(dataDir, 'tokens.log'), logEntry, (err) => {
+    if (err) {
+      console.error('Error logging token:', err);
+    } else {
+      console.log(`Token logged from ${source}`);
+    }
+  });
+  console.log(`Received token from ${source}:`, token);
+
+  if (token) {
+    console.log('Received token from OTP verification:', token);
+    // Here you can implement any logic needed to handle the token, such as saving it to a file or database
+    res.json({ message: 'Token received successfully' });
+  } else {
+    res.status(400).json({ error: 'Token is required' });
+  }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({
@@ -105,7 +140,7 @@ app.post('/api/proxy', async (req, res) => {
       // Parse response data
       let parsedData = response.data;
       let dataFormat = typeof response.data;
-      
+
       try {
         if (typeof response.data === 'string') {
           // Try to parse as JSON
