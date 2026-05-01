@@ -607,10 +607,14 @@ ipcMain.handle('ping-server', async (event, serverUrl) => {
       const isHttps = parsedUrl.protocol === 'https:';
       const client = isHttps ? https : http;
       
+      // Construct ping path - use provided path or default to /health
+      let pingPath = parsedUrl.pathname && parsedUrl.pathname !== '/' ? parsedUrl.pathname : '/health';
+      if (parsedUrl.search) pingPath += parsedUrl.search;
+      
       const options = {
         hostname: parsedUrl.hostname,
         port: parsedUrl.port || (isHttps ? 443 : 80),
-        path: '/',
+        path: pingPath,
         method: 'GET',
         timeout: 5000,
       };
@@ -637,6 +641,47 @@ ipcMain.handle('ping-server', async (event, serverUrl) => {
       });
       
       req.end();
+    } catch (error) {
+      resolve({ success: false, error: error.message });
+    }
+  });
+});
+
+// Run Python automation script from the GUI
+ipcMain.handle('run-python-script', async (event, options = {}) => {
+  const scriptPath = path.join(__dirname, '../src/server/Script.py');
+  const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+
+  return new Promise((resolve) => {
+    try {
+      const child = spawn(pythonCmd, [scriptPath], {
+        cwd: path.dirname(scriptPath),
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      child.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      child.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      child.on('error', (error) => {
+        resolve({ success: false, error: error.message, stderr });
+      });
+
+      child.on('close', (code) => {
+        resolve({ success: code === 0, stdout, stderr, code });
+      });
+
+      if (options.token) {
+        child.stdin.write(`${options.token}\n`);
+      }
+      child.stdin.end();
     } catch (error) {
       resolve({ success: false, error: error.message });
     }

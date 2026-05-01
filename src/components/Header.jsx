@@ -82,7 +82,7 @@ function Header({ onThemeChange, currentTheme }) {
             type="text"
             value={serverUrl}
             onChange={handleServerUrlChange}
-            placeholder="http://192.168.4.1"
+            placeholder="http://localhost:3000"
             className="url-input"
           />
         </div>

@@ -9,6 +9,7 @@ import {
   FiDownload,
   FiSave,
   FiMaximize2,
+  FiExternalLink,
 } from 'react-icons/fi';
 import OutputModal from './OutputModal';
 import '../styles/ResponseViewer.css';
@@ -27,13 +28,14 @@ function ResponseViewer() {
     isBatchTesting,
   } = useStore();
 
-  const [expandedResponses, setExpandedResponses] = useState(new Set());
+const [expandedResponses, setExpandedResponses] = useState(new Set());
   const [responseTabs, setResponseTabs] = useState({});
   const [isBatchRunning, setIsBatchRunning] = useState(false);
   const [showBatchSelector, setShowBatchSelector] = useState(false);
   const [selectedAPIs, setSelectedAPIs] = useState(
     new Set(apis.map((api) => api.id))
   );
+  const [selectedResponse, setSelectedResponse] = useState(null);
 
   const toggleResponseExpand = (responseId) => {
     const newExpanded = new Set(expandedResponses);
@@ -439,16 +441,25 @@ const runBatchTests = async () => {
 
                       <div className="tab-content">
                         {(responseTabs[response.id] || 'Output') === 'Output' && (
-                          <div className="body-section">
+<div className="body-section">
                             <div className="body-header">
                               <h4>Response Body {response.dataFormat && <span className="data-format">{getDataFormatLabel(response.dataFormat)}</span>}</h4>
-                              <button
-                                className="copy-btn"
-                                onClick={() => copyToClipboard(response.body)}
-                                title="Copy to clipboard"
-                              >
-                                <FiCopy size={16} />
-                              </button>
+                              <div className="body-actions">
+                                <button
+                                  className="action-btn"
+                                  onClick={() => setSelectedResponse(response)}
+                                  title="Open in clean view"
+                                >
+                                  <FiExternalLink size={16} />
+                                </button>
+                                <button
+                                  className="copy-btn"
+                                  onClick={() => copyToClipboard(response.body)}
+                                  title="Copy to clipboard"
+                                >
+                                  <FiCopy size={16} />
+                                </button>
+                              </div>
                             </div>
                             <pre className="response-code">
                               {renderDataFormat(response.body, response.dataFormat)}
@@ -521,8 +532,14 @@ const runBatchTests = async () => {
               Send a request to see the response here
             </p>
           </div>
-        )}
+)}
       </div>
+      {selectedResponse && (
+        <OutputModal
+          response={selectedResponse}
+          onClose={() => setSelectedResponse(null)}
+        />
+      )}
     </div>
   );
 }

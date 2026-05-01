@@ -182,8 +182,8 @@ export const parsePostmanCollection = (collectionData) => {
         const url = extractUrl(request.url);
         const headers = extractHeaders(request.header);
 
-        // Extract server URL and endpoint
-        let serverUrl = 'http://localhost:3000';
+// Extract server URL and endpoint
+        let serverUrl = 'http://localhost:5000';
         let endpoint = '/';
 
         if (url) {

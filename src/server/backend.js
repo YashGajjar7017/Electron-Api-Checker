@@ -102,19 +102,43 @@ app.post('/api/endpoint', (req, res) => {
   });
 });
 
+// Accept both GET and POST for login endpoint (flexible for client implementations)
 app.get('/api/login', (req, res) => {
-  // Mock login endpoint - generates OTP
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   res.json({
-    message: 'Login OTP generated',
+    Data: {
+      token: `mock-token-${otp}`,
+      valid_for: 600,
+    },
+    message: 'Login successful',
     otp: otp,
-    expiresIn: 600, // 10 minutes
-    note: 'This is a mock endpoint - use any 6 digit code as OTP',
+  });
+});
+
+app.post('/api/login', (req, res) => {
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  res.json({
+    Data: {
+      token: `mock-token-${otp}`,
+      valid_for: 600,
+    },
+    message: 'Login successful',
+    otp: otp,
   });
 });
 
 app.post('/api/verify-otp', (req, res) => {
   // Mock OTP verification
+  res.json({
+    message: 'OTP verified successfully',
+    token: `sess-${Date.now()}`,
+    expiresIn: 3600,
+    user: { id: 1, email: 'user@example.com' },
+  });
+});
+
+app.post('/auth/verify-otp', (req, res) => {
+  // Mock OTP verification (alternative path)
   res.json({
     message: 'OTP verified successfully',
     token: `sess-${Date.now()}`,
@@ -365,9 +389,9 @@ const startServer = (preferredPort = 5000) => {
 ╔════════════════════════════════════════════╗
 ║   API Checker Backend Server Running       ║
 ╠════════════════════════════════════════════╣
-║ Port: ${PORT}                                 ║
-║ URL: http://localhost:${PORT}                ║
-║ Health: http://localhost:${PORT}/health      ║
+║ Port: ${PORT}                              ║
+║ URL: http://localhost:${PORT}              ║
+║ Health: http://localhost:${PORT}/health    ║
 ╚════════════════════════════════════════════╝
     `);
 

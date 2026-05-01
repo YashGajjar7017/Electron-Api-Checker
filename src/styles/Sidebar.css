@@ -70,24 +70,95 @@
 }
 
 .collection-item {
-  margin-bottom: 0.5rem;
-  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  border-radius: 12px;
   overflow: hidden;
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(99, 102, 241, 0.08) 100%);
+  border: 1px solid var(--border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.collection-item:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.15), 0 2px 8px rgba(99, 102, 241, 0.1);
+  transform: translateY(-2px);
+}
+
+.collection-item.selected .collection-header {
+  background: rgba(99, 102, 241, 0.1);
 }
 
 .collection-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
   padding: 0.75rem;
-  background: var(--bg-secondary);
-  border-radius: 8px;
   cursor: pointer;
   transition: var(--transition);
+  position: relative;
+}
+
+.toggle-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.toggle-btn:hover {
+  background: var(--border);
+  color: var(--primary);
+}
+
+.collection-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.collection-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collection-meta {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collection-header::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--primary) 0%, var(--info) 100%);
+  border-radius: 12px 0 0 12px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.collection-item:hover .collection-header::before {
+  opacity: 1;
 }
 
 .collection-header:hover {
-  background: var(--bg-tertiary);
+  background: transparent;
 }
 
 .expand-btn {
@@ -121,12 +192,69 @@
 .collection-actions {
   display: flex;
   gap: 0.25rem;
-  opacity: 0;
-  transition: opacity 0.2s;
+  position: relative;
+  opacity: 1 !important;
 }
 
-.collection-header:hover .collection-actions {
-  opacity: 1;
+.menu-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 6px;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-btn:hover {
+  background: var(--border);
+  color: var(--text-primary);
+}
+
+.collection-menu,
+.api-menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  width: 220px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  padding: 0.5rem;
+  z-index: 999;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.collection-menu .menu-item,
+.api-menu .menu-item {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  text-align: left;
+  transition: background 0.2s, color 0.2s;
+}
+
+.collection-menu .menu-item:hover,
+.api-menu .menu-item:hover {
+  background: var(--border);
+}
+
+.collection-menu .menu-item.danger,
+.api-menu .menu-item.danger {
+  color: var(--error);
 }
 
 .action-btn {
@@ -193,6 +321,71 @@
   width: 100%;
 }
 
+.api-item-actions {
+  display: flex;
+  gap: 0.125rem;
+  opacity: 1;
+  margin-left: auto;
+  padding-left: 0.5rem;
+}
+
+.api-rename-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: var(--transition);
+  min-width: 22px;
+  height: 22px;
+}
+
+.api-rename-btn:hover:not(:disabled) {
+  background: var(--border);
+  color: var(--text-primary);
+}
+
+.api-rename-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.api-rename-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--error);
+}
+
+.api-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: var(--transition);
+}
+
+.api-action-btn:hover:not(:disabled) {
+  background: var(--border);
+  color: var(--primary);
+}
+
+.api-action-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.api-action-btn.small {
+  padding: 0.15rem;
+}
+
 .api-item-info {
   display: flex;
   align-items: center;
@@ -216,21 +409,69 @@
 }
 
 .api-item-endpoint {
-  font-family: 'Monaco', 'Courier', monospace;
-  font-size: 0.7rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
   color: var(--text-tertiary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  padding-left: 0.75rem;
 }
 
-.api-item:hover {
-  background: var(--bg-secondary);
+.empty-collection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--text-tertiary);
+}
+
+.empty-collection p {
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--text-tertiary);
+  height: 100%;
+}
+
+.empty-state p {
+  font-size: 0.9rem;
+  margin: 0;
 }
 
 .api-item.active {
   background: var(--primary);
   color: white;
+}
+
+.api-rename-input {
+  flex: 1;
+  padding: 0.25rem 0.5rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.api-rename-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
 }
 
 .method-badge {
@@ -296,4 +537,34 @@
 .empty-state p:first-child {
   font-weight: 600;
   color: var(--text-secondary);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .api-item-actions {
+    opacity: 1;
+  gap: 0.125rem;
+  padding-left: 0.25rem;
+  margin-left: auto;
+  flex-shrink: 0;
+  }
+  
+  .api-rename-btn {
+    min-width: 20px;
+    height: 20px;
+    padding: 0.2rem;
+  }
+  
+  .api-name {
+    font-size: 0.8rem;
+  }
+  
+  .method-badge {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.7rem;
+  }
+  
+  .api-item-endpoint {
+    font-size: 0.65rem;
+  }
 }

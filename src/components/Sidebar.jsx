@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import useStore from '../store';
-import { FiPlus, FiFolder, FiTrash2, FiEdit2, FiChevronDown, FiUpload, FiCopy, FiDownload, FiShuffle, FiChevronUp } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiEdit2, FiChevronDown, FiUpload, FiCopy, FiDownload, FiMoreVertical, FiChevronUp } from 'react-icons/fi';
 import parsePostmanCollection from '../utils/postmanParser';
 import '../styles/Sidebar.css';
 
 function Sidebar() {
-  const {
+const {
     collections,
     addCollection,
     deleteCollection,
@@ -15,8 +15,6 @@ function Sidebar() {
     deleteAPI,
     setCurrentAPI,
     currentAPI,
-    shuffleCollections,
-    shuffleAPIs,
   } = useStore();
 
   const [expandedFolders, setExpandedFolders] = useState(new Set());
@@ -24,6 +22,8 @@ function Sidebar() {
   const [showNewCollection, setShowNewCollection] = useState(false);
   const [editingApiId, setEditingApiId] = useState(null);
   const [editApiName, setEditApiName] = useState('');
+  const [activeCollectionMenu, setActiveCollectionMenu] = useState(null);
+  const [activeApiMenu, setActiveApiMenu] = useState(null);
 
   // Auto-save apis when they change
   useEffect(() => {
@@ -60,6 +60,14 @@ function Sidebar() {
         window.electronAPI.saveCollections(allCollections);
       }
     }
+  };
+
+  const toggleCollectionMenu = (collectionId) => {
+    setActiveCollectionMenu((current) => (current === collectionId ? null : collectionId));
+  };
+
+  const toggleApiMenu = (apiId) => {
+    setActiveApiMenu((current) => (current === apiId ? null : apiId));
   };
 
   // Auto-save collections when they change
@@ -325,24 +333,13 @@ function Sidebar() {
     <div className="sidebar glass-lg">
       <div className="sidebar-header">
         <h2>Collections</h2>
-        <div className="header-actions">
+<div className="header-actions">
           <button
             className="btn btn-primary btn-sm"
             onClick={() => setShowNewCollection(!showNewCollection)}
             title="Add new collection"
           >
             <FiPlus size={16} />
-          </button>
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => {
-              if (window.confirm('Shuffle all collections?')) {
-                shuffleCollections();
-              }
-            }}
-            title="Randomize collection order"
-          >
-            <FiShuffle size={16} />
           </button>
           <label className="btn btn-secondary btn-sm" title="Import JSON or CSV">
             <FiUpload size={16} />
@@ -387,158 +384,206 @@ function Sidebar() {
 
       <div className="collections-list">
         {collections && collections.length > 0 ? (
-          collections.map((collection) => (
-            <div key={collection.id} className="collection-item">
-              <div className="collection-header">
-                <button
-                  className="expand-btn"
-                  onClick={() => toggleFolder(collection.id)}
-                >
-                  <FiChevronDown
-                    className={
-                      expandedFolders.has(collection.id) ? 'rotated' : ''
-                    }
-                  />
-                </button>
-                <FiFolder size={18} className="folder-icon" />
-                <span className="collection-name">{collection.name}</span>
-                <div className="collection-actions">
+          collections.map((collection) => {
+            const collectionAPIs = getCollectionAPIs(collection.id);
+            const isExpanded = expandedFolders.has(collection.id);
+
+            return (
+              <div key={collection.id} className="collection-item">
+                <div className="collection-header">
                   <button
-                    className="action-btn"
-                    onClick={() => handleAddAPI(collection.id)}
-                    title="Add API"
-                  >
-                    <FiPlus size={14} />
-                  </button>
-                  <button
-                    className="action-btn"
+                    className="toggle-btn"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (window.confirm(`Shuffle APIs in "${collection.name}"?`)) {
-                        const collectionAPIs = apis.filter(a => a.collectionId === collection.id);
-                        shuffleAPIs();
-                      }
+                      toggleFolder(collection.id);
                     }}
-                    title="Shuffle APIs in this collection"
+                    title={isExpanded ? 'Collapse' : 'Expand'}
                   >
-                    <FiShuffle size={14} />
+                    {isExpanded ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
                   </button>
-                  <button
-                    className="action-btn"
-                    onClick={(e) => handleDuplicateCollection(collection, e)}
-                    title="Duplicate collection"
-                  >
-                    <FiCopy size={14} />
-                  </button>
-                  <button
-                    className="action-btn"
-                    onClick={(e) => handleExportCollection(collection, e)}
-                    title="Export collection"
-                  >
-                    <FiDownload size={14} />
-                  </button>
-                  <button
-                    className="action-btn danger"
-                    onClick={() => handleDeleteCollection(collection.id)}
-                    title="Delete collection"
-                  >
-                    <FiTrash2 size={14} />
-                  </button>
-                </div>
-              </div>
 
-{expandedFolders.has(collection.id) && (
-                <div className="api-list">
-                  {getCollectionAPIs(collection.id).map((api, index) => {
-                    const collectionAPIs = getCollectionAPIs(collection.id);
-                    const isFirst = index === 0;
-                    const isLast = index === collectionAPIs.length - 1;
-                    
-                    return (
-                      <div
-                        key={api.id}
-                        className={`api-item ${
-                          currentAPI?.id === api.id ? 'active' : ''
-                        }`}
-                        onClick={() => setCurrentAPI(api)}
-                      >
-                        <div className="api-item-header">
-                          <span className={`method-badge method-${api.method.toLowerCase()}`}>
-                            {api.method}
-                          </span>
-                          {editingApiId === api.id ? (
-                            <input
-                              type="text"
-                              className="api-rename-input"
-                              value={editApiName}
-                              onChange={(e) => setEditApiName(e.target.value)}
-                              onKeyPress={(e) => {
-                                if (e.key === 'Enter') saveApiName(api.id);
-                                if (e.key === 'Escape') {
-                                  setEditingApiId(null);
-                                  setEditApiName('');
-                                }
-                              }}
-                              onBlur={() => saveApiName(api.id)}
-                              autoFocus
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          ) : (
-                            <span className="api-name">{api.name}</span>
-                          )}
-                          <div className="api-item-actions">
-                            <button
-                              className="api-rename-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                moveAPI(api.id, 'up');
-                              }}
-                              disabled={isFirst}
-                              title="Move up"
-                            >
-                              <FiChevronUp size={12} />
-                            </button>
-                            <button
-                              className="api-rename-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                moveAPI(api.id, 'down');
-                              }}
-                              disabled={isLast}
-                              title="Move down"
-                            >
-                              <FiChevronDown size={12} />
-                            </button>
-                            <button
-                              className="api-rename-btn"
-                              onClick={(e) => startEditApiName(api, e)}
-                              title="Rename API"
-                            >
-                              <FiEdit2 size={12} />
-                            </button>
-                            <button
-                              className="api-rename-btn danger"
-                              onClick={(e) => handleDeleteAPI(api.id, e)}
-                              title="Delete API"
-                            >
-                              <FiTrash2 size={12} />
-                            </button>
-                          </div>
-                        </div>
-                        <div className="api-item-details">
-                          <span className="api-item-endpoint">{api.endpoint}</span>
-                        </div>
+                  <div className="collection-info">
+                    <div className="collection-name">{collection.name}</div>
+                    <div className="collection-meta">{collectionAPIs.length} APIs</div>
+                  </div>
+
+                  <div className="collection-actions">
+                    <button
+                      className="menu-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleCollectionMenu(collection.id);
+                      }}
+                      title="Collection actions"
+                    >
+                      <FiMoreVertical size={16} />
+                    </button>
+                    {activeCollectionMenu === collection.id && (
+                      <div className="collection-menu" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          className="menu-item"
+                          onClick={() => {
+                            handleAddAPI(collection.id);
+                            setActiveCollectionMenu(null);
+                          }}
+                        >
+                          <FiPlus size={14} /> Add API
+                        </button>
+                        <button
+                          className="menu-item"
+                          onClick={() => {
+                            handleDuplicateCollection(collection);
+                            setActiveCollectionMenu(null);
+                          }}
+                        >
+                          <FiCopy size={14} /> Duplicate
+                        </button>
+                        <button
+                          className="menu-item"
+                          onClick={() => {
+                            handleExportCollection(collection);
+                            setActiveCollectionMenu(null);
+                          }}
+                        >
+                          <FiDownload size={14} /> Export
+                        </button>
+                        <button
+                          className="menu-item danger"
+                          onClick={() => {
+                            handleDeleteCollection(collection.id);
+                            setActiveCollectionMenu(null);
+                          }}
+                        >
+                          <FiTrash2 size={14} /> Delete
+                        </button>
                       </div>
-                    );
-                  })}
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
-          ))
+
+                {isExpanded && (
+                  <div className="api-list">
+                    {collectionAPIs.length > 0 ? (
+                      collectionAPIs.map((api, index) => {
+                        const isFirst = index === 0;
+                        const isLast = index === collectionAPIs.length - 1;
+
+                        return (
+                          <div
+                            key={api.id}
+                            className={`api-item ${currentAPI?.id === api.id ? 'active' : ''}`}
+                            onClick={() => setCurrentAPI(api)}
+                          >
+                            <div className="api-item-header">
+                              <span className={`method-badge method-${api.method.toLowerCase()}`}>
+                                {api.method}
+                              </span>
+
+                              {editingApiId === api.id ? (
+                                <input
+                                  type="text"
+                                  className="api-rename-input"
+                                  value={editApiName}
+                                  onChange={(e) => setEditApiName(e.target.value)}
+                                  onKeyPress={(e) => {
+                                    if (e.key === 'Enter') saveApiName(api.id);
+                                    if (e.key === 'Escape') {
+                                      setEditingApiId(null);
+                                      setEditApiName('');
+                                    }
+                                  }}
+                                  onBlur={() => saveApiName(api.id)}
+                                  autoFocus
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                              ) : (
+                                <span className="api-name">{api.name}</span>
+                              )}
+
+                              <div className="api-item-actions">
+                                <button
+                                  className="menu-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleApiMenu(api.id);
+                                  }}
+                                  title="API actions"
+                                >
+                                  <FiMoreVertical size={14} />
+                                </button>
+                                {activeApiMenu === api.id && (
+                                  <div className="api-menu" onClick={(e) => e.stopPropagation()}>
+                                    <button
+                                      className="menu-item"
+                                      onClick={() => {
+                                        startEditApiName(api, { stopPropagation: () => {} });
+                                        setActiveApiMenu(null);
+                                      }}
+                                    >
+                                      <FiEdit2 size={14} /> Rename
+                                    </button>
+                                    <button
+                                      className="menu-item"
+                                      onClick={() => {
+                                        moveAPI(api.id, 'up');
+                                        setActiveApiMenu(null);
+                                      }}
+                                      disabled={isFirst}
+                                    >
+                                      <FiChevronUp size={14} /> Move Up
+                                    </button>
+                                    <button
+                                      className="menu-item"
+                                      onClick={() => {
+                                        moveAPI(api.id, 'down');
+                                        setActiveApiMenu(null);
+                                      }}
+                                      disabled={isLast}
+                                    >
+                                      <FiChevronDown size={14} /> Move Down
+                                    </button>
+                                    <button
+                                      className="menu-item danger"
+                                      onClick={() => {
+                                        handleDeleteAPI(api.id, { stopPropagation: () => {} });
+                                        setActiveApiMenu(null);
+                                      }}
+                                    >
+                                      <FiTrash2 size={14} /> Delete
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="api-item-endpoint">{api.endpoint}</div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="empty-collection">
+                        <p>No APIs in this collection</p>
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => handleAddAPI(collection.id)}
+                        >
+                          <FiPlus size={12} /> Add API
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })
         ) : (
           <div className="empty-state">
             <p>No collections yet</p>
-            <p className="text-muted">Create a new collection to get started</p>
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={() => setShowNewCollection(true)}
+            >
+              <FiPlus size={12} /> Create Collection
+            </button>
           </div>
         )}
       </div>

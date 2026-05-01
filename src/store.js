@@ -106,8 +106,8 @@ const useStore = create(
     currentAPI: null,
     setCurrentAPI: (api) => set({ currentAPI: api }),
 
-    // Server URL state - default to localhost:5000 backend
-    serverUrl: 'http://localhost:5000',
+    // Server URL state - default to localhost:3000 (React dev server)
+    serverUrl: 'http://localhost:3000',
     setServerUrl: (url) => set({ serverUrl: url }),
 
     // Auth token state
@@ -144,6 +144,27 @@ const useStore = create(
       set({ sessionToken: token, sessionTokenExpiry: Date.now() + 10 * 60 * 1000 }),
     clearSessionToken: () =>
       set({ sessionToken: '', sessionTokenExpiry: null }),
+
+    // API Response Token state (from login API, 10 min expiry by default)
+    apiResponseToken: null,
+    apiResponseTokenExpiry: null,
+    setAPIResponseToken: (token, validForMinutes = 10) => {
+      const expiryTime = Date.now() + validForMinutes * 60 * 1000;
+      set({ apiResponseToken: token, apiResponseTokenExpiry: expiryTime });
+      // Auto-clear token when it expires
+      setTimeout(() => {
+        set({ apiResponseToken: null, apiResponseTokenExpiry: null });
+      }, validForMinutes * 60 * 1000);
+    },
+    clearAPIResponseToken: () =>
+      set({ apiResponseToken: null, apiResponseTokenExpiry: null }),
+    getAPIResponseToken: () => {
+      const state = get();
+      if (state.apiResponseToken && state.apiResponseTokenExpiry && Date.now() < state.apiResponseTokenExpiry) {
+        return state.apiResponseToken;
+      }
+      return null;
+    },
 
     // Batch testing state - enhanced with stats
     isBatchTesting: false,

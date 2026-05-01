@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Network requests
   sendRequest: (requestOptions) => ipcRenderer.invoke('send-request', requestOptions),
   pingServer: (serverUrl) => ipcRenderer.invoke('ping-server', serverUrl),
+  runPythonScript: (options) => ipcRenderer.invoke('run-python-script', options),
   
   // Backend info
   getBackendInfo: () => ipcRenderer.invoke('get-backend-info'),

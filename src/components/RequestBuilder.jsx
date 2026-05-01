@@ -39,6 +39,9 @@ const [activeTab, setActiveTab] = useState('params');
   const [headers, setHeaders] = useState(currentAPI?.headers || {});
   const [params, setParams] = useState(currentAPI?.params || {});
   const [body, setBody] = useState(currentAPI?.body || '');
+  const [bodyParams, setBodyParams] = useState(currentAPI?.bodyParams || {});
+  const [newBodyKey, setNewBodyKey] = useState('');
+  const [newBodyValue, setNewBodyValue] = useState('');
   const [bodyType, setBodyType] = useState(currentAPI?.bodyType || 'none');
   const [authType, setAuthType] = useState(currentAPI?.auth?.type || 'none');
   const [authTokenState, setAuthTokenLocal] = useState(
@@ -66,6 +69,8 @@ const [docs, setDocs] = useState(currentAPI?.docs || '');
   const [automationDelay, setAutomationDelay] = useState(currentAPI?.automation?.delay || 500);
   const [isAutomating, setIsAutomating] = useState(false);
   const [automationProgress, setAutomationProgress] = useState({ current: 0, total: 0, results: [] });
+  const [pythonScriptOutput, setPythonScriptOutput] = useState('');
+  const [runningScript, setRunningScript] = useState(false);
 
 // Sync form state when currentAPI changes
   useEffect(() => {
@@ -76,6 +81,9 @@ const [docs, setDocs] = useState(currentAPI?.docs || '');
       setHeaders(currentAPI.headers || {});
       setParams(currentAPI.params || {});
       setBody(currentAPI.body || '');
+      setBodyParams(currentAPI.bodyParams || {});
+      setNewBodyKey('');
+      setNewBodyValue('');
       setAuthType(currentAPI.auth?.type || 'none');
       setAuthTokenLocal(currentAPI.auth?.token || '');
       setCertFile(currentAPI.auth?.certFile || '');
@@ -117,6 +125,8 @@ const [docs, setDocs] = useState(currentAPI?.docs || '');
         headers,
         params,
         body,
+        bodyType,
+        bodyParams,
         auth: {
           type: authType,
           token: authTokenState,
@@ -148,7 +158,7 @@ const [docs, setDocs] = useState(currentAPI?.docs || '');
     }, 1500); // Save after 1.5 seconds of inactivity
 
     return () => clearTimeout(timeoutId);
-}, [apiName, method, endpoint, headers, params, body, authType, authTokenState, certFile, keyFile, caFile, skipOtp, automationEnabled, automationVariable, automationStart, automationEnd, automationStep, automationPadding, automationDelay, currentAPI?.id, updateAPI, apis]);
+}, [apiName, method, endpoint, headers, params, body, bodyType, bodyParams, authType, authTokenState, certFile, keyFile, caFile, skipOtp, automationEnabled, automationVariable, automationStart, automationEnd, automationStep, automationPadding, automationDelay, currentAPI?.id, updateAPI, apis]);
 
   if (!currentAPI) {
     return (
@@ -167,6 +177,8 @@ const handleUpdateAPI = () => {
       headers,
       params,
       body,
+      bodyType,
+      bodyParams,
       auth: {
         type: authType,
         token: authTokenState,
@@ -231,6 +243,24 @@ const handleUpdateAPI = () => {
     setParams(updatedParams);
   };
 
+  const addBodyParam = () => {
+    if (newBodyKey && newBodyValue) {
+      const updatedBodyParams = {
+        ...bodyParams,
+        [newBodyKey]: newBodyValue,
+      };
+      setBodyParams(updatedBodyParams);
+      setNewBodyKey('');
+      setNewBodyValue('');
+    }
+  };
+
+  const removeBodyParam = (key) => {
+    const updatedBodyParams = { ...bodyParams };
+    delete updatedBodyParams[key];
+    setBodyParams(updatedBodyParams);
+  };
+
   const buildURL = () => {
     let url = endpoint;
     
@@ -268,13 +298,17 @@ const handleUpdateAPI = () => {
     }
     
     // Ensure Content-Type is set for POST/PUT/PATCH requests with body
-    const hasBody = body && ['POST', 'PUT', 'PATCH'].includes(method);
+    const hasBody = ['POST', 'PUT', 'PATCH'].includes(method);
     if (hasBody && !requestHeaders['Content-Type']) {
-      // Default to JSON if no content type is set
-      if (body.trim().startsWith('{') || body.trim().startsWith('[')) {
+      if (bodyType === 'json') {
+        requestHeaders['Content-Type'] = 'application/json';
+      } else if (bodyType === 'form-data' || bodyType === 'x-www-form-urlencoded') {
+        requestHeaders['Content-Type'] = 'application/x-www-form-urlencoded';
+      } else if (bodyType === 'graphql') {
+        requestHeaders['Content-Type'] = 'application/graphql';
+      } else if (body.trim().startsWith('{') || body.trim().startsWith('[')) {
         requestHeaders['Content-Type'] = 'application/json';
       } else if (body.includes('=') && !body.includes('{')) {
-        // Likely URL-encoded data
         requestHeaders['Content-Type'] = 'application/x-www-form-urlencoded';
       }
     }
@@ -292,6 +326,46 @@ const handleUpdateAPI = () => {
   //   return () => clearInterval(interval);
   // }, [sessionTokenExpiry, clearSessionToken]);
 
+
+  const getRequestBody = () => {
+    if (['GET', 'HEAD', 'DELETE'].includes(method)) return undefined;
+
+    if (bodyType === 'form-data' || bodyType === 'x-www-form-urlencoded') {
+      const bodyParamsData = new URLSearchParams();
+      Object.entries(bodyParams).forEach(([key, value]) => {
+        if (key !== '' && value !== undefined && value !== null) {
+          bodyParamsData.append(key, value);
+        }
+      });
+      return bodyParamsData.toString();
+    }
+
+    return body || undefined;
+  };
+
+  const handleRunPythonScript = async () => {
+    const tokenToUse = authTokenState || sessionToken || '';
+    if (!tokenToUse) {
+      setPythonScriptOutput('Please set an auth token before running the Python script.');
+      return;
+    }
+
+    setRunningScript(true);
+    setPythonScriptOutput('Running automation script...');
+
+    try {
+      const result = await window.electronAPI.runPythonScript({ token: tokenToUse });
+      if (result.success) {
+        setPythonScriptOutput(`Script finished successfully.\n${result.stdout || ''}`);
+      } else {
+        setPythonScriptOutput(`Script failed: ${result.error || result.stderr || 'Unknown error'}`);
+      }
+    } catch (error) {
+      setPythonScriptOutput(`Script execution error: ${error.message}`);
+    }
+
+    setRunningScript(false);
+  };
 
   const handleOtpVerify = (otp) => {
     // Generate a session token from the OTP (simulated auth)
@@ -329,7 +403,7 @@ const handleUpdateAPI = () => {
         url,
         method,
         headers: requestHeaders,
-        body: ['GET', 'HEAD', 'DELETE'].includes(method) ? undefined : body,
+        body: getRequestBody(),
         sslOptions,
       });
 
@@ -344,6 +418,14 @@ const handleUpdateAPI = () => {
         responseData = JSON.parse(result.body);
       } catch {
         responseData = result.body;
+      }
+
+      // Check if response contains a token (from login API)
+      if (responseData && typeof responseData === 'object' && responseData.Data && responseData.Data.token) {
+        const token = responseData.Data.token;
+        const validForMinutes = responseData.Data.valid_for ? Math.ceil(responseData.Data.valid_for / 60) : 10;
+        useStore.getState().setAPIResponseToken(token, validForMinutes);
+        console.log(`Token captured: ${token.substring(0, 10)}... (expires in ${validForMinutes} min)`);
       }
 
       addResponse({
@@ -553,27 +635,27 @@ const handleUpdateAPI = () => {
                   <input
                     type="text"
                     placeholder="Key"
-                    value={newParamKey}
-                    onChange={(e) => setNewParamKey(e.target.value)}
+                    value={newBodyKey}
+                    onChange={(e) => setNewBodyKey(e.target.value)}
                   />
                   <input
                     type="text"
                     placeholder="Value"
-                    value={newParamValue}
-                    onChange={(e) => setNewParamValue(e.target.value)}
+                    value={newBodyValue}
+                    onChange={(e) => setNewBodyValue(e.target.value)}
                   />
-                  <button className="btn btn-primary btn-sm" onClick={addParam}>
+                  <button className="btn btn-primary btn-sm" onClick={addBodyParam}>
                     <FiPlus size={16} />
                   </button>
                 </div>
                 <div className="rows-list">
-                  {Object.entries(params).map(([key, value]) => (
+                  {Object.entries(bodyParams).map(([key, value]) => (
                     <div key={key} className="row">
                       <span className="key">{key}</span>
                       <span className="value">{value}</span>
                       <button
                         className="btn-delete"
-                        onClick={() => removeParam(key)}
+                        onClick={() => removeBodyParam(key)}
                       >
                         <FiX size={16} />
                       </button>
@@ -589,27 +671,27 @@ const handleUpdateAPI = () => {
                   <input
                     type="text"
                     placeholder="Key"
-                    value={newParamKey}
-                    onChange={(e) => setNewParamKey(e.target.value)}
+                    value={newBodyKey}
+                    onChange={(e) => setNewBodyKey(e.target.value)}
                   />
                   <input
                     type="text"
                     placeholder="Value"
-                    value={newParamValue}
-                    onChange={(e) => setNewParamValue(e.target.value)}
+                    value={newBodyValue}
+                    onChange={(e) => setNewBodyValue(e.target.value)}
                   />
-                  <button className="btn btn-primary btn-sm" onClick={addParam}>
+                  <button className="btn btn-primary btn-sm" onClick={addBodyParam}>
                     <FiPlus size={16} />
                   </button>
                 </div>
                 <div className="rows-list">
-                  {Object.entries(params).map(([key, value]) => (
+                  {Object.entries(bodyParams).map(([key, value]) => (
                     <div key={key} className="row">
                       <span className="key">{key}</span>
                       <span className="value">{value}</span>
                       <button
                         className="btn-delete"
-                        onClick={() => removeParam(key)}
+                        onClick={() => removeBodyParam(key)}
                       >
                         <FiX size={16} />
                       </button>
@@ -906,6 +988,31 @@ const handleUpdateAPI = () => {
                 }}
               />
             </div>
+            <div className="form-group script-runner-group">
+              <label>Run Python Automation</label>
+              <div className="script-runner-controls">
+                <input
+                  type="text"
+                  value={authTokenState || sessionToken || ''}
+                  readOnly
+                  placeholder="Auth token used by Script.py"
+                />
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={handleRunPythonScript}
+                  disabled={runningScript}
+                >
+                  <FiPlay size={14} /> {runningScript ? 'Running...' : 'Run Script.py'}
+                </button>
+              </div>
+              <textarea
+                className="script-output"
+                value={pythonScriptOutput}
+                readOnly
+                rows={5}
+                placeholder="Script output will appear here"
+              />
+            </div>
           </div>
         )}
 
@@ -959,7 +1066,6 @@ const handleUpdateAPI = () => {
                   type="number"
                   value={automationStart}
                   onChange={(e) => setAutomationStart(parseInt(e.target.value) || 1)}
-                  disabled={!automationEnabled}
                 />
               </div>
               <div className="form-group">
@@ -968,7 +1074,6 @@ const handleUpdateAPI = () => {
                   type="number"
                   value={automationEnd}
                   onChange={(e) => setAutomationEnd(parseInt(e.target.value) || 10)}
-                  disabled={!automationEnabled}
                 />
               </div>
             </div>
@@ -980,7 +1085,6 @@ const handleUpdateAPI = () => {
                   type="number"
                   value={automationStep}
                   onChange={(e) => setAutomationStep(parseInt(e.target.value) || 1)}
-                  disabled={!automationEnabled}
                 />
               </div>
               <div className="form-group">
@@ -989,7 +1093,6 @@ const handleUpdateAPI = () => {
                   type="number"
                   value={automationPadding}
                   onChange={(e) => setAutomationPadding(parseInt(e.target.value) || 0)}
-                  disabled={!automationEnabled}
                   min="0"
                   max="10"
                 />
@@ -1003,7 +1106,6 @@ const handleUpdateAPI = () => {
                 type="number"
                 value={automationDelay}
                 onChange={(e) => setAutomationDelay(parseInt(e.target.value) || 500)}
-                disabled={!automationEnabled}
                 min="0"
               />
             </div>
