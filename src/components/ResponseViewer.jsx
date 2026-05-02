@@ -394,6 +394,16 @@ const runBatchTests = async () => {
                       <span className="response-size">
                         {(response.responseSize / 1024).toFixed(2)}KB
                       </span>
+                      <button
+                        className="open-modal-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedResponse(response);
+                        }}
+                        title="Open in clean view"
+                      >
+                        <FiExternalLink size={16} />
+                      </button>
                     </>
                   ) : (
                     <span className="error-badge">Error</span>

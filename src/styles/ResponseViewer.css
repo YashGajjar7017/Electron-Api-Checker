@@ -124,6 +124,23 @@
   margin-left: 0.5rem;
 }
 
+.open-modal-btn {
+  background: transparent;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  border-radius: 4px;
+  transition: var(--transition);
+  margin-left: 0.25rem;
+}
+
+.open-modal-btn:hover {
+  background: var(--primary);
+  color: white;
+}
+
 .status-badge {
   padding: 0.25rem 0.5rem;
   border-radius: 4px;

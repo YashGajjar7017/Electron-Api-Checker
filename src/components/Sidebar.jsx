@@ -104,8 +104,8 @@ const {
     }
   };
 
-  const handleDuplicateCollection = (collection, e) => {
-    e.stopPropagation();
+const handleDuplicateCollection = (collection, e) => {
+    e?.stopPropagation();
     const newCollection = {
       ...collection,
       id: Math.random().toString(36).substr(2, 9),
@@ -130,8 +130,8 @@ const {
     }
   };
 
-  const handleExportCollection = (collection, e) => {
-    e.stopPropagation();
+const handleExportCollection = (collection, e) => {
+    e?.stopPropagation();
     const collectionAPIs = getCollectionAPIs(collection.id);
     const exportData = {
       collection: {
