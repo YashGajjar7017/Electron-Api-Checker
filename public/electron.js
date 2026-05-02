@@ -518,14 +518,35 @@ ipcMain.handle('send-request', async (event, requestOptions) => {
 
       // Handle SSL certificates if provided
       if (isHttps && sslOptions) {
-        if (sslOptions.certFile && fs.existsSync(sslOptions.certFile)) {
-          options.cert = fs.readFileSync(sslOptions.certFile);
-        }
-        if (sslOptions.keyFile && fs.existsSync(sslOptions.keyFile)) {
-          options.key = fs.readFileSync(sslOptions.keyFile);
-        }
-        if (sslOptions.caFile && fs.existsSync(sslOptions.caFile)) {
-          options.ca = fs.readFileSync(sslOptions.caFile);
+        try {
+          if (sslOptions.certFile && fs.existsSync(sslOptions.certFile)) {
+            options.cert = fs.readFileSync(sslOptions.certFile, 'utf-8');
+            console.log('SSL certificate loaded:', sslOptions.certFile);
+          } else if (sslOptions.certFile) {
+            console.warn('Certificate file not found:', sslOptions.certFile);
+          }
+          
+          if (sslOptions.keyFile && fs.existsSync(sslOptions.keyFile)) {
+            options.key = fs.readFileSync(sslOptions.keyFile, 'utf-8');
+            console.log('SSL key loaded:', sslOptions.keyFile);
+          } else if (sslOptions.keyFile) {
+            console.warn('Key file not found:', sslOptions.keyFile);
+          }
+          
+          if (sslOptions.caFile && fs.existsSync(sslOptions.caFile)) {
+            options.ca = fs.readFileSync(sslOptions.caFile, 'utf-8');
+            console.log('CA certificate loaded:', sslOptions.caFile);
+          } else if (sslOptions.caFile) {
+            console.warn('CA file not found:', sslOptions.caFile);
+          }
+          
+          // Disable SSL verification for self-signed certificates (use with caution)
+          if (sslOptions.rejectUnauthorized === false) {
+            options.rejectUnauthorized = false;
+            console.warn('SSL verification disabled - using self-signed certificates');
+          }
+        } catch (err) {
+          console.error('Error loading SSL certificates:', err.message);
         }
       }
 
@@ -556,8 +577,15 @@ ipcMain.handle('send-request', async (event, requestOptions) => {
             status: res.statusCode,
             statusMessage: res.statusMessage,
             bodyLength: responseBody.length,
+            contentType: res.headers['content-type'],
           });
           
+          // Log first 500 chars of body for debugging
+          if (responseBody) {
+            console.log('Response body preview:', responseBody.substring(0, 500));
+          }
+          
+          // Return response regardless of status code (success or error)
           resolve({
             success: true,
             status: res.statusCode,

@@ -413,12 +413,23 @@ const handleUpdateAPI = () => {
         throw new Error(result.error || 'Request failed');
       }
 
-      let responseData;
+let responseData;
       try {
         responseData = JSON.parse(result.body);
       } catch {
         responseData = result.body;
       }
+
+      // Print the response to console
+      console.log('API Response:', {
+        status: result.status,
+        statusText: result.statusText,
+        headers: result.headers,
+        body: responseData,
+        rawBody: result.body,
+        responseTime: Math.round(responseTime),
+        responseSize: new Blob([result.body]).size,
+      });
 
       // Check if response contains a token (from login API)
       if (responseData && typeof responseData === 'object' && responseData.Data && responseData.Data.token) {
