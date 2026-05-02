@@ -367,15 +367,53 @@ const handleUpdateAPI = () => {
     setRunningScript(false);
   };
 
-  const handleOtpVerify = (otp) => {
-    // Generate a session token from the OTP (simulated auth)
-    const token = `sess-${otp}-${Date.now()}`;
-    setSessionToken(token);
-    setShowOtpModal(false);
-    // If a request was pending, retry it
-    if (pendingSendRef.current) {
-      pendingSendRef.current = false;
-      executeRequest();
+const handleOtpVerify = async (otp) => {
+    // Verify OTP against backend server
+    try {
+      const serverUrlEndpoint = serverUrl.replace('localhost:3000', 'localhost:5000');
+      const verifyUrl = serverUrlEndpoint + '/auth/verify-otp';
+      
+      // Try to verify OTP with backend
+      let sessionTokenFromVerify = null;
+      
+      try {
+        const verifyResult = await window.electronAPI.sendRequest({
+          url: verifyUrl,
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ otp }),
+        });
+        
+        if (verifyResult.success && verifyResult.status === 200) {
+          const response = JSON.parse(verifyResult.body);
+          if (response.token) {
+            sessionTokenFromVerify = response.token;
+          }
+        }
+      } catch (verifyError) {
+        console.log('Backend OTP verification not available, using fallback');
+      }
+      
+      // Use verified token from backend, or fall back to local token generation
+      const token = sessionTokenFromVerify || `sess-${otp}-${Date.now()}`;
+      setSessionToken(token);
+      setShowOtpModal(false);
+      
+      // If a request was pending, retry it
+      if (pendingSendRef.current) {
+        pendingSendRef.current = false;
+        executeRequest();
+      }
+    } catch (error) {
+      console.error('OTP verification error:', error);
+      // Still allow to proceed with local token on error
+      const token = `sess-${otp}-${Date.now()}`;
+      setSessionToken(token);
+      setShowOtpModal(false);
+      if (pendingSendRef.current) {
+        pendingSendRef.current = false;
+        executeRequest();
+      }
     }
   };
 

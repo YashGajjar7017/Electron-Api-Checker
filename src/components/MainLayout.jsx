@@ -4,8 +4,9 @@ import RequestBuilder from './RequestBuilder';
 import ResponseViewer from './ResponseViewer';
 import Header from './Header';
 import PythonScriptModal from './PythonScriptModal';
+import MCPConfig from './MCPConfig';
 import useStore from '../store';
-import { FiTerminal, FiRefreshCcw, FiTrash2, FiShuffle, FiLayers } from 'react-icons/fi';
+import { FiTerminal, FiRefreshCcw, FiTrash2, FiShuffle, FiLayers, FiSettings } from 'react-icons/fi';
 import '../styles/MainLayout.css';
 
 function MainLayout({ onThemeChange, currentTheme }) {
@@ -17,6 +18,7 @@ function MainLayout({ onThemeChange, currentTheme }) {
   const [showPythonModal, setShowPythonModal] = useState(false);
   const [pythonScriptOutput, setPythonScriptOutput] = useState('');
   const [isRunningScript, setIsRunningScript] = useState(false);
+  const [showMCPModal, setShowMCPModal] = useState(false);
 
   const {
     sessionToken,
@@ -138,6 +140,15 @@ function MainLayout({ onThemeChange, currentTheme }) {
 
         <button
           className="control-button"
+          onClick={() => setShowMCPModal(true)}
+          title="Open MCP configuration"
+        >
+          <FiSettings size={16} />
+          MCP Configuration
+        </button>
+
+        <button
+          className="control-button"
           onClick={() => shuffleAPIs()}
           title="Shuffle API list to randomize testing"
         >
@@ -193,6 +204,11 @@ function MainLayout({ onThemeChange, currentTheme }) {
         isRunning={isRunningScript}
         output={pythonScriptOutput}
         token={sessionToken}
+      />
+
+      <MCPConfig
+        isOpen={showMCPModal}
+        onClose={() => setShowMCPModal(false)}
       />
     </div>
   );

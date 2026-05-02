@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow-y: auto;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
 }
@@ -186,7 +187,7 @@
 }
 
 .response-body {
-  max-height: 400px;
+  max-height: 600px;
   overflow-y: auto;
   border-top: 1px solid var(--border);
   background: var(--bg-primary);
@@ -327,7 +328,8 @@
   font-family: 'Monaco', 'Courier', monospace;
   font-size: 0.8rem;
   color: var(--text-secondary);
-  max-height: 300px;
+  max-height: 500px;
+  min-height: 150px;
   overflow-y: auto;
   white-space: pre-wrap;
   word-wrap: break-word;

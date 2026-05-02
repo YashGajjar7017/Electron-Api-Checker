@@ -197,6 +197,33 @@ const useStore = create(
       set((state) => ({
         theme: state.theme === 'dark' ? 'light' : 'dark',
       })),
+
+    // MCP Configuration
+    mcpServers: [],
+    addMCPServer: (server) =>
+      set((state) => {
+        const newServers = [...state.mcpServers, server];
+        persistData('mcpServers', newServers);
+        return { mcpServers: newServers };
+      }),
+    updateMCPServer: (id, updates) =>
+      set((state) => {
+        const newServers = state.mcpServers.map((server) =>
+          server.id === id ? { ...server, ...updates } : server
+        );
+        persistData('mcpServers', newServers);
+        return { mcpServers: newServers };
+      }),
+    deleteMCPServer: (id) =>
+      set((state) => {
+        const newServers = state.mcpServers.filter((server) => server.id !== id);
+        persistData('mcpServers', newServers);
+        return { mcpServers: newServers };
+      }),
+    setMCPServers: (servers) => {
+      persistData('mcpServers', servers);
+      set({ mcpServers: servers });
+    },
   }))
 );
 
