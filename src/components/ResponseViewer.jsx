@@ -26,6 +26,7 @@ function ResponseViewer() {
     serverUrl,
     batchStats,
     isBatchTesting,
+    batchTestDelay,
   } = useStore();
 
 const [expandedResponses, setExpandedResponses] = useState(new Set());
@@ -127,8 +128,9 @@ const runBatchTests = async () => {
         addResponse(batchResult);
         setExpandedResponses((prev) => new Set(prev).add(batchResult.id));
 
-        // Add small delay between requests
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // Add customizable delay between requests (default 500ms)
+        const delayMs = useStore.getState().batchTestDelay || 500;
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
       } catch (error) {
         const batchResult = {
           id: Math.random().toString(36).substr(2, 9),
@@ -209,14 +211,23 @@ const runBatchTests = async () => {
   };
 
   const renderDataFormat = (data, format) => {
+    // Ensure data is a string for proper display
+    let stringData = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    
     if (format === 'json') {
-      return renderJSON(data);
+      try {
+        // Parse and re-stringify to ensure valid JSON display
+        const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+        return JSON.stringify(parsed, null, 2);
+      } catch {
+        return stringData;
+      }
     } else if (format === 'html') {
-      return `[HTML Content - ${typeof data === 'string' ? data.length : 0} bytes]`;
+      return `[HTML Content - ${stringData.length} bytes]`;
     } else if (format === 'xml') {
-      return data;
+      return stringData;
     } else {
-      return String(data);
+      return stringData;
     }
   };
 
@@ -308,6 +319,27 @@ const runBatchTests = async () => {
               Deselect All
             </button>
           </div>
+
+          <div className="batch-settings-section">
+            <h5>Batch Settings</h5>
+            <div className="settings-group">
+              <label htmlFor="batch-delay">Delay Between Requests (ms):</label>
+              <input
+                id="batch-delay"
+                type="number"
+                min="100"
+                max="5000"
+                step="50"
+                defaultValue={batchTestDelay || 500}
+                onChange={(e) => {
+                  const delay = parseInt(e.target.value) || 500;
+                  useStore.getState().setBatchTestDelay(delay);
+                }}
+                title="Set delay between batch test requests in milliseconds"
+              />
+            </div>
+          </div>
+
           <div className="batch-selector-list">
             {apis.map((api) => (
               <div key={api.id} className="batch-selector-item">

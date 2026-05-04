@@ -475,10 +475,18 @@ ipcMain.handle('load-apis', async () => {
 });
 
 ipcMain.handle('reload-app', async () => {
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.reloadIgnoringCache();
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      // Clear cache before reloading
+      await mainWindow.webContents.session.clearCache();
+      mainWindow.webContents.reloadIgnoringCache();
+      return { success: true };
+    }
+    return { success: false, error: 'Main window not available' };
+  } catch (error) {
+    console.error('Reload error:', error);
+    return { success: false, error: error.message };
   }
-  return { success: true };
 });
 
 ipcMain.handle('send-request', async (event, requestOptions) => {

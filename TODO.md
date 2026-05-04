@@ -1,28 +1,25 @@
-# Redesign Collection Area - TODO
+# API Persistence Fix - Progress Tracker
 
-## Task Summary
-Redesign the collection area with:
-1. Move Copy & Delete buttons to upper side (always visible)
-2. Add "More" button with selection popup
-3. Reduce button clutter, make content more accessible
-4. Selection popup for batch operations
+## Plan Status: ✅ APPROVED BY USER
 
-## Implementation Steps
+### Step 1: [IN PROGRESS] Fix src/store.js - Make persistData async
+- Convert persistData to async/await  
+- Update all store actions to await persistData
+- Add error logging
 
-### Phase 1: Update Sidebar.jsx
-- [ ] Redesign collection header with always-visible copy/delete buttons
-- [ ] Add "More" (•••) button for collection actions
-- [ ] Implement selection popup component
-- [ ] Redesign API item with minimal buttons
-- [ ] Add "More" button for API item actions
+### Step 2: [PENDING] Clean up src/components/Sidebar.jsx
+- Remove redundant useEffect saveAPIs calls
+- Rely on store persistence only
 
-### Phase 2: Update Sidebar.css
-- [ ] Add styles for selection popup
-- [ ] Add styles for always-visible collection buttons
-- [ ] Add styles for minimized API item buttons
-- [ ] Make content more prominent
+### Step 3: [PENDING] Enhance src/App.jsx recovery
+- Add logging for recovery actions
+- Test data migration
 
-### Phase 3: Testing
-- [ ] Verify all functionality works
-- [ ] Check responsive design
-- [ ] Test selection popup interactions
+### Step 4: [PENDING] Test & Verify
+- Add new API → app reload → verify persists
+- Check apis.json updates on changes
+- Test import/export
+
+### Step 5: [PENDING] Complete
+- Update this TODO with completion status
+- Notify user of successful fix

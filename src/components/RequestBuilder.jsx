@@ -408,21 +408,31 @@ const handleOtpVerify = async (otp) => {
       let sessionTokenFromVerify = null;
       
       try {
+        // Send OTP with additional required parameters
+        const otpPayload = {
+          otp: otp,
+          username: 'user', // Default username if not available
+          source: 'electron-app',
+        };
+        
         const verifyResult = await window.electronAPI.sendRequest({
           url: verifyUrl,
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ otp }),
+          body: JSON.stringify(otpPayload),
         });
         
         if (verifyResult.success && verifyResult.status === 200) {
           const response = JSON.parse(verifyResult.body);
+          // Check for token in various possible response formats
           if (response.token) {
             sessionTokenFromVerify = response.token;
+          } else if (response.Data && response.Data.token) {
+            sessionTokenFromVerify = response.Data.token;
           }
         }
       } catch (verifyError) {
-        console.log('Backend OTP verification not available, using fallback');
+        console.log('Backend OTP verification not available, using fallback:', verifyError.message);
       }
       
       // Use verified token from backend, or fall back to local token generation
@@ -507,6 +517,17 @@ let responseData;
         console.log(`Token captured: ${token.substring(0, 10)}... (expires in ${validForMinutes} min)`);
       }
 
+      // Detect response format from content-type header
+      const contentType = result.headers['content-type'] || result.headers['Content-Type'] || '';
+      let dataFormat = 'text';
+      if (contentType.includes('application/json')) {
+        dataFormat = 'json';
+      } else if (contentType.includes('text/html')) {
+        dataFormat = 'html';
+      } else if (contentType.includes('application/xml') || contentType.includes('text/xml')) {
+        dataFormat = 'xml';
+      }
+
       addResponse({
         id: Math.random().toString(36).substr(2, 9),
         apiName,
@@ -517,8 +538,9 @@ let responseData;
         responseTime: Math.round(responseTime),
         responseSize: new Blob([result.body]).size,
         headers: result.headers,
-        body: responseData,
+        body: typeof responseData === 'string' ? responseData : JSON.stringify(responseData, null, 2),
         rawBody: result.body,
+        dataFormat,
       });
     } catch (error) {
       addResponse({

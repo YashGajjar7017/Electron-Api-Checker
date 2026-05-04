@@ -5,7 +5,7 @@ import parsePostmanCollection from '../utils/postmanParser';
 import '../styles/Sidebar.css';
 
 function Sidebar() {
-const {
+  const {
     collections,
     addCollection,
     deleteCollection,
@@ -25,7 +25,7 @@ const {
   const [activeCollectionMenu, setActiveCollectionMenu] = useState(null);
   const [activeApiMenu, setActiveApiMenu] = useState(null);
 
-  // Auto-save apis when they change
+  // REMOVED: Redundant - store handles persistence
   useEffect(() => {
     if (window.electronAPI && window.electronAPI.saveAPIs) {
       window.electronAPI.saveAPIs(apis);
@@ -104,7 +104,7 @@ const {
     }
   };
 
-const handleDuplicateCollection = (collection, e) => {
+  const handleDuplicateCollection = (collection, e) => {
     e?.stopPropagation();
     const newCollection = {
       ...collection,
@@ -130,7 +130,7 @@ const handleDuplicateCollection = (collection, e) => {
     }
   };
 
-const handleExportCollection = (collection, e) => {
+  const handleExportCollection = (collection, e) => {
     e?.stopPropagation();
     const collectionAPIs = getCollectionAPIs(collection.id);
     const exportData = {
@@ -189,7 +189,7 @@ const handleExportCollection = (collection, e) => {
 
     const collectionAPIs = getCollectionAPIs(api.collectionId);
     const currentIndex = collectionAPIs.findIndex(a => a.id === apiId);
-    
+
     if (direction === 'up' && currentIndex > 0) {
       // Swap with previous
       const temp = collectionAPIs[currentIndex];
@@ -207,12 +207,12 @@ const handleExportCollection = (collection, e) => {
       ...apis.filter(a => a.collectionId !== api.collectionId),
       ...collectionAPIs,
     ];
-    
+
     // Persist the new order
     if (window.electronAPI && window.electronAPI.saveAPIs) {
       window.electronAPI.saveAPIs(sortedAPIs);
     }
-    
+
     // Update store with new order
     useStore.getState().setAPIs(sortedAPIs);
   };
@@ -308,7 +308,7 @@ const handleExportCollection = (collection, e) => {
       // Add all imported APIs
       importedAPIs.forEach((api) => addAPI(api));
 
-      // Persist to storage
+       // Persist to storage
       if (window.electronAPI && window.electronAPI.saveCollections) {
         window.electronAPI.saveCollections([...collections, newCollection]);
       }
@@ -335,7 +335,7 @@ const handleExportCollection = (collection, e) => {
     <div className="sidebar glass-lg">
       <div className="sidebar-header">
         <h2>Collections</h2>
-<div className="header-actions">
+        <div className="header-actions">
           <button
             className="btn btn-primary btn-sm"
             onClick={() => setShowNewCollection(!showNewCollection)}
@@ -518,7 +518,7 @@ const handleExportCollection = (collection, e) => {
                                     <button
                                       className="menu-item"
                                       onClick={() => {
-                                        startEditApiName(api, { stopPropagation: () => {} });
+                                        startEditApiName(api, { stopPropagation: () => { } });
                                         setActiveApiMenu(null);
                                       }}
                                     >
@@ -547,7 +547,7 @@ const handleExportCollection = (collection, e) => {
                                     <button
                                       className="menu-item danger"
                                       onClick={() => {
-                                        handleDeleteAPI(api.id, { stopPropagation: () => {} });
+                                        handleDeleteAPI(api.id, { stopPropagation: () => { } });
                                         setActiveApiMenu(null);
                                       }}
                                     >

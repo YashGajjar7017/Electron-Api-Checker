@@ -558,3 +558,48 @@
 .tab-content {
   padding: 0.75rem 0;
 }
+
+/* Batch Settings */
+.batch-settings-section {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.batch-settings-section h5 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.settings-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.settings-group label {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.settings-group input[type="number"] {
+  width: 100px;
+  padding: 0.4rem 0.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+}
+
+.settings-group input[type="number"]:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+

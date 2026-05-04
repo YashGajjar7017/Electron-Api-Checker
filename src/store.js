@@ -5,13 +5,17 @@ import { subscribeWithSelector } from 'zustand/middleware';
 const persistData = async (key, data) => {
   if (window.electronAPI) {
     try {
-      if (key === 'apis' && window.electronAPI.saveAPIs) {
-        await window.electronAPI.saveAPIs(data);
-      } else if (key === 'collections' && window.electronAPI.saveCollections) {
-        await window.electronAPI.saveCollections(data);
+      console.log(`Persisting ${key}:`, data.length, 'items');
+      const result = key === 'apis' 
+        ? await window.electronAPI.saveAPIs(data)
+        : await window.electronAPI.saveCollections(data);
+      if (result?.success !== true) {
+        console.error(`Persist ${key} failed:`, result?.error);
+      } else {
+        console.log(`✅ Persisted ${key} successfully`);
       }
     } catch (error) {
-      console.error(`Failed to persist ${key}:`, error);
+      console.error(`❌ Failed to persist ${key}:`, error);
     }
   }
 };
@@ -28,12 +32,13 @@ const useStore = create(
 
     // Collections state
     collections: [],
-    addCollection: (collection) =>
+addCollection: (collection) => {
       set((state) => {
         const newCollections = [...state.collections, collection];
         persistData('collections', newCollections);
         return { collections: newCollections };
-      }),
+      });
+    },
     updateCollection: (id, collection) =>
       set((state) => {
         const newCollections = state.collections.map((c) =>
@@ -170,6 +175,7 @@ const useStore = create(
     isBatchTesting: false,
     batchResults: [],
     batchStats: { total: 0, success: 0, failed: 0, avgResponseTime: 0 },
+    batchTestDelay: 500, // Delay in ms between batch test requests
     startBatchTesting: () => set({ isBatchTesting: true, batchResults: [], batchStats: { total: 0, success: 0, failed: 0, avgResponseTime: 0 } }),
     stopBatchTesting: () => set({ isBatchTesting: false }),
     addBatchResult: (result) =>
@@ -186,6 +192,7 @@ const useStore = create(
         return { batchResults: newResults, batchStats: stats };
       }),
     clearBatchResults: () => set({ batchResults: [], batchStats: { total: 0, success: 0, failed: 0, avgResponseTime: 0 } }),
+    setBatchTestDelay: (delay) => set({ batchTestDelay: Math.max(100, delay) }),
 
     // UI state
     selectedSidebar: null,
