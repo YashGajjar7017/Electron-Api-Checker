@@ -49,6 +49,7 @@ const [activeTab, setActiveTab] = useState('params');
   const [authTokenState, setAuthTokenLocal] = useState(
     currentAPI?.auth?.token || ''
   );
+  const [manualTokenExpiry, setManualTokenExpiry] = useState(null);
   const [certFile, setCertFile] = useState(currentAPI?.auth?.certFile || '');
   const [keyFile, setKeyFile] = useState(currentAPI?.auth?.keyFile || '');
   const [caFile, setCaFile] = useState(currentAPI?.auth?.caFile || '');
@@ -107,15 +108,21 @@ const [docs, setDocs] = useState(currentAPI?.docs || '');
     }
   }, [currentAPI?.id]); // Only sync when the API ID changes, not the entire object
 
-  // Periodically check if session token has expired
+  // Periodically check if tokens have expired
   useEffect(() => {
-    const interval = setInterval(() => {
+    const checkTokenExpiry = () => {
       if (sessionTokenExpiry && Date.now() > sessionTokenExpiry) {
         clearSessionToken();
       }
-    }, 5000);
+      if (manualTokenExpiry && Date.now() > manualTokenExpiry) {
+        setManualTokenExpiry(null);
+      }
+    };
+    
+    checkTokenExpiry();
+    const interval = setInterval(checkTokenExpiry, 1000);
     return () => clearInterval(interval);
-  }, [sessionTokenExpiry, clearSessionToken]);
+  }, [sessionTokenExpiry, manualTokenExpiry, clearSessionToken]);
 
 // Auto-save API configuration with debounce
   useEffect(() => {
@@ -306,25 +313,35 @@ const handleUpdateAPI = () => {
       }
     });
 
-    // Set Authorization header based on auth type only if not explicitly provided
+    // Priority 1: Manually entered auth token (if not expired)
     if (!requestHeaders['Authorization']) {
-      if (authType === 'bearer' && authTokenState) {
+      if (authType === 'bearer' && authTokenState && (!manualTokenExpiry || Date.now() < manualTokenExpiry)) {
         requestHeaders['Authorization'] = `Bearer ${authTokenState}`;
-      } else if (authType === 'basic' && authTokenState) {
+      } else if (authType === 'basic' && authTokenState && (!manualTokenExpiry || Date.now() < manualTokenExpiry)) {
         requestHeaders['Authorization'] = `Basic ${authTokenState}`;
       }
     }
 
-    const apiToken = useStore.getState().getAPIResponseToken();
+    // Priority 2: Session token from OTP verification (10-minute window)
     const hasValidSessionToken = sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry;
+    if (!requestHeaders['Authorization']) {
+      if (hasValidSessionToken) {
+        requestHeaders['Authorization'] = `Bearer ${sessionToken}`;
+      }
+    }
 
+    // Priority 3: Override token (from failed request retry)
     if (!requestHeaders['Authorization']) {
       if (overrideAuthToken) {
         requestHeaders['Authorization'] = `Bearer ${overrideAuthToken}`;
-      } else if (apiToken) {
+      }
+    }
+
+    // Priority 4: API response token (from login endpoint)
+    const apiToken = useStore.getState().getAPIResponseToken();
+    if (!requestHeaders['Authorization']) {
+      if (apiToken) {
         requestHeaders['Authorization'] = `Bearer ${apiToken}`;
-      } else if (hasValidSessionToken) {
-        requestHeaders['Authorization'] = `Bearer ${sessionToken}`;
       }
     }
 
@@ -437,10 +454,8 @@ const handleOtpVerify = async (otp) => {
       
       // Use verified token from backend, or fall back to local token generation
       const token = sessionTokenFromVerify || `sess-${otp}-${Date.now()}`;
-      setSessionToken(token);
-      
-      // Also set as API response token for use in requests
-      useStore.getState().setAPIResponseToken(token, 10);
+      // Set ONLY sessionToken, not apiResponseToken to prevent overwriting manual tokens
+      useStore.getState().setSessionToken(token, 10);
       
       setShowOtpModal(false);
       
@@ -453,7 +468,7 @@ const handleOtpVerify = async (otp) => {
       console.error('OTP verification error:', error);
       // Still allow to proceed with local token on error
       const token = `sess-${otp}-${Date.now()}`;
-      setSessionToken(token);
+      useStore.getState().setSessionToken(token, 10);
       setShowOtpModal(false);
       if (pendingSendRef.current) {
         pendingSendRef.current = false;
@@ -917,7 +932,11 @@ let responseData;
                   <input
                     type={showAuthToken ? 'text' : 'password'}
                     value={authTokenState}
-                    onChange={(e) => setAuthTokenLocal(e.target.value)}
+                    onChange={(e) => {
+                      setAuthTokenLocal(e.target.value);
+                      // Reset manual token expiry when user changes the token
+                      setManualTokenExpiry(null);
+                    }}
                     placeholder="Enter your bearer token"
                   />
                   <button
@@ -928,7 +947,42 @@ let responseData;
                   >
                     {showAuthToken ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                   </button>
+                  {authTokenState && (
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={() => {
+                        setAuthTokenLocal('');
+                        setManualTokenExpiry(null);
+                      }}
+                      title="Clear token"
+                    >
+                      <FiX size={16} />
+                    </button>
+                  )}
                 </div>
+                {authTokenState && !manualTokenExpiry && sessionToken === '' && (
+                  <button
+                    className="btn btn-secondary btn-sm" 
+                    onClick={() => {
+                      const expiryTime = Date.now() + 10 * 60 * 1000;
+                      setManualTokenExpiry(expiryTime);
+                    }}
+                    style={{ marginTop: '0.5rem' }}
+                  >
+                    Set 10-Min Expiry
+                  </button>
+                )}
+                {manualTokenExpiry && (
+                  <div className="token-expiry-info">
+                    ⏱ Expires in {Math.ceil((manualTokenExpiry - Date.now()) / 1000)}s
+                  </div>
+                )}
+                {sessionToken && sessionTokenExpiry && (
+                  <div className="token-expiry-info" style={{ color: 'var(--success)' }}>
+                    ✓ Session Token - Expires in {Math.ceil((sessionTokenExpiry - Date.now()) / 1000)}s
+                  </div>
+                )}
               </div>
             )}
 
@@ -939,7 +993,10 @@ let responseData;
                   <input
                     type={showAuthToken ? 'text' : 'password'}
                     value={authTokenState}
-                    onChange={(e) => setAuthTokenLocal(e.target.value)}
+                    onChange={(e) => {
+                      setAuthTokenLocal(e.target.value);
+                      setManualTokenExpiry(null);
+                    }}
                     placeholder="Base64 encoded username:password"
                   />
                   <button
@@ -950,7 +1007,42 @@ let responseData;
                   >
                     {showAuthToken ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                   </button>
+                  {authTokenState && (
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={() => {
+                        setAuthTokenLocal('');
+                        setManualTokenExpiry(null);
+                      }}
+                      title="Clear credentials"
+                    >
+                      <FiX size={16} />
+                    </button>
+                  )}
                 </div>
+                {authTokenState && !manualTokenExpiry && sessionToken === '' && (
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => {
+                      const expiryTime = Date.now() + 10 * 60 * 1000;
+                      setManualTokenExpiry(expiryTime);
+                    }}
+                    style={{ marginTop: '0.5rem' }}
+                  >
+                    Set 10-Min Expiry
+                  </button>
+                )}
+                {manualTokenExpiry && (
+                  <div className="token-expiry-info">
+                    ⏱ Expires in {Math.ceil((manualTokenExpiry - Date.now()) / 1000)}s
+                  </div>
+                )}
+                {sessionToken && sessionTokenExpiry && (
+                  <div className="token-expiry-info" style={{ color: 'var(--success)' }}>
+                    ✓ Session Token - Expires in {Math.ceil((sessionTokenExpiry - Date.now()) / 1000)}s
+                  </div>
+                )}
               </div>
             )}
 

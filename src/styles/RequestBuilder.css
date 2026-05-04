@@ -331,6 +331,17 @@
   min-width: 42px;
 }
 
+.token-expiry-info {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(99, 102, 241, 0.1);
+  border-left: 2px solid var(--primary);
+  border-radius: 4px;
+  font-weight: 500;
+}
+
 .form-group input:focus,
 .form-group select:focus {
   outline: none;

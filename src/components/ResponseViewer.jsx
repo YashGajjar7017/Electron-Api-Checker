@@ -307,13 +307,13 @@ const runBatchTests = async () => {
           <div className="batch-selector-header">
             <h4>Select APIs to Test</h4>
             <button
-              className="btn btn-sm"
+              className="btn btn-sm btn-secondary"
               onClick={() => setSelectedAPIs(new Set(apis.map((a) => a.id)))}
             >
               Select All
             </button>
             <button
-              className="btn btn-sm"
+              className="btn btn-sm btn-secondary"
               onClick={() => setSelectedAPIs(new Set())}
             >
               Deselect All

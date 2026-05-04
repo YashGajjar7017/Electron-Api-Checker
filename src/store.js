@@ -145,30 +145,72 @@ addCollection: (collection) => {
     // Session token state (OTP-based, 10 min expiry)
     sessionToken: '',
     sessionTokenExpiry: null,
-    setSessionToken: (token) =>
-      set({ sessionToken: token, sessionTokenExpiry: Date.now() + 10 * 60 * 1000 }),
-    clearSessionToken: () =>
-      set({ sessionToken: '', sessionTokenExpiry: null }),
+    sessionTokenTimeoutId: null,
+    setSessionToken: (token, validForMinutes = 10) => {
+      const state = get();
+      // Clear any existing timeout
+      if (state.sessionTokenTimeoutId) {
+        clearTimeout(state.sessionTokenTimeoutId);
+      }
+      const expiryTime = Date.now() + validForMinutes * 60 * 1000;
+      // Set up auto-clear when expires
+      const timeoutId = setTimeout(() => {
+        set({ sessionToken: '', sessionTokenExpiry: null, sessionTokenTimeoutId: null });
+      }, validForMinutes * 60 * 1000);
+      set({ sessionToken: token, sessionTokenExpiry: expiryTime, sessionTokenTimeoutId: timeoutId });
+    },
+    clearSessionToken: () => {
+      const state = get();
+      if (state.sessionTokenTimeoutId) {
+        clearTimeout(state.sessionTokenTimeoutId);
+      }
+      set({ sessionToken: '', sessionTokenExpiry: null, sessionTokenTimeoutId: null });
+    },
+    getSessionTokenRemainingTime: () => {
+      const state = get();
+      if (state.sessionToken && state.sessionTokenExpiry && Date.now() < state.sessionTokenExpiry) {
+        return Math.max(0, state.sessionTokenExpiry - Date.now());
+      }
+      return 0;
+    },
 
     // API Response Token state (from login API, 10 min expiry by default)
     apiResponseToken: null,
     apiResponseTokenExpiry: null,
+    apiResponseTokenTimeoutId: null,
     setAPIResponseToken: (token, validForMinutes = 10) => {
+      const state = get();
+      // Clear any existing timeout
+      if (state.apiResponseTokenTimeoutId) {
+        clearTimeout(state.apiResponseTokenTimeoutId);
+      }
       const expiryTime = Date.now() + validForMinutes * 60 * 1000;
-      set({ apiResponseToken: token, apiResponseTokenExpiry: expiryTime });
-      // Auto-clear token when it expires
-      setTimeout(() => {
-        set({ apiResponseToken: null, apiResponseTokenExpiry: null });
+      // Set up auto-clear when expires
+      const timeoutId = setTimeout(() => {
+        set({ apiResponseToken: null, apiResponseTokenExpiry: null, apiResponseTokenTimeoutId: null });
       }, validForMinutes * 60 * 1000);
+      set({ apiResponseToken: token, apiResponseTokenExpiry: expiryTime, apiResponseTokenTimeoutId: timeoutId });
     },
-    clearAPIResponseToken: () =>
-      set({ apiResponseToken: null, apiResponseTokenExpiry: null }),
+    clearAPIResponseToken: () => {
+      const state = get();
+      if (state.apiResponseTokenTimeoutId) {
+        clearTimeout(state.apiResponseTokenTimeoutId);
+      }
+      set({ apiResponseToken: null, apiResponseTokenExpiry: null, apiResponseTokenTimeoutId: null });
+    },
     getAPIResponseToken: () => {
       const state = get();
       if (state.apiResponseToken && state.apiResponseTokenExpiry && Date.now() < state.apiResponseTokenExpiry) {
         return state.apiResponseToken;
       }
       return null;
+    },
+    getAPIResponseTokenRemainingTime: () => {
+      const state = get();
+      if (state.apiResponseToken && state.apiResponseTokenExpiry && Date.now() < state.apiResponseTokenExpiry) {
+        return Math.max(0, state.apiResponseTokenExpiry - Date.now());
+      }
+      return 0;
     },
 
     // Batch testing state - enhanced with stats

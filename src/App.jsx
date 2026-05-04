@@ -50,7 +50,7 @@ function App() {
           }
         }
 
-        // Recover APIs stored inside collections if API file was lost or empty
+
         if (loadedAPIs.length === 0 && loadedCollections.length > 0) {
           const recoveredAPIs = loadedCollections.flatMap((collection) =>
             Array.isArray(collection.apis)
