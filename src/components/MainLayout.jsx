@@ -158,6 +158,15 @@ function MainLayout({ onThemeChange, currentTheme }) {
 
         <button
           className="control-button"
+          onClick={() => window.electronAPI?.reloadApp()}
+          title="Reload the app and ignore cache"
+        >
+          <FiRefreshCcw size={16} />
+          Dev Reload
+        </button>
+
+        <button
+          className="control-button"
           onClick={() => clearBatchResults()}
           title="Clear batch testing results"
         >

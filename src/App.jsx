@@ -31,18 +31,38 @@ function App() {
         }
 
         // Load collections
+        let loadedCollections = [];
         if (window.electronAPI && window.electronAPI.loadCollections) {
           const collectionsResult = await window.electronAPI.loadCollections();
           if (collectionsResult.success && collectionsResult.data) {
-            useStore.getState().setCollections(collectionsResult.data);
+            loadedCollections = collectionsResult.data;
+            useStore.getState().setCollections(loadedCollections);
           }
         }
 
         // Load APIs
+        let loadedAPIs = [];
         if (window.electronAPI && window.electronAPI.loadAPIs) {
           const apisResult = await window.electronAPI.loadAPIs();
           if (apisResult.success && apisResult.data) {
-            useStore.getState().setAPIs(apisResult.data);
+            loadedAPIs = apisResult.data;
+            useStore.getState().setAPIs(loadedAPIs);
+          }
+        }
+
+        // Recover APIs stored inside collections if API file was lost or empty
+        if (loadedAPIs.length === 0 && loadedCollections.length > 0) {
+          const recoveredAPIs = loadedCollections.flatMap((collection) =>
+            Array.isArray(collection.apis)
+              ? collection.apis.map((api) => ({ ...api, collectionId: collection.id }))
+              : []
+          );
+          if (recoveredAPIs.length > 0) {
+            useStore.getState().setAPIs(recoveredAPIs);
+            if (window.electronAPI && window.electronAPI.saveAPIs) {
+              window.electronAPI.saveAPIs(recoveredAPIs);
+            }
+            loadedAPIs = recoveredAPIs;
           }
         }
 
@@ -77,6 +97,9 @@ function App() {
           if (window.electronAPI && window.electronAPI.saveAPIs) {
             window.electronAPI.saveAPIs([authApi]);
           }
+        } else if (!state.currentAPI && state.apis.length > 0) {
+          // Set current API to first available API if none is selected
+          state.setCurrentAPI(state.apis[0]);
         }
       } catch (error) {
         console.error('Failed to load persisted data:', error);

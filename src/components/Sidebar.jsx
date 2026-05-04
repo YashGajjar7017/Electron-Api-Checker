@@ -240,7 +240,6 @@ const handleExportCollection = (collection, e) => {
         apis: [],
         createdAt: new Date(),
       };
-      addCollection(newCollection);
 
       let importedAPIs = [];
 
@@ -302,6 +301,9 @@ const handleExportCollection = (collection, e) => {
         e.target.value = '';
         return;
       }
+
+      newCollection.apis = importedAPIs;
+      addCollection(newCollection);
 
       // Add all imported APIs
       importedAPIs.forEach((api) => addAPI(api));

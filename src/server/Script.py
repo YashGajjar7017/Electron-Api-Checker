@@ -3,12 +3,12 @@ import json
 import csv
 import time
 
-BASE_URL = "http://192.168.4.1/api/history?day=2026-04-29&vd=5&offset={id}&limit=96"
+BASE_URL = "http://192.168.4.1/api/history?day=2026-05-02&vd=5&offset={id}&limit=96"
 
 START_ID = 0
 END_ID = 200
 STEP = 5
-DELAY_SECONDS = 0.5   # safer delay
+DELAY_SECONDS = 10   # safer delay
 
 TOKEN = input()
 

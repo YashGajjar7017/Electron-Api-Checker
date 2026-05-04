@@ -78,6 +78,19 @@ function launchBackendServer() {
   });
 }
 
+function stopBackendServer() {
+  if (backendServer) {
+    console.log('Stopping backend server...');
+    try {
+      backendServer.kill();
+    } catch (error) {
+      console.error('Error killing backend:', error);
+    }
+    backendServer = null;
+    backendPort = null;
+  }
+}
+
 function isUrlAvailable(url) {
   return new Promise((resolve) => {
     const request = http.get(url, (response) => {
@@ -219,6 +232,10 @@ async function createWindow() {
     if (mainWindow) {
       mainWindow.webContents.send('window-resized');
     }
+  });
+
+  mainWindow.on('close', () => {
+    stopBackendServer();
   });
 
   mainWindow.on('closed', () => {
@@ -370,19 +387,15 @@ app.on('ready', async () => {
 });
 
 app.on('window-all-closed', () => {
-  // Kill backend server if it's running
-  if (backendServer) {
-    console.log('Stopping backend server...');
-    try {
-      backendServer.kill();
-    } catch (error) {
-      console.error('Error killing backend:', error);
-    }
-  }
+  stopBackendServer();
 
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+app.on('before-quit', () => {
+  stopBackendServer();
 });
 
 app.on('activate', () => {
@@ -459,6 +472,13 @@ ipcMain.handle('load-apis', async () => {
   } catch (error) {
     return { success: false, error: error.message };
   }
+});
+
+ipcMain.handle('reload-app', async () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.reloadIgnoringCache();
+  }
+  return { success: true };
 });
 
 ipcMain.handle('send-request', async (event, requestOptions) => {

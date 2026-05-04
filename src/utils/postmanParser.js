@@ -214,9 +214,15 @@ export const parsePostmanCollection = (collectionData) => {
     });
   };
 
-  // Start parsing from top-level items
-  if (collectionData.item) {
+  // Start parsing from top-level items or alternate Postman collection formats
+  if (Array.isArray(collectionData.item)) {
     parseItems(collectionData.item);
+  } else if (Array.isArray(collectionData.items)) {
+    parseItems(collectionData.items);
+  } else if (Array.isArray(collectionData)) {
+    parseItems(collectionData);
+  } else if (collectionData.item && collectionData.item.item) {
+    parseItems(collectionData.item.item);
   }
 
   return apis;

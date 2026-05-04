@@ -72,7 +72,7 @@
 .collection-item {
   margin-bottom: 0.75rem;
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
   background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(99, 102, 241, 0.08) 100%);
   border: 1px solid var(--border);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -97,6 +97,13 @@
   cursor: pointer;
   transition: var(--transition);
   position: relative;
+  overflow: visible;
+}
+
+.collection-actions,
+.api-item-actions {
+  position: relative;
+  z-index: 2;
 }
 
 .toggle-btn {
@@ -300,6 +307,18 @@
   cursor: pointer;
   transition: var(--transition);
   position: relative;
+  overflow: visible;
+}
+
+.collection-actions,
+.api-item-actions {
+  position: relative;
+  z-index: 1;
+}
+
+.collection-menu,
+.api-menu {
+  z-index: 9999;
 }
 
 .api-item:hover {

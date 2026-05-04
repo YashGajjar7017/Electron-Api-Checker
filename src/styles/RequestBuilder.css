@@ -316,6 +316,21 @@
   font-size: 0.9rem;
 }
 
+.token-input-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.token-input-row input {
+  flex: 1;
+}
+
+.token-toggle-btn {
+  flex-shrink: 0;
+  min-width: 42px;
+}
+
 .form-group input:focus,
 .form-group select:focus {
   outline: none;

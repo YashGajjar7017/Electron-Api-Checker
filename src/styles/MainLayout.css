@@ -80,11 +80,14 @@
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: 12px;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
   animation: slideInUp 0.5s ease-out;
   position: relative;
+}
+
+.sidebar-panel {
+  overflow: visible;
 }
 
 .sidebar-panel {

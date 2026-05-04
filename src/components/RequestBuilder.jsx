@@ -11,6 +11,8 @@ import {
   FiPlay,
   FiRefreshCw,
   FiSettings,
+  FiEye,
+  FiEyeOff,
 } from 'react-icons/fi';
 import OTPModal from './OTPModal';
 import '../styles/RequestBuilder.css';
@@ -56,6 +58,7 @@ const [activeTab, setActiveTab] = useState('params');
   const [newParamKey, setNewParamKey] = useState('');
   const [newParamValue, setNewParamValue] = useState('');
   const [showOtpModal, setShowOtpModal] = useState(false);
+  const [showAuthToken, setShowAuthToken] = useState(false);
   const pendingSendRef = useRef(false);
 const [docs, setDocs] = useState(currentAPI?.docs || '');
 
@@ -90,7 +93,9 @@ const [docs, setDocs] = useState(currentAPI?.docs || '');
       setKeyFile(currentAPI.auth?.keyFile || '');
       setCaFile(currentAPI.auth?.caFile || '');
       setSkipOtp(currentAPI.skipOtp || false);
+      setShowAuthToken(false);
       setIsEditingName(false);
+      setShowAuthToken(false);
       // Sync automation state
       setAutomationEnabled(currentAPI.automation?.enabled || false);
       setAutomationVariable(currentAPI.automation?.variable || '{{id}}');
@@ -287,16 +292,42 @@ const handleUpdateAPI = () => {
     return url;
   };
 
-  const buildRequestHeaders = () => {
-    const requestHeaders = { ...headers };
-    
-    // Set Authorization header based on auth type
-    if (authType === 'bearer' && authTokenState) {
-      requestHeaders['Authorization'] = `Bearer ${authTokenState}`;
-    } else if (authType === 'basic' && authTokenState) {
-      requestHeaders['Authorization'] = `Basic ${authTokenState}`;
+  const buildRequestHeaders = (overrideAuthToken) => {
+    const requestHeaders = {};
+
+    Object.entries(headers || {}).forEach(([key, value]) => {
+      requestHeaders[key] = value;
+      const normalizedKey = key.toLowerCase();
+      if (normalizedKey === 'authorization' && !requestHeaders['Authorization']) {
+        requestHeaders['Authorization'] = value;
+      }
+      if (normalizedKey === 'content-type' && !requestHeaders['Content-Type']) {
+        requestHeaders['Content-Type'] = value;
+      }
+    });
+
+    // Set Authorization header based on auth type only if not explicitly provided
+    if (!requestHeaders['Authorization']) {
+      if (authType === 'bearer' && authTokenState) {
+        requestHeaders['Authorization'] = `Bearer ${authTokenState}`;
+      } else if (authType === 'basic' && authTokenState) {
+        requestHeaders['Authorization'] = `Basic ${authTokenState}`;
+      }
     }
-    
+
+    const apiToken = useStore.getState().getAPIResponseToken();
+    const hasValidSessionToken = sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry;
+
+    if (!requestHeaders['Authorization']) {
+      if (overrideAuthToken) {
+        requestHeaders['Authorization'] = `Bearer ${overrideAuthToken}`;
+      } else if (apiToken) {
+        requestHeaders['Authorization'] = `Bearer ${apiToken}`;
+      } else if (hasValidSessionToken) {
+        requestHeaders['Authorization'] = `Bearer ${sessionToken}`;
+      }
+    }
+
     // Ensure Content-Type is set for POST/PUT/PATCH requests with body
     const hasBody = ['POST', 'PUT', 'PATCH'].includes(method);
     if (hasBody && !requestHeaders['Content-Type']) {
@@ -312,7 +343,7 @@ const handleUpdateAPI = () => {
         requestHeaders['Content-Type'] = 'application/x-www-form-urlencoded';
       }
     }
-    
+
     return requestHeaders;
   };
 
@@ -397,12 +428,16 @@ const handleOtpVerify = async (otp) => {
       // Use verified token from backend, or fall back to local token generation
       const token = sessionTokenFromVerify || `sess-${otp}-${Date.now()}`;
       setSessionToken(token);
+      
+      // Also set as API response token for use in requests
+      useStore.getState().setAPIResponseToken(token, 10);
+      
       setShowOtpModal(false);
       
-      // If a request was pending, retry it
+      // If a request was pending, retry it with the new token immediately
       if (pendingSendRef.current) {
         pendingSendRef.current = false;
-        executeRequest();
+        executeRequest(token);
       }
     } catch (error) {
       console.error('OTP verification error:', error);
@@ -412,23 +447,18 @@ const handleOtpVerify = async (otp) => {
       setShowOtpModal(false);
       if (pendingSendRef.current) {
         pendingSendRef.current = false;
-        executeRequest();
+        executeRequest(token);
       }
     }
   };
 
-  const executeRequest = async () => {
+  const executeRequest = async (overrideAuthToken) => {
     setIsSending(true);
     handleUpdateAPI();
 
     try {
       const url = buildURL();
-      const requestHeaders = buildRequestHeaders();
-
-      // Inject session token if available and not expired
-      if (sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry) {
-        requestHeaders['Authorization'] = `Bearer ${sessionToken}`;
-      }
+      const requestHeaders = buildRequestHeaders(overrideAuthToken);
 
       const sslOptions =
         authType === 'ssl'
@@ -859,26 +889,46 @@ let responseData;
             </div>
 
             {authType === 'bearer' && (
-              <div className="form-group">
+              <div className="form-group auth-token-group">
                 <label>Bearer Token</label>
-                <input
-                  type="password"
-                  value={authTokenState}
-                  onChange={(e) => setAuthTokenLocal(e.target.value)}
-                  placeholder="Enter your bearer token"
-                />
+                <div className="token-input-row">
+                  <input
+                    type={showAuthToken ? 'text' : 'password'}
+                    value={authTokenState}
+                    onChange={(e) => setAuthTokenLocal(e.target.value)}
+                    placeholder="Enter your bearer token"
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm token-toggle-btn"
+                    onClick={() => setShowAuthToken((prev) => !prev)}
+                    title={showAuthToken ? 'Hide token' : 'Show token'}
+                  >
+                    {showAuthToken ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                  </button>
+                </div>
               </div>
             )}
 
             {authType === 'basic' && (
-              <div className="form-group">
+              <div className="form-group auth-token-group">
                 <label>Credentials</label>
-                <input
-                  type="password"
-                  value={authTokenState}
-                  onChange={(e) => setAuthTokenLocal(e.target.value)}
-                  placeholder="Base64 encoded username:password"
-                />
+                <div className="token-input-row">
+                  <input
+                    type={showAuthToken ? 'text' : 'password'}
+                    value={authTokenState}
+                    onChange={(e) => setAuthTokenLocal(e.target.value)}
+                    placeholder="Base64 encoded username:password"
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm token-toggle-btn"
+                    onClick={() => setShowAuthToken((prev) => !prev)}
+                    title={showAuthToken ? 'Hide token' : 'Show token'}
+                  >
+                    {showAuthToken ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                  </button>
+                </div>
               </div>
             )}
 

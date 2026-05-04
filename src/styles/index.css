@@ -258,6 +258,12 @@ button:active {
   align-items: center;
   gap: 0.5rem;
   white-space: nowrap;
+  color: var(--text-primary);
+}
+
+.btn-secondary,
+.btn-ghost {
+  color: var(--text-primary);
 }
 
 .btn-primary {
