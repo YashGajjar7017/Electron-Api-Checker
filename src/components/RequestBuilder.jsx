@@ -60,8 +60,10 @@ const [activeTab, setActiveTab] = useState('params');
   const [newParamValue, setNewParamValue] = useState('');
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [showAuthToken, setShowAuthToken] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('');
   const pendingSendRef = useRef(false);
-const [docs, setDocs] = useState(currentAPI?.docs || '');
+  const abortAutomationRef = useRef(false);
+  const [docs, setDocs] = useState(currentAPI?.docs || '');
 
   // Automation state
   const [automationEnabled, setAutomationEnabled] = useState(currentAPI?.automation?.enabled || false);
@@ -180,7 +182,7 @@ const [docs, setDocs] = useState(currentAPI?.docs || '');
     );
   }
 
-const handleUpdateAPI = () => {
+const handleUpdateAPI = async () => {
     const updatedAPI = {
       ...currentAPI,
       name: apiName,
@@ -199,13 +201,39 @@ const handleUpdateAPI = () => {
         caFile,
       },
       skipOtp,
+      automation: {
+        enabled: automationEnabled,
+        variable: automationVariable,
+        start: automationStart,
+        end: automationEnd,
+        step: automationStep,
+        padding: automationPadding,
+        delay: automationDelay,
+      },
     };
+
     updateAPI(currentAPI.id, updatedAPI);
-    // Auto-save to electron storage
+
     if (window.electronAPI && window.electronAPI.saveAPIs) {
-      window.electronAPI.saveAPIs(apis);
+      const updatedAPIs = apis.map((api) =>
+        api.id === currentAPI.id ? updatedAPI : api
+      );
+      const result = await window.electronAPI.saveAPIs(updatedAPIs);
+      if (result?.success) {
+        setSaveStatus('Saved successfully');
+      } else {
+        setSaveStatus(result?.error ? `Save failed: ${result.error}` : 'Saved locally');
+      }
+    } else {
+      setSaveStatus('Changes saved in memory');
     }
   };
+
+  React.useEffect(() => {
+    if (!saveStatus) return undefined;
+    const timeoutId = setTimeout(() => setSaveStatus(''), 2500);
+    return () => clearTimeout(timeoutId);
+  }, [saveStatus]);
 
   const handleDeleteAPI = () => {
     if (window.confirm(`Are you sure you want to delete "${apiName}"?`)) {
@@ -305,43 +333,37 @@ const handleUpdateAPI = () => {
     Object.entries(headers || {}).forEach(([key, value]) => {
       requestHeaders[key] = value;
       const normalizedKey = key.toLowerCase();
-      if (normalizedKey === 'authorization' && !requestHeaders['Authorization']) {
+      if (normalizedKey === 'authorization') {
         requestHeaders['Authorization'] = value;
       }
-      if (normalizedKey === 'content-type' && !requestHeaders['Content-Type']) {
+      if (normalizedKey === 'content-type') {
         requestHeaders['Content-Type'] = value;
       }
     });
 
-    // Priority 1: Manually entered auth token (if not expired)
-    if (!requestHeaders['Authorization']) {
-      if (authType === 'bearer' && authTokenState && (!manualTokenExpiry || Date.now() < manualTokenExpiry)) {
-        requestHeaders['Authorization'] = `Bearer ${authTokenState}`;
-      } else if (authType === 'basic' && authTokenState && (!manualTokenExpiry || Date.now() < manualTokenExpiry)) {
-        requestHeaders['Authorization'] = `Basic ${authTokenState}`;
+    if (overrideAuthToken) {
+      requestHeaders['Authorization'] = `Bearer ${overrideAuthToken}`;
+    } else {
+      if (!requestHeaders['Authorization']) {
+        if (authType === 'bearer' && authTokenState && (!manualTokenExpiry || Date.now() < manualTokenExpiry)) {
+          requestHeaders['Authorization'] = `Bearer ${authTokenState}`;
+        } else if (authType === 'basic' && authTokenState && (!manualTokenExpiry || Date.now() < manualTokenExpiry)) {
+          requestHeaders['Authorization'] = `Basic ${authTokenState}`;
+        }
       }
-    }
 
-    // Priority 2: Session token from OTP verification (10-minute window)
-    const hasValidSessionToken = sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry;
-    if (!requestHeaders['Authorization']) {
-      if (hasValidSessionToken) {
-        requestHeaders['Authorization'] = `Bearer ${sessionToken}`;
+      if (!requestHeaders['Authorization']) {
+        const hasValidSessionToken = sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry;
+        if (hasValidSessionToken) {
+          requestHeaders['Authorization'] = `Bearer ${sessionToken}`;
+        }
       }
-    }
 
-    // Priority 3: Override token (from failed request retry)
-    if (!requestHeaders['Authorization']) {
-      if (overrideAuthToken) {
-        requestHeaders['Authorization'] = `Bearer ${overrideAuthToken}`;
-      }
-    }
-
-    // Priority 4: API response token (from login endpoint)
-    const apiToken = useStore.getState().getAPIResponseToken();
-    if (!requestHeaders['Authorization']) {
-      if (apiToken) {
-        requestHeaders['Authorization'] = `Bearer ${apiToken}`;
+      if (!requestHeaders['Authorization']) {
+        const apiToken = useStore.getState().getAPIResponseToken();
+        if (apiToken) {
+          requestHeaders['Authorization'] = `Bearer ${apiToken}`;
+        }
       }
     }
 
@@ -462,17 +484,16 @@ const handleOtpVerify = async (otp) => {
       // If a request was pending, retry it with the new token immediately
       if (pendingSendRef.current) {
         pendingSendRef.current = false;
-        executeRequest(token);
+        executeRequest();
       }
     } catch (error) {
       console.error('OTP verification error:', error);
-      // Still allow to proceed with local token on error
       const token = `sess-${otp}-${Date.now()}`;
       useStore.getState().setSessionToken(token, 10);
       setShowOtpModal(false);
       if (pendingSendRef.current) {
         pendingSendRef.current = false;
-        executeRequest(token);
+        executeRequest();
       }
     }
   };
@@ -668,10 +689,12 @@ let responseData;
             className="btn btn-secondary"
             onClick={handleUpdateAPI}
             title="Save API configuration"
+            disabled={isSending}
           >
             <FiSave size={18} />
             {isSending ? 'Save configuration...' : 'Save Data'}            
           </button>
+          <span className="save-status-message">{saveStatus}</span>
           <button
             className="btn btn-danger"
             onClick={handleDeleteAPI}
@@ -1359,37 +1382,48 @@ let responseData;
                     alert(`Please include ${automationVariable} in your endpoint URL`);
                     return;
                   }
-                  
+
+                  const actualStep = Math.max(1, automationStep);
+                  if (automationEnd < automationStart) {
+                    alert('Automation end value must be greater than or equal to start value');
+                    return;
+                  }
+
+                  const totalRuns = Math.max(0, Math.floor((automationEnd - automationStart) / actualStep) + 1);
+                  if (totalRuns <= 0) {
+                    alert('Please configure a valid automation range');
+                    return;
+                  }
+
+                  abortAutomationRef.current = false;
                   setIsAutomating(true);
                   const results = [];
-                  const totalRuns = Math.ceil((automationEnd - automationStart) / automationStep) + 1;
                   setAutomationProgress({ current: 0, total: totalRuns, results: [] });
-                  
-                  // Track batched progress updates to reduce re-renders
-                  let batchedProgress = { current: 0, total: totalRuns, results: [] };
-                  let updateFrequency = Math.max(1, Math.floor(totalRuns / 10)); // Update 10 times max
-                  
-                  for (let i = automationStart; i <= automationEnd; i += automationStep) {
-                    const runIndex = Math.floor((i - automationStart) / automationStep);
+
+                  const updateFrequency = Math.max(1, Math.floor(totalRuns / 10));
+
+                  for (let runIndex = 0; runIndex < totalRuns; runIndex += 1) {
+                    if (abortAutomationRef.current) {
+                      break;
+                    }
+
+                    const i = automationStart + runIndex * actualStep;
                     const currentProgress = runIndex + 1;
-                    
+
                     try {
-                      const paddedValue = automationPadding > 0 
-                        ? String(i).padStart(automationPadding, '0') 
+                      const paddedValue = automationPadding > 0
+                        ? String(i).padStart(automationPadding, '0')
                         : i;
-                      
-                      // Build URL with replaced variable - use our improved buildURL logic
+
                       let url = endpoint.replace(
-                        new RegExp(automationVariable.replace('{{', '\\{{').replace('}}', '\\}}'), 'g'), 
+                        new RegExp(automationVariable.replace('{{', '\\{{').replace('}}', '\\}}'), 'g'),
                         paddedValue
                       );
-                      
-                      // If endpoint is not a full URL, prepend serverUrl
+
                       if (!url.startsWith('http://') && !url.startsWith('https://')) {
                         url = serverUrl + url;
                       }
-                      
-                      // Handle params replacement
+
                       if (params && Object.keys(params).length > 0) {
                         const queryParams = new URLSearchParams();
                         Object.entries(params).forEach(([key, value]) => {
@@ -1406,18 +1440,11 @@ let responseData;
                           url += (url.includes('?') ? '&' : '?') + queryString;
                         }
                       }
-                      
+
                       const requestHeaders = buildRequestHeaders();
-                      
-                      // Inject session token if available and not expired
-                      if (sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry) {
-                        requestHeaders['Authorization'] = `Bearer ${sessionToken}`;
-                      }
-
                       const sslOptions = authType === 'ssl' ? { certFile, keyFile, caFile } : undefined;
-
                       const startTime = performance.now();
-                      
+
                       const result = await window.electronAPI.sendRequest({
                         url,
                         method,
@@ -1425,9 +1452,8 @@ let responseData;
                         body: ['GET', 'HEAD', 'DELETE'].includes(method) ? undefined : body,
                         sslOptions,
                       });
-                      
-                      const responseTime = performance.now() - startTime;
 
+                      const responseTime = performance.now() - startTime;
                       let responseData;
                       try {
                         responseData = JSON.parse(result.body);
@@ -1449,22 +1475,20 @@ let responseData;
                         rawBody: result.body,
                         timestamp: new Date(),
                       };
-                      
+
                       results.push(resultObj);
                       addResponse(resultObj);
-                      
-                      // Batch progress updates to reduce re-renders
+
                       if (currentProgress % updateFrequency === 0 || currentProgress === totalRuns) {
-                        setAutomationProgress({ 
-                          current: currentProgress, 
-                          total: totalRuns, 
-                          results 
+                        setAutomationProgress({
+                          current: currentProgress,
+                          total: totalRuns,
+                          results,
                         });
                       }
-                      
-                      // Add delay between requests
-                      if (i + automationStep <= automationEnd) {
-                        await new Promise(resolve => setTimeout(resolve, automationDelay));
+
+                      if (i + actualStep <= automationEnd && !abortAutomationRef.current) {
+                        await new Promise((resolve) => setTimeout(resolve, automationDelay));
                       }
                     } catch (error) {
                       const errorResult = {
@@ -1480,7 +1504,7 @@ let responseData;
                       addResponse(errorResult);
                     }
                   }
-                  
+
                   setIsAutomating(false);
                   setAutomationProgress({ current: 0, total: 0, results: [] });
                 }}
@@ -1492,7 +1516,10 @@ let responseData;
               {isAutomating && (
                 <button
                   className="btn btn-danger"
-                  onClick={() => setIsAutomating(false)}
+                  onClick={() => {
+                    abortAutomationRef.current = true;
+                    setIsAutomating(false);
+                  }}
                 >
                   <FiX size={18} />
                   Stop

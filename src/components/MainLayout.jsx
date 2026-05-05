@@ -6,7 +6,7 @@ import Header from './Header';
 import PythonScriptModal from './PythonScriptModal';
 import MCPConfig from './MCPConfig';
 import useStore from '../store';
-import { FiTerminal, FiRefreshCcw, FiTrash2, FiShuffle, FiLayers, FiSettings } from 'react-icons/fi';
+import { FiTerminal, FiRefreshCcw, FiTrash2, FiShuffle, FiLayers, FiSettings, FiPower } from 'react-icons/fi';
 import '../styles/MainLayout.css';
 
 function MainLayout({ onThemeChange, currentTheme }) {
@@ -167,6 +167,24 @@ function MainLayout({ onThemeChange, currentTheme }) {
 
         <button
           className="control-button"
+          onClick={handleRestartBackend}
+          title="Restart backend server only"
+        >
+          <FiRefreshCcw size={16} />
+          Restart Server
+        </button>
+
+        <button
+          className="control-button"
+          onClick={handleStopBackend}
+          title="Stop backend server only"
+        >
+          <FiPower size={16} />
+          Stop Server
+        </button>
+
+        <button
+          className="control-button"
           onClick={() => clearBatchResults()}
           title="Clear batch testing results"
         >
@@ -184,6 +202,7 @@ function MainLayout({ onThemeChange, currentTheme }) {
         </button>
       </div>
 
+      {backendMessage && <div className="backend-action-message">{backendMessage}</div>}
       <div className="layout-container" ref={containerRef}>
         <div className="sidebar-panel" style={{ width: `${sidebarWidth}px` }}>
           <Sidebar />

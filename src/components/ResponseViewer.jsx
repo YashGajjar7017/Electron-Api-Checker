@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import useStore from '../store';
 import {
   FiCopy,
@@ -10,6 +10,7 @@ import {
   FiSave,
   FiMaximize2,
   FiExternalLink,
+  FiX,
 } from 'react-icons/fi';
 import OutputModal from './OutputModal';
 import '../styles/ResponseViewer.css';
@@ -27,9 +28,15 @@ function ResponseViewer() {
     batchStats,
     isBatchTesting,
     batchTestDelay,
+    comparisonMode,
+    comparisonResponses,
+    setComparisonResponses,
   } = useStore();
 
-const [expandedResponses, setExpandedResponses] = useState(new Set());
+  const [expandedResponses, setExpandedResponses] = useState(new Set());
+  const [compareSelected, setCompareSelected] = useState(new Set());
+  const [showComparisonPanel, setShowComparisonPanel] = useState(false);
+
   const [responseTabs, setResponseTabs] = useState({});
   const [isBatchRunning, setIsBatchRunning] = useState(false);
   const [showBatchSelector, setShowBatchSelector] = useState(false);
@@ -37,6 +44,7 @@ const [expandedResponses, setExpandedResponses] = useState(new Set());
     new Set(apis.map((api) => api.id))
   );
   const [selectedResponse, setSelectedResponse] = useState(null);
+  const batchAbortRef = useRef(false);
 
   const toggleResponseExpand = (responseId) => {
     const newExpanded = new Set(expandedResponses);
@@ -74,10 +82,14 @@ const runBatchTests = async () => {
       return;
     }
 
+    batchAbortRef.current = false;
     setIsBatchRunning(true);
     startBatchTesting();
 
     for (const api of apisToRun) {
+      if (batchAbortRef.current) {
+        break;
+      }
       try {
         const headers = api.headers || {};
         if (api.auth?.type === 'bearer' && api.auth?.token) {
@@ -146,6 +158,12 @@ const runBatchTests = async () => {
       }
     }
 
+    stopBatchTesting();
+    setIsBatchRunning(false);
+  };
+
+  const cancelBatchTests = () => {
+    batchAbortRef.current = true;
     stopBatchTesting();
     setIsBatchRunning(false);
   };
@@ -267,7 +285,29 @@ const runBatchTests = async () => {
                 <FiPlay size={16} />
                 {isBatchRunning ? 'Running...' : 'Batch Test'}
               </button>
+              {isBatchRunning && (
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={cancelBatchTests}
+                  title="Cancel batch testing"
+                >
+                  <FiX size={16} />
+                  Stop
+                </button>
+              )}
             </>
+          )}
+
+          {comparisonMode && (
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={handleOpenComparison}
+              disabled={compareSelected.size < 2}
+              title="Compare selected responses"
+            >
+              <FiLayers size={16} />
+              Compare ({compareSelected.size})
+            </button>
           )}
 
 
@@ -301,6 +341,40 @@ const runBatchTests = async () => {
           )}
         </div>
       </div>
+
+      {comparisonMode && showComparisonPanel && selectedCompareResponses.length > 0 && (
+        <div className="comparison-panel">
+          <div className="comparison-header">
+            <h4>Comparison View</h4>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => setShowComparisonPanel(false)}
+            >
+              Close
+            </button>
+          </div>
+          <div className="comparison-grid">
+            {selectedCompareResponses.map((response) => (
+              <div key={response.id} className="comparison-card">
+                <div className="comparison-card-header">
+                  <span className={`status-badge status-${getStatusColor(response.status)}`}>
+                    {response.status || 'Error'}
+                  </span>
+                  <span className="comparison-api-name">{response.apiName || response.endpoint}</span>
+                </div>
+                <div className="comparison-detail">
+                  <p><strong>Endpoint:</strong> {response.endpoint}</p>
+                  <p><strong>Method:</strong> {response.method}</p>
+                  <p><strong>Time:</strong> {response.responseTime}ms</p>
+                  <pre className="comparison-body">
+{typeof response.body === 'string' ? response.body : JSON.stringify(response.body, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {showBatchSelector && apis.length > 0 && (
         <div className="batch-selector-panel">
@@ -413,6 +487,17 @@ const runBatchTests = async () => {
                   <span className="endpoint">{response.endpoint}</span>
                   <span className={`api-name`}>{response.apiName}</span>
                 </div>
+
+                {comparisonMode && (
+                  <label className="compare-toggle" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={compareSelected.has(response.id)}
+                      onChange={() => toggleCompareSelection(response.id)}
+                    />
+                    Compare
+                  </label>
+                )}
 
                 <div className="response-meta">
                   {response.status ? (

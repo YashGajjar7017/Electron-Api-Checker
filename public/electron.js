@@ -474,6 +474,28 @@ ipcMain.handle('load-apis', async () => {
   }
 });
 
+ipcMain.handle('restart-backend', async () => {
+  try {
+    stopBackendServer();
+    const port = await launchBackendServer();
+    if (port) {
+      return { success: true, port };
+    }
+    return { success: false, error: 'Failed to restart backend server' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('stop-backend', async () => {
+  try {
+    stopBackendServer();
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
 ipcMain.handle('reload-app', async () => {
   try {
     if (mainWindow && !mainWindow.isDestroyed()) {

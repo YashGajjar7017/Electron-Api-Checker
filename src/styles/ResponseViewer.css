@@ -38,15 +38,100 @@
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  align-items: center;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
 }
 
-.responses-list {
-  flex: 1;
-  overflow-y: auto;
+.viewer-controls button {
+  flex: 0 0 auto;
+  min-width: 110px;
+}
+
+.save-status-message {
+  margin-left: 0.75rem;
+  color: var(--success);
+  font-size: 0.9rem;
+  align-self: center;
+}
+
+.comparison-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+  margin: 0.75rem;
+}
+
+.comparison-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.comparison-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+  min-height: 220px;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+.comparison-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.comparison-api-name {
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comparison-body {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
   padding: 0.75rem;
+  font-family: 'Monaco', 'Courier', monospace;
+  font-size: 0.78rem;
+  overflow-y: auto;
+  max-height: 180px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.compare-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.compare-toggle input {
+  accent-color: var(--primary);
 }
 
 .responses-list.empty-state {

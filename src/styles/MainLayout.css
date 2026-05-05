@@ -178,6 +178,15 @@
 .resize-handle-right {
   right: -3px;
   top: 0;
+}
+
+.backend-action-message {
+  margin: 0 0.75rem 0.5rem;
+  color: var(--success);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
   width: 6px;
   height: 100%;
   cursor: col-resize;
