@@ -187,6 +187,9 @@
   font-weight: 600;
 }
 
+.resize-handle-right {
+  right: -3px;
+  top: 0;
   width: 6px;
   height: 100%;
   cursor: col-resize;
@@ -237,11 +240,12 @@
 .layout-container.resizing .sidebar-panel,
 .layout-container.resizing .response-panel {
   user-select: none;
-  
-  .sidebar-panel {
-    width: 220px;
-  }
-  .response-panel {
-    width: 280px;
-  }
+}
+
+.layout-container.resizing .sidebar-panel {
+  width: 220px;
+}
+
+.layout-container.resizing .response-panel {
+  width: 280px;
 }

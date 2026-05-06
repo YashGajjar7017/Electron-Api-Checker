@@ -1,6 +1,6 @@
 {
   "name": "api-checker",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A modern Electron desktop application for API testing and management",
   "main": "public/electron.js",
   "homepage": "./",

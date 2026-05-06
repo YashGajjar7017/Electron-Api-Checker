@@ -15,6 +15,7 @@ import {
   FiEyeOff,
 } from 'react-icons/fi';
 import OTPModal from './OTPModal';
+import { useSaveStatusEffect } from './useSaveStatusEffect.js';
 import '../styles/RequestBuilder.css';
 
 function RequestBuilder() {
@@ -61,6 +62,8 @@ const [activeTab, setActiveTab] = useState('params');
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [showAuthToken, setShowAuthToken] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
+
+  useSaveStatusEffect(saveStatus, setSaveStatus);
   const pendingSendRef = useRef(false);
   const abortAutomationRef = useRef(false);
   const [docs, setDocs] = useState(currentAPI?.docs || '');
@@ -229,11 +232,12 @@ const handleUpdateAPI = async () => {
     }
   };
 
-  React.useEffect(() => {
-    if (!saveStatus) return undefined;
+useEffect(() => {
+  if (saveStatus) {
     const timeoutId = setTimeout(() => setSaveStatus(''), 2500);
     return () => clearTimeout(timeoutId);
-  }, [saveStatus]);
+  }
+}, [saveStatus]);
 
   const handleDeleteAPI = () => {
     if (window.confirm(`Are you sure you want to delete "${apiName}"?`)) {
@@ -343,12 +347,17 @@ const handleUpdateAPI = async () => {
 
     if (overrideAuthToken) {
       requestHeaders['Authorization'] = `Bearer ${overrideAuthToken}`;
+      console.log('🔑 Using override auth token');
     } else {
+      console.log('🔑 Token priority check - Manual:', !!authTokenState?.trim(), 'Session:', !!(sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry), 'API:', !!(useStore.getState().getAPIResponseToken()));
+      
       if (!requestHeaders['Authorization']) {
-        if (authType === 'bearer' && authTokenState && (!manualTokenExpiry || Date.now() < manualTokenExpiry)) {
+        if (authType === 'bearer' && authTokenState && authTokenState.trim().length > 0 && (!manualTokenExpiry || Date.now() < manualTokenExpiry)) {
           requestHeaders['Authorization'] = `Bearer ${authTokenState}`;
-        } else if (authType === 'basic' && authTokenState && (!manualTokenExpiry || Date.now() < manualTokenExpiry)) {
+          console.log('🔑 Using MANUAL bearer token');
+        } else if (authType === 'basic' && authTokenState && authTokenState.trim().length > 0 && (!manualTokenExpiry || Date.now() < manualTokenExpiry)) {
           requestHeaders['Authorization'] = `Basic ${authTokenState}`;
+          console.log('🔑 Using MANUAL basic auth');
         }
       }
 
@@ -356,6 +365,7 @@ const handleUpdateAPI = async () => {
         const hasValidSessionToken = sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry;
         if (hasValidSessionToken) {
           requestHeaders['Authorization'] = `Bearer ${sessionToken}`;
+          console.log('🔑 Using SESSION token');
         }
       }
 
@@ -363,7 +373,12 @@ const handleUpdateAPI = async () => {
         const apiToken = useStore.getState().getAPIResponseToken();
         if (apiToken) {
           requestHeaders['Authorization'] = `Bearer ${apiToken}`;
+          console.log('🔑 Using API response token');
         }
+      }
+      
+      if (!requestHeaders['Authorization']) {
+        console.log('⚠️  No authorization token available');
       }
     }
 
@@ -438,6 +453,7 @@ const handleUpdateAPI = async () => {
   };
 
 const handleOtpVerify = async (otp) => {
+    // FIXED: Prevent OTP token from overwriting manual/API tokens + ensure 10min expiry
     // Verify OTP against backend server
     try {
       const serverUrlEndpoint = serverUrl.replace('localhost:3000', 'localhost:5000');
@@ -474,10 +490,20 @@ const handleOtpVerify = async (otp) => {
         console.log('Backend OTP verification not available, using fallback:', verifyError.message);
       }
       
-      // Use verified token from backend, or fall back to local token generation
       const token = sessionTokenFromVerify || `sess-${otp}-${Date.now()}`;
-      // Set ONLY sessionToken, not apiResponseToken to prevent overwriting manual tokens
-      useStore.getState().setSessionToken(token, 10);
+      const expiryMs = 10 * 60 * 1000; // 10 minutes exactly
+      
+      // ONLY set sessionToken if no manual authTokenState or API token exists
+      const storeState = useStore.getState();
+      const hasManualToken = authTokenState && authTokenState.trim().length > 0;
+      const hasAPIToken = storeState.getAPIResponseToken();
+      
+      if (!hasManualToken && !hasAPIToken) {
+        storeState.setSessionToken(token, expiryMs);
+        console.log('Session token set from OTP (10min expiry)');
+      } else {
+        console.log('OTP token NOT set - manual/API token already exists');
+      }
       
       setShowOtpModal(false);
       
@@ -489,7 +515,16 @@ const handleOtpVerify = async (otp) => {
     } catch (error) {
       console.error('OTP verification error:', error);
       const token = `sess-${otp}-${Date.now()}`;
-      useStore.getState().setSessionToken(token, 10);
+      const expiryMs = 10 * 60 * 1000; // 10 minutes exactly
+      
+      const storeState = useStore.getState();
+      const hasManualToken = authTokenState && authTokenState.trim().length > 0;
+      const hasAPIToken = storeState.getAPIResponseToken();
+      
+      if (!hasManualToken && !hasAPIToken) {
+        storeState.setSessionToken(token, expiryMs);
+      }
+      
       setShowOtpModal(false);
       if (pendingSendRef.current) {
         pendingSendRef.current = false;

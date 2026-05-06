@@ -20,13 +20,17 @@ function MainLayout({ onThemeChange, currentTheme }) {
   const [isRunningScript, setIsRunningScript] = useState(false);
   const [showMCPModal, setShowMCPModal] = useState(false);
 
-  const {
+const {
     sessionToken,
     clearResponseHistory,
     shuffleAPIs,
     clearBatchResults,
     toggleComparisonMode,
     comparisonMode,
+    currentAPI,
+    setCurrentAPI,
+    backendMessage,
+    setBackendMessage,
   } = useStore((state) => ({
     sessionToken: state.sessionToken,
     clearResponseHistory: state.clearResponseHistory,
@@ -34,7 +38,13 @@ function MainLayout({ onThemeChange, currentTheme }) {
     clearBatchResults: state.clearBatchResults,
     toggleComparisonMode: state.toggleComparisonMode,
     comparisonMode: state.comparisonMode,
+    currentAPI: state.currentAPI,
+    setCurrentAPI: state.setCurrentAPI,
+    backendMessage: state.backendMessage,
+    setBackendMessage: state.setBackendMessage,
   }));
+
+  const [localBackendMessage, setLocalBackendMessage] = useState('');
 
   const handleMouseDown = (side) => {
     if (side === 'sidebar') {
@@ -98,6 +108,45 @@ function MainLayout({ onThemeChange, currentTheme }) {
       setPythonScriptOutput(`✗ Error executing script:\n${error.message}`);
     } finally {
       setIsRunningScript(false);
+    }
+  };
+
+  const handleRestartBackend = async () => {
+    try {
+      setLocalBackendMessage('Restarting backend server...');
+      
+      // Call electron API to restart backend
+      if (window.electronAPI?.restartBackend) {
+        await window.electronAPI.restartBackend();
+        setLocalBackendMessage('Backend restarted successfully!');
+      } else {
+        setLocalBackendMessage('Backend restart requested (electronAPI unavailable)');
+        // Fallback: reload app which may restart backend
+        window.electronAPI?.reloadApp?.();
+      }
+      
+      setTimeout(() => setLocalBackendMessage(''), 3000);
+    } catch (error) {
+      setLocalBackendMessage(`Backend restart failed: ${error.message}`);
+      setTimeout(() => setLocalBackendMessage(''), 5000);
+    }
+  };
+
+  const handleStopBackend = async () => {
+    try {
+      setLocalBackendMessage('Stopping backend server...');
+      
+      if (window.electronAPI?.stopBackend) {
+        await window.electronAPI.stopBackend();
+        setLocalBackendMessage('Backend stopped successfully!');
+      } else {
+        setLocalBackendMessage('Backend stop requested (electronAPI unavailable)');
+      }
+      
+      setTimeout(() => setLocalBackendMessage(''), 3000);
+    } catch (error) {
+      setLocalBackendMessage(`Backend stop failed: ${error.message}`);
+      setTimeout(() => setLocalBackendMessage(''), 5000);
     }
   };
 
@@ -202,7 +251,11 @@ function MainLayout({ onThemeChange, currentTheme }) {
         </button>
       </div>
 
-      {backendMessage && <div className="backend-action-message">{backendMessage}</div>}
+{(backendMessage || localBackendMessage) && (
+  <div className={`backend-action-message ${backendMessage ? 'server-message' : 'local-message'}`}>
+    {backendMessage || localBackendMessage}
+  </div>
+)}
       <div className="layout-container" ref={containerRef}>
         <div className="sidebar-panel" style={{ width: `${sidebarWidth}px` }}>
           <Sidebar />
