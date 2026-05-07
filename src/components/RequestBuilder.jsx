@@ -319,15 +319,20 @@ useEffect(() => {
       const queryParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
         if (value !== '' && value !== null && value !== undefined) {
-          queryParams.append(key, value);
+          // Properly encode each parameter
+          queryParams.append(encodeURIComponent(key), encodeURIComponent(String(value)));
         }
       });
       const queryString = queryParams.toString();
       if (queryString) {
-        url += (url.includes('?') ? '&' : '?') + queryString;
+        // Check if URL already has query params
+        const hasExistingParams = url.includes('?');
+        url += (hasExistingParams ? '&' : '?') + queryString;
       }
     }
     
+    // Log the final URL for debugging
+    console.log('📍 Built URL:', url);
     return url;
   };
 
@@ -491,7 +496,7 @@ const handleOtpVerify = async (otp) => {
       }
       
       const token = sessionTokenFromVerify || `sess-${otp}-${Date.now()}`;
-      const expiryMs = 10 * 60 * 1000; // 10 minutes exactly
+      const validForMinutes = 10; // 10 minutes exactly
       
       // ONLY set sessionToken if no manual authTokenState or API token exists
       const storeState = useStore.getState();
@@ -499,10 +504,10 @@ const handleOtpVerify = async (otp) => {
       const hasAPIToken = storeState.getAPIResponseToken();
       
       if (!hasManualToken && !hasAPIToken) {
-        storeState.setSessionToken(token, expiryMs);
-        console.log('Session token set from OTP (10min expiry)');
+        storeState.setSessionToken(token, validForMinutes);
+        console.log('✅ Session token set from OTP (10min expiry)');
       } else {
-        console.log('OTP token NOT set - manual/API token already exists');
+        console.log('⚠️ OTP token NOT set - manual/API token already exists');
       }
       
       setShowOtpModal(false);
@@ -515,14 +520,15 @@ const handleOtpVerify = async (otp) => {
     } catch (error) {
       console.error('OTP verification error:', error);
       const token = `sess-${otp}-${Date.now()}`;
-      const expiryMs = 10 * 60 * 1000; // 10 minutes exactly
+      const validForMinutes = 10; // 10 minutes exactly
       
       const storeState = useStore.getState();
       const hasManualToken = authTokenState && authTokenState.trim().length > 0;
       const hasAPIToken = storeState.getAPIResponseToken();
       
       if (!hasManualToken && !hasAPIToken) {
-        storeState.setSessionToken(token, expiryMs);
+        storeState.setSessionToken(token, validForMinutes);
+        console.log('✅ Session token set from OTP fallback (10min expiry)');
       }
       
       setShowOtpModal(false);
@@ -604,6 +610,7 @@ let responseData;
         apiName,
         method,
         endpoint,
+        requestUrl: url, // Include full built URL for reference
         status: result.status,
         statusText: result.statusText,
         responseTime: Math.round(responseTime),

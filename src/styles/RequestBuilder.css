@@ -129,6 +129,74 @@
   font-size: 0.85rem;
   margin-left: 0.75rem;
   min-width: 160px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: slideInLeft 0.3s ease-out, slideOutLeft 0.3s ease-out 2.2s forwards;
+  opacity: 0;
+  animation: fadeInSlide 0.4s ease-out forwards, fadeOutSlide 0.4s ease-in 2.3s forwards;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+}
+
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeOutSlide {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+}
+
+.save-status-message::before {
+  content: '✓';
+  display: inline-block;
+  animation: checkmarkScale 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes checkmarkScale {
+  0% {
+    transform: scale(0) rotate(-45deg);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
 }
 
 .builder-actions .btn svg {

@@ -38,6 +38,7 @@ function ResponseViewer() {
   const [compareSelected, setCompareSelected] = useState(new Set());
   const [showComparisonPanel, setShowComparisonPanel] = useState(false);
   const [selectedCompareResponses, setSelectedCompareResponses] = useState([]);
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid' or 'detailed'
 
   const toggleCompareSelection = (responseId) => {
     setCompareSelected((prev) => {

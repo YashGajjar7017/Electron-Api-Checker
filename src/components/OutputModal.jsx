@@ -180,6 +180,11 @@ function OutputModal({ response, onClose }) {
             <span className="info-item">Time: {response.responseTime}ms</span>
             <span className="info-item">Size: {response.responseSize ? (response.responseSize / 1024).toFixed(2) : '0'}KB</span>
             <span className="info-item">Method: {response.method}</span>
+            {response.requestUrl && (
+              <span className="info-item request-url" title={response.requestUrl}>
+                URL: <code>{response.requestUrl}</code>
+              </span>
+            )}
             <span className="info-item">Endpoint: {response.endpoint}</span>
           </div>
         </div>

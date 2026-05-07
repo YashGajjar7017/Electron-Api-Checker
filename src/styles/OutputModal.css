@@ -345,6 +345,25 @@
   margin-right: 0;
 }
 
+.info-item.request-url {
+  flex: 1;
+  max-width: 400px;
+}
+
+.info-item.request-url code {
+  font-family: 'Monaco', 'Courier', monospace;
+  background: rgba(var(--primary-rgb), 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  color: var(--primary);
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  max-width: 250px;
+}
+
 @media (max-width: 768px) {
   .modal-content {
     width: 95%;

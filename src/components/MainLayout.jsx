@@ -5,8 +5,9 @@ import ResponseViewer from './ResponseViewer';
 import Header from './Header';
 import PythonScriptModal from './PythonScriptModal';
 import MCPConfig from './MCPConfig';
+import ArduinoCliConfig from './ArduinoCliConfig';
 import useStore from '../store';
-import { FiTerminal, FiRefreshCcw, FiTrash2, FiShuffle, FiLayers, FiSettings, FiPower } from 'react-icons/fi';
+import { FiTerminal, FiRefreshCcw, FiTrash2, FiShuffle, FiLayers, FiSettings, FiPower, FiCpu } from 'react-icons/fi';
 import '../styles/MainLayout.css';
 
 function MainLayout({ onThemeChange, currentTheme }) {
@@ -19,6 +20,7 @@ function MainLayout({ onThemeChange, currentTheme }) {
   const [pythonScriptOutput, setPythonScriptOutput] = useState('');
   const [isRunningScript, setIsRunningScript] = useState(false);
   const [showMCPModal, setShowMCPModal] = useState(false);
+  const [showArduinoModal, setShowArduinoModal] = useState(false);
 
 const {
     sessionToken,
@@ -198,6 +200,15 @@ const {
 
         <button
           className="control-button"
+          onClick={() => setShowArduinoModal(true)}
+          title="Configure Arduino CLI settings"
+        >
+          <FiCpu size={16} />
+          Arduino CLI
+        </button>
+
+        <button
+          className="control-button"
           onClick={() => shuffleAPIs()}
           title="Shuffle API list to randomize testing"
         >
@@ -290,6 +301,11 @@ const {
       <MCPConfig
         isOpen={showMCPModal}
         onClose={() => setShowMCPModal(false)}
+      />
+
+      <ArduinoCliConfig
+        isOpen={showArduinoModal}
+        onClose={() => setShowArduinoModal(false)}
       />
     </div>
   );
