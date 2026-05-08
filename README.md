@@ -4,6 +4,11 @@ A beautiful, modern Electron + React desktop application for API testing and man
 <hr>
 <img width="1919" height="1008" alt="image" src="https://github.com/user-attachments/assets/dfdb3014-f837-4ba6-b915-829e2aa30f5b" />
 <hr>
+<img width="1919" height="1036" alt="image" src="https://github.com/user-attachments/assets/3273809f-6778-46d0-a96c-154397546537" />
+<hr>
+<img width="1919" height="1029" alt="image" src="https://github.com/user-attachments/assets/ef161830-45c0-4a9a-b21d-20816745beba" />
+<hr>
+
 ## ✨ Features
 
 ### 🎯 Core Features
