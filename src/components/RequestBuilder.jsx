@@ -13,6 +13,9 @@ import {
   FiSettings,
   FiEye,
   FiEyeOff,
+  FiShare2,
+  FiExternalLink,
+  FiZap,
 } from 'react-icons/fi';
 import OTPModal from './OTPModal';
 import { useSaveStatusEffect } from './useSaveStatusEffect.js';
@@ -62,6 +65,7 @@ const [activeTab, setActiveTab] = useState('params');
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [showAuthToken, setShowAuthToken] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
+  const [actionMessage, setActionMessage] = useState('');
 
   useSaveStatusEffect(saveStatus, setSaveStatus);
   const pendingSendRef = useRef(false);
@@ -457,85 +461,103 @@ useEffect(() => {
     setRunningScript(false);
   };
 
-const handleOtpVerify = async (otp) => {
-    // FIXED: Prevent OTP token from overwriting manual/API tokens + ensure 10min expiry
-    // Verify OTP against backend server
+  const showActionMessage = (message, duration = 3000) => {
+    setActionMessage(message);
+    if (duration > 0) {
+      setTimeout(() => setActionMessage(''), duration);
+    }
+  };
+
+  const handleShareRequest = async () => {
+    const url = buildURL();
+    const debugText = `URL: ${url}\nMethod: ${method}\nHeaders: ${JSON.stringify(headers, null, 2)}\nBody: ${body || JSON.stringify(bodyParams, null, 2)}`;
     try {
-      const serverUrlEndpoint = serverUrl.replace('localhost:3000', 'localhost:5000');
-      const verifyUrl = serverUrlEndpoint + '/auth/verify-otp';
-      
-      // Try to verify OTP with backend
-      let sessionTokenFromVerify = null;
-      
-      try {
-        // Send OTP with additional required parameters
-        const otpPayload = {
-          otp: otp,
-          username: 'user', // Default username if not available
-          source: 'electron-app',
-        };
-        
-        const verifyResult = await window.electronAPI.sendRequest({
-          url: verifyUrl,
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(otpPayload),
-        });
-        
-        if (verifyResult.success && verifyResult.status === 200) {
-          const response = JSON.parse(verifyResult.body);
-          // Check for token in various possible response formats
-          if (response.token) {
-            sessionTokenFromVerify = response.token;
-          } else if (response.Data && response.Data.token) {
-            sessionTokenFromVerify = response.Data.token;
-          }
-        }
-      } catch (verifyError) {
-        console.log('Backend OTP verification not available, using fallback:', verifyError.message);
-      }
-      
-      const token = sessionTokenFromVerify || `sess-${otp}-${Date.now()}`;
-      const validForMinutes = 10; // 10 minutes exactly
-      
-      // ONLY set sessionToken if no manual authTokenState or API token exists
-      const storeState = useStore.getState();
-      const hasManualToken = authTokenState && authTokenState.trim().length > 0;
-      const hasAPIToken = storeState.getAPIResponseToken();
-      
-      if (!hasManualToken && !hasAPIToken) {
-        storeState.setSessionToken(token, validForMinutes);
-        console.log('✅ Session token set from OTP (10min expiry)');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(debugText);
       } else {
-        console.log('⚠️ OTP token NOT set - manual/API token already exists');
+        const textarea = document.createElement('textarea');
+        textarea.value = debugText;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
       }
-      
-      setShowOtpModal(false);
-      
-      // If a request was pending, retry it with the new token immediately
-      if (pendingSendRef.current) {
-        pendingSendRef.current = false;
-        executeRequest();
+      showActionMessage('Request details copied to clipboard');
+    } catch (err) {
+      console.error('Copy failed', err);
+      showActionMessage('Unable to copy request details');
+    }
+  };
+
+  const handleDebugUrl = async () => {
+    const url = buildURL();
+    if (!url) {
+      showActionMessage('Cannot debug: invalid URL');
+      return;
+    }
+    if (window.electronAPI?.openExternalUrl) {
+      await window.electronAPI.openExternalUrl(url);
+      showActionMessage('Opened URL in external browser');
+    } else {
+      window.open(url, '_blank');
+      showActionMessage('Opened URL in browser');
+    }
+  };
+
+  const handleResendRequest = async () => {
+    if (isSending) return;
+    if (shouldSkipOtp()) {
+      await executeRequest();
+      return;
+    }
+    const isTokenValid = sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry;
+    if (!isTokenValid) {
+      pendingSendRef.current = true;
+      setShowOtpModal(true);
+      showActionMessage('Session expired. Enter OTP to resend request');
+      return;
+    }
+    await executeRequest();
+  };
+
+  const handleOtpVerify = async (otp) => {
+    const storeState = useStore.getState();
+    const hasManualToken = authTokenState && authTokenState.trim().length > 0;
+    const hasAPIToken = storeState.getAPIResponseToken();
+    const validForMinutes = 10;
+    let sessionTokenFromVerify = null;
+
+    try {
+      const verifyUrl = `${serverUrl.replace(/\/$/, '')}/auth/verify-otp`;
+      const otpPayload = { otp, source: 'electron-app' };
+      const verifyResult = await window.electronAPI.sendRequest({
+        url: verifyUrl,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(otpPayload),
+      });
+
+      if (verifyResult.success && verifyResult.status >= 200 && verifyResult.status < 300) {
+        const response = JSON.parse(verifyResult.body || '{}');
+        sessionTokenFromVerify = response.token || response.Data?.token || null;
       }
-    } catch (error) {
-      console.error('OTP verification error:', error);
-      const token = `sess-${otp}-${Date.now()}`;
-      const validForMinutes = 10; // 10 minutes exactly
-      
-      const storeState = useStore.getState();
-      const hasManualToken = authTokenState && authTokenState.trim().length > 0;
-      const hasAPIToken = storeState.getAPIResponseToken();
-      
-      if (!hasManualToken && !hasAPIToken) {
-        storeState.setSessionToken(token, validForMinutes);
-        console.log('✅ Session token set from OTP fallback (10min expiry)');
-      }
-      
-      setShowOtpModal(false);
-      if (pendingSendRef.current) {
-        pendingSendRef.current = false;
-        executeRequest();
-      }
+    } catch (verifyError) {
+      console.log('OTP verification request failed, falling back to local session token', verifyError.message);
+    }
+
+    const finalToken = sessionTokenFromVerify || `sess-${otp}-${Date.now()}`;
+    if (!hasManualToken && !hasAPIToken) {
+      storeState.setSessionToken(finalToken, validForMinutes);
+      console.log('✅ Session token set for 10 min');
+    } else {
+      console.log('⚠️ Session token not stored because manual/API token already active');
+    }
+
+    setShowOtpModal(false);
+    showActionMessage('OTP accepted. Retrying pending request...');
+    if (pendingSendRef.current) {
+      pendingSendRef.current = false;
+      await executeRequest();
     }
   };
 
@@ -635,8 +657,8 @@ let responseData;
   };
 
   const shouldSkipOtp = () => {
-    // Auto-skip OTP for auth/login endpoints
-    const authKeywords = ['/login', '/auth', '/signin', '/authenticate'];
+    // Auto-skip OTP for auth/login/OTP endpoints
+    const authKeywords = ['/login', '/auth', '/signin', '/authenticate', '/otp'];
     const isAuthEndpoint = authKeywords.some(keyword => 
       endpoint.toLowerCase().includes(keyword) || 
       apiName.toLowerCase().includes(keyword)
@@ -645,16 +667,15 @@ let responseData;
   };
 
   const handleSendRequest = async () => {
-    // Skip OTP for APIs marked with skipOtp (e.g. Auth endpoint) or auto-detected auth endpoints
     if (shouldSkipOtp()) {
       await executeRequest();
       return;
     }
-    // Check if session token is valid
     const isTokenValid = sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry;
     if (!isTokenValid) {
       pendingSendRef.current = true;
       setShowOtpModal(true);
+      showActionMessage('OTP required before sending this request');
       return;
     }
     await executeRequest();
@@ -728,6 +749,15 @@ let responseData;
             {isSending ? 'Sending...' : 'Send'}
           </button>
           <button
+            className="btn btn-outline"
+            onClick={handleResendRequest}
+            disabled={isSending}
+            title="Resend the same request"
+          >
+            <FiRefreshCw size={18} />
+            Resend
+          </button>
+          <button
             className="btn btn-secondary"
             onClick={handleUpdateAPI}
             title="Save API configuration"
@@ -736,7 +766,25 @@ let responseData;
             <FiSave size={18} />
             {isSending ? 'Save configuration...' : 'Save Data'}            
           </button>
-          <span className="save-status-message">{saveStatus}</span>
+          <button
+            className="btn btn-ghost"
+            onClick={handleShareRequest}
+            type="button"
+            title="Copy URL and request details"
+          >
+            <FiShare2 size={18} />
+            Share
+          </button>
+          <button
+            className="btn btn-ghost"
+            onClick={handleDebugUrl}
+            type="button"
+            title="Open built URL in browser for debugging"
+          >
+            <FiExternalLink size={18} />
+            Debug URL
+          </button>
+          <span className="save-status-message">{saveStatus || actionMessage}</span>
           <button
             className="btn btn-danger"
             onClick={handleDeleteAPI}
