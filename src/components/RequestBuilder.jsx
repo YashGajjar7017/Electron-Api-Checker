@@ -10,14 +10,13 @@ import {
   FiTrash2,
   FiPlay,
   FiRefreshCw,
-  FiSettings,
   FiEye,
   FiEyeOff,
   FiShare2,
   FiExternalLink,
-  FiZap,
 } from 'react-icons/fi';
 import OTPModal from './OTPModal';
+import { applyTemplateVariables } from '../utils/variableUtils';
 import { useSaveStatusEffect } from './useSaveStatusEffect.js';
 import '../styles/RequestBuilder.css';
 
@@ -34,6 +33,8 @@ const {
     sessionTokenExpiry,
     setSessionToken,
     clearSessionToken,
+    environments,
+    activeEnvironment,
   } = useStore();
 
 const [activeTab, setActiveTab] = useState('params');
@@ -115,7 +116,7 @@ const [activeTab, setActiveTab] = useState('params');
       setAutomationPadding(currentAPI.automation?.padding || 0);
       setAutomationDelay(currentAPI.automation?.delay || 500);
     }
-  }, [currentAPI?.id]); // Only sync when the API ID changes, not the entire object
+  }, [currentAPI]); // Only sync when the API changes
 
   // Periodically check if tokens have expired
   useEffect(() => {
@@ -179,7 +180,15 @@ const [activeTab, setActiveTab] = useState('params');
     }, 1500); // Save after 1.5 seconds of inactivity
 
     return () => clearTimeout(timeoutId);
-}, [apiName, method, endpoint, headers, params, body, bodyType, bodyParams, authType, authTokenState, certFile, keyFile, caFile, skipOtp, automationEnabled, automationVariable, automationStart, automationEnd, automationStep, automationPadding, automationDelay, currentAPI?.id, updateAPI, apis]);
+}, [apiName, method, endpoint, headers, params, body, bodyType, bodyParams, authType, authTokenState, certFile, keyFile, caFile, skipOtp, automationEnabled, automationVariable, automationStart, automationEnd, automationStep, automationPadding, automationDelay, currentAPI, updateAPI, apis]);
+
+  // Clear save status after timeout
+  useEffect(() => {
+    if (saveStatus) {
+      const timeoutId = setTimeout(() => setSaveStatus(''), 2500);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [saveStatus]);
 
   if (!currentAPI) {
     return (
@@ -189,7 +198,30 @@ const [activeTab, setActiveTab] = useState('params');
     );
   }
 
-const handleUpdateAPI = async () => {
+  const handleShareRequest = async () => {
+    const url = buildURL();
+    const debugText = `URL: ${url}\nMethod: ${method}\nHeaders: ${JSON.stringify(headers, null, 2)}\nBody: ${body || JSON.stringify(bodyParams, null, 2)}`;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(debugText);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = debugText;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      showActionMessage('Request details copied to clipboard');
+    } catch (err) {
+      console.error('Copy failed', err);
+      showActionMessage('Unable to copy request details');
+    }
+  };
+
+  const handleUpdateAPI = async () => {
+    if (!currentAPI?.id) return;
+
     const updatedAPI = {
       ...currentAPI,
       name: apiName,
@@ -235,13 +267,6 @@ const handleUpdateAPI = async () => {
       setSaveStatus('Changes saved in memory');
     }
   };
-
-useEffect(() => {
-  if (saveStatus) {
-    const timeoutId = setTimeout(() => setSaveStatus(''), 2500);
-    return () => clearTimeout(timeoutId);
-  }
-}, [saveStatus]);
 
   const handleDeleteAPI = () => {
     if (window.confirm(`Are you sure you want to delete "${apiName}"?`)) {
@@ -310,32 +335,49 @@ useEffect(() => {
   };
 
   const buildURL = () => {
+    const environment = environments.find((env) => env.id === activeEnvironment) || environments[0] || {};
+    const base = environment.baseUrl || serverUrl;
     let url = endpoint;
-    
-    // If endpoint is a full URL (starts with http/https), use it directly
-    if (!endpoint.startsWith('http://') && !endpoint.startsWith('https://')) {
-      // Otherwise, combine with serverUrl
-      url = serverUrl + endpoint;
+
+    // Apply variable substitution to endpoint and query params
+    const resolvedEndpoint = applyTemplateVariables(endpoint, {
+      baseUrl: base,
+      token: authTokenState || sessionToken || '',
+      timestamp: String(Date.now()),
+      uuid: undefined,
+      randomIntMax: 1000000,
+    });
+
+    if (!resolvedEndpoint.startsWith('http://') && !resolvedEndpoint.startsWith('https://')) {
+      url = `${base.replace(/\/$/, '')}/${resolvedEndpoint.replace(/^\//, '')}`;
+    } else {
+      url = resolvedEndpoint;
     }
-    
+
     // Handle params as URL query parameters
     if (params && Object.keys(params).length > 0) {
       const queryParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
         if (value !== '' && value !== null && value !== undefined) {
-          // Properly encode each parameter
-          queryParams.append(encodeURIComponent(key), encodeURIComponent(String(value)));
+          queryParams.append(
+            encodeURIComponent(key),
+            encodeURIComponent(applyTemplateVariables(String(value), {
+              baseUrl: base,
+              token: authTokenState || sessionToken || '',
+              timestamp: String(Date.now()),
+              uuid: undefined,
+              randomIntMax: 1000000,
+            }))
+          );
         }
       });
       const queryString = queryParams.toString();
       if (queryString) {
-        // Check if URL already has query params
         const hasExistingParams = url.includes('?');
         url += (hasExistingParams ? '&' : '?') + queryString;
       }
     }
-    
-    // Log the final URL for debugging
+
     console.log('📍 Built URL:', url);
     return url;
   };
@@ -428,13 +470,28 @@ useEffect(() => {
       const bodyParamsData = new URLSearchParams();
       Object.entries(bodyParams).forEach(([key, value]) => {
         if (key !== '' && value !== undefined && value !== null) {
-          bodyParamsData.append(key, value);
+          bodyParamsData.append(
+            key,
+            applyTemplateVariables(String(value), {
+              baseUrl: serverUrl,
+              token: authTokenState || sessionToken || '',
+              timestamp: String(Date.now()),
+              uuid: undefined,
+              randomIntMax: 1000000,
+            })
+          );
         }
       });
       return bodyParamsData.toString();
     }
 
-    return body || undefined;
+    return applyTemplateVariables(body, {
+      baseUrl: serverUrl,
+      token: authTokenState || sessionToken || '',
+      timestamp: String(Date.now()),
+      uuid: undefined,
+      randomIntMax: 1000000,
+    }) || undefined;
   };
 
   const handleRunPythonScript = async () => {
@@ -468,24 +525,38 @@ useEffect(() => {
     }
   };
 
-  const handleShareRequest = async () => {
-    const url = buildURL();
-    const debugText = `URL: ${url}\nMethod: ${method}\nHeaders: ${JSON.stringify(headers, null, 2)}\nBody: ${body || JSON.stringify(bodyParams, null, 2)}`;
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(debugText);
-      } else {
-        const textarea = document.createElement('textarea');
-        textarea.value = debugText;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-      }
-      showActionMessage('Request details copied to clipboard');
-    } catch (err) {
-      console.error('Copy failed', err);
-      showActionMessage('Unable to copy request details');
+  const handleShareToGitHub = async () => {
+    const apiConfig = {
+      name: apiName,
+      method,
+      endpoint,
+      headers,
+      params,
+      body,
+      bodyType,
+      auth: {
+        type: authType,
+        // Don't include actual tokens for security
+        token: authTokenState ? '[REDACTED]' : '',
+      },
+      docs,
+    };
+
+    const shareData = {
+      title: `API Configuration: ${apiName}`,
+      body: `## API Configuration\n\n\`\`\`json\n${JSON.stringify(apiConfig, null, 2)}\n\`\`\`\n\nShared from Electron API Checker`,
+      labels: ['api', 'configuration', 'electron-app']
+    };
+
+    // Create GitHub issue URL
+    const githubUrl = `https://github.com/issues/new?title=${encodeURIComponent(shareData.title)}&body=${encodeURIComponent(shareData.body)}&labels=${encodeURIComponent(shareData.labels.join(','))}`;
+
+    if (window.electronAPI?.openExternalUrl) {
+      await window.electronAPI.openExternalUrl(githubUrl);
+      showActionMessage('Opened GitHub issue page');
+    } else {
+      window.open(githubUrl, '_blank');
+      showActionMessage('Opened GitHub issue page in browser');
     }
   };
 
@@ -521,9 +592,8 @@ useEffect(() => {
   };
 
   const handleOtpVerify = async (otp) => {
-    const storeState = useStore.getState();
     const hasManualToken = authTokenState && authTokenState.trim().length > 0;
-    const hasAPIToken = storeState.getAPIResponseToken();
+    const hasAPIToken = useStore.getState().apiResponseToken;
     const validForMinutes = 10;
     let sessionTokenFromVerify = null;
 
@@ -547,7 +617,7 @@ useEffect(() => {
 
     const finalToken = sessionTokenFromVerify || `sess-${otp}-${Date.now()}`;
     if (!hasManualToken && !hasAPIToken) {
-      storeState.setSessionToken(finalToken, validForMinutes);
+      setSessionToken(finalToken, validForMinutes);
       console.log('✅ Session token set for 10 min');
     } else {
       console.log('⚠️ Session token not stored because manual/API token already active');
@@ -749,7 +819,7 @@ let responseData;
             {isSending ? 'Sending...' : 'Send'}
           </button>
           <button
-            className="btn btn-outline"
+            className="btn btn-primary"
             onClick={handleResendRequest}
             disabled={isSending}
             title="Resend the same request"
@@ -774,6 +844,15 @@ let responseData;
           >
             <FiShare2 size={18} />
             Share
+          </button>
+          <button
+            className="btn btn-ghost"
+            onClick={handleShareToGitHub}
+            type="button"
+            title="Share API configuration to GitHub"
+          >
+            <FiExternalLink size={18} />
+            Share to GitHub
           </button>
           <button
             className="btn btn-ghost"

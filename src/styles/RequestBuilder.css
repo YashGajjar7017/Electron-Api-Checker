@@ -113,8 +113,9 @@
 .builder-actions {
   display: flex;
   gap: 0.5rem;
-  flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .builder-actions .btn {
@@ -135,6 +136,11 @@
   animation: slideInLeft 0.3s ease-out, slideOutLeft 0.3s ease-out 2.2s forwards;
   opacity: 0;
   animation: fadeInSlide 0.4s ease-out forwards, fadeOutSlide 0.4s ease-in 2.3s forwards;
+}
+.btn-secondary{
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
 }
 
 @keyframes slideInLeft {

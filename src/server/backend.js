@@ -13,6 +13,8 @@ const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
 let PORT = 5000;
@@ -21,6 +23,27 @@ let PORT = 5000;
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+const httpServer = http.createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+  },
+});
+
+io.on('connection', (socket) => {
+  console.log('WebSocket client connected:', socket.id);
+  socket.emit('welcome', { message: 'API Checker Pro live updates enabled' });
+
+  socket.on('subscribe', (room) => {
+    socket.join(room);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('WebSocket client disconnected:', socket.id);
+  });
+});
 
 // Data directory
 const dataDir = path.join(os.homedir(), '.api-checker-server');
@@ -165,6 +188,7 @@ app.get('/api/history', (req, res) => {
 // Clear request history
 app.delete('/api/history', (req, res) => {
   requestHistory = [];
+  emitHistoryUpdate();
   res.json({ message: 'History cleared' });
 });
 
@@ -239,6 +263,7 @@ app.post('/api/proxy', async (req, res) => {
       if (requestHistory.length > MAX_HISTORY) {
         requestHistory.pop();
       }
+      emitHistoryUpdate();
 
       res.json({
         status: response.status,
@@ -384,7 +409,7 @@ app.get('/api/info', (req, res) => {
 // Start server
 const startServer = (preferredPort = 5000) => {
   PORT = preferredPort;
-  const server = app.listen(PORT, 'localhost', () => {
+  const server = httpServer.listen(PORT, 'localhost', () => {
     console.log(`
 ╔════════════════════════════════════════════╗
 ║   API Checker Backend Server Running       ║
@@ -395,7 +420,6 @@ const startServer = (preferredPort = 5000) => {
 ╚════════════════════════════════════════════╝
     `);
 
-    // Send port info to parent process (Electron)
     if (process.send) {
       process.send({ type: 'server-started', port: PORT });
     }
@@ -411,6 +435,14 @@ const startServer = (preferredPort = 5000) => {
   });
 
   return server;
+};
+
+// Broadcast request history updates live
+const emitHistoryUpdate = () => {
+  io.emit('historyUpdate', {
+    count: requestHistory.length,
+    lastEntry: requestHistory[0] || null,
+  });
 };
 
 // Start the server

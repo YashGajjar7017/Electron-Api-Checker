@@ -142,6 +142,56 @@ addCollection: (collection) => {
     setComparisonResponses: (responses) =>
       set({ comparisonResponses: responses }),
 
+    // Plugin architecture
+    plugins: [],
+    registerPlugin: (plugin) =>
+      set((state) => ({ plugins: [...state.plugins, plugin] })),
+    runPlugin: async (pluginId, payload) => {
+      const plugin = get().plugins.find((p) => p.id === pluginId);
+      if (plugin && typeof plugin.execute === 'function') {
+        return await plugin.execute(payload, get());
+      }
+      return null;
+    },
+
+    // Environment support
+    environments: [
+      { id: 'dev', name: 'Development', baseUrl: 'http://localhost:3000', values: {} },
+      { id: 'staging', name: 'Staging', baseUrl: 'https://staging.api.local', values: {} },
+      { id: 'prod', name: 'Production', baseUrl: 'https://api.production.com', values: {} },
+    ],
+    activeEnvironment: 'dev',
+    setActiveEnvironment: (id) => set({ activeEnvironment: id }),
+    updateEnvironment: (id, values) =>
+      set((state) => ({
+        environments: state.environments.map((env) =>
+          env.id === id ? { ...env, ...values } : env
+        ),
+      })),
+
+    // Automation and workflow state
+    automationWorkflows: [],
+    addAutomationWorkflow: (workflow) =>
+      set((state) => ({ automationWorkflows: [...state.automationWorkflows, workflow] })),
+    updateAutomationWorkflow: (id, workflow) =>
+      set((state) => ({
+        automationWorkflows: state.automationWorkflows.map((item) =>
+          item.id === id ? { ...item, ...workflow } : item
+        ),
+      })),
+
+    // Performance data
+    performanceMetrics: [],
+    addPerformanceMetric: (metric) =>
+      set((state) => ({
+        performanceMetrics: [...state.performanceMetrics, metric].slice(-1000),
+      })),
+    clearPerformanceMetrics: () => set({ performanceMetrics: [] }),
+
+    // Backend status / server messaging
+    backendMessage: '',
+    setBackendMessage: (message) => set({ backendMessage: message }),
+
     // Session token state (OTP-based, 10 min expiry)
     sessionToken: '',
     sessionTokenExpiry: null,

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import RequestBuilder from './RequestBuilder';
 import ResponseViewer from './ResponseViewer';
+import PerformancePanel from './PerformancePanel';
 import Header from './Header';
 import PythonScriptModal from './PythonScriptModal';
 import MCPConfig from './MCPConfig';
@@ -88,6 +89,14 @@ const {
       };
     }
   }, [isResizingSidebar, isResizingResponse]);
+
+  useEffect(() => {
+    const handleReset = () => {
+      handleResetLayout();
+    };
+    window.addEventListener('reset-layout', handleReset);
+    return () => window.removeEventListener('reset-layout', handleReset);
+  }, []);
 
   const handleRunPythonScript = async () => {
     if (!sessionToken) {
@@ -282,6 +291,7 @@ const {
 
         <div className="response-panel" style={{ width: `${responseWidth}px` }}>
           <ResponseViewer />
+          <PerformancePanel />
           <div
             className="resize-handle resize-handle-left"
             onMouseDown={() => handleMouseDown('response')}

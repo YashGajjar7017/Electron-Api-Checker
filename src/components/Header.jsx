@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import useStore from '../store';
-import { FiLogOut, FiWifi } from 'react-icons/fi';
+import { FiLogOut, FiWifi, FiGithub, FiCloud, FiRefreshCcw, FiPower, FiShuffle, FiLayers, FiSettings, FiZap, FiPlay, FiTrash2 } from 'react-icons/fi';
 import BackendStatus from './BackendStatus';
 import '../styles/Header.css';
 
@@ -8,12 +8,16 @@ function Header({ onThemeChange, currentTheme }) {
   const [pinging, setPinging] = useState(false);
   const [pingStatus, setPingStatus] = useState(null);
   
-  const { user, logoutUser, serverUrl, setServerUrl } = useStore(
+  const { user, logoutUser, serverUrl, setServerUrl, clearResponseHistory, shuffleAPIs, toggleComparisonMode, comparisonMode } = useStore(
     (state) => ({
       user: state.user,
       logoutUser: state.logoutUser,
       serverUrl: state.serverUrl,
       setServerUrl: state.setServerUrl,
+      clearResponseHistory: state.clearResponseHistory,
+      shuffleAPIs: state.shuffleAPIs,
+      toggleComparisonMode: state.toggleComparisonMode,
+      comparisonMode: state.comparisonMode,
     })
   );
 
@@ -22,6 +26,16 @@ function Header({ onThemeChange, currentTheme }) {
       await window.electronAPI.saveUser(null);
     }
     logoutUser();
+  };
+
+  const handleGitHubAuth = async () => {
+    // Placeholder for GitHub authentication
+    alert('GitHub authentication coming soon!');
+  };
+
+  const handleGoogleAuth = async () => {
+    // Placeholder for Google authentication
+    alert('Google authentication coming soon!');
   };
 
   const handleServerUrlChange = (e) => {
@@ -66,6 +80,45 @@ function Header({ onThemeChange, currentTheme }) {
     }
   };
 
+  const handleRunAutomation = () => {
+    showActionToast('Automation runner coming soon.');
+  };
+
+  const handleResetLayout = () => {
+    window.dispatchEvent(new Event('reset-layout'));
+  };
+
+  const handleRestartServer = async () => {
+    if (window.electronAPI?.restartBackend) {
+      await window.electronAPI.restartBackend();
+      alert('Backend server restart requested');
+    } else {
+      alert('Restart backend API unavailable');
+    }
+  };
+
+  const handleStopServer = async () => {
+    if (window.electronAPI?.stopBackend) {
+      await window.electronAPI.stopBackend();
+      alert('Backend server stop requested');
+    } else {
+      alert('Stop backend API unavailable');
+    }
+  };
+
+  const handleClearHistory = () => {
+    clearResponseHistory();
+    alert('Response history cleared');
+  };
+
+  const showActionToast = (message) => {
+    if (window.electronAPI?.showToast) {
+      window.electronAPI.showToast(message);
+    } else {
+      console.log(message);
+    }
+  };
+
   return (
     <header className="header glass">
       <div className="header-left">
@@ -86,10 +139,53 @@ function Header({ onThemeChange, currentTheme }) {
             className="url-input"
           />
         </div>
+        <div className="header-actions">
+          <button className="header-action-btn" onClick={handleRunAutomation} title="Run automation workflows">
+            <FiPlay size={16} />
+            Run Automation
+          </button>
+          <button className="header-action-btn" onClick={handleResetLayout} title="Reset layout">
+            <FiRefreshCcw size={16} />
+            Reset Layout
+          </button>
+          <button className="header-action-btn" onClick={handleClearHistory} title="Clear all history">
+            <FiTrash2 size={16} />
+            Clear History
+          </button>
+          <button className="header-action-btn" onClick={() => window.electronAPI?.reloadApp()} title="Reload development environment">
+            <FiRefreshCcw size={16} />
+            Dev Reload
+          </button>
+          <button className="header-action-btn" onClick={handleRestartServer} title="Restart backend server">
+            <FiPower size={16} />
+            Restart Server
+          </button>
+          <button className="header-action-btn" onClick={handleStopServer} title="Stop backend server">
+            <FiPower size={16} />
+            Stop Server
+          </button>
+        </div>
       </div>
 
       <div className="header-right">
         <BackendStatus />
+        
+        <div className="cloud-auth">
+          <button
+            className="header-btn cloud-btn"
+            onClick={handleGitHubAuth}
+            title="Connect with GitHub"
+          >
+            <FiGithub size={18} />
+          </button>
+          <button
+            className="header-btn cloud-btn"
+            onClick={handleGoogleAuth}
+            title="Connect with Google"
+          >
+            <FiCloud size={18} />
+          </button>
+        </div>
         
         <div className="user-info">
           <span className="user-email">{user?.email}</span>
@@ -108,6 +204,22 @@ function Header({ onThemeChange, currentTheme }) {
             {pingStatus.message}
           </span>
         )}
+
+        <button
+          className="header-btn"
+          onClick={() => shuffleAPIs()}
+          title="Shuffle API collections"
+        >
+          <FiShuffle size={18} />
+        </button>
+
+        <button
+          className={`header-btn ${comparisonMode ? 'active' : ''}`}
+          onClick={() => toggleComparisonMode()}
+          title="Toggle response comparison"
+        >
+          <FiLayers size={18} />
+        </button>
 
         <button
           className="header-btn"

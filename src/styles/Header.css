@@ -38,8 +38,11 @@
 }
 
 .header-center {
-  flex: 1;
-  min-width: 300px;
+  flex: 2;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .server-url-input {
@@ -76,6 +79,37 @@
   align-items: center;
   gap: 0.75rem;
   flex-shrink: 0;
+}
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.header-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: var(--transition);
+}
+
+.header-action-btn:hover {
+  border-color: var(--primary);
+  background: rgba(99, 102, 241, 0.12);
+}
+
+.header-btn.active {
+  background: rgba(124, 58, 237, 0.18);
+  border-color: rgba(124, 58, 237, 0.4);
 }
 
 .user-info {
@@ -116,10 +150,17 @@
   border-color: var(--primary);
 }
 
-.header-btn.logout-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
-  color: var(--error);
-  border-color: var(--error);
+.cloud-auth {
+  display: flex;
+  gap: 0.5rem;
+  padding-right: 1rem;
+  border-right: 1px solid var(--border);
+}
+
+.cloud-btn:hover {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary);
+  border-color: var(--primary);
 }
 
 .ping-btn {

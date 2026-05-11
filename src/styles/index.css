@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Root Variables - Dark Theme */
 :root {
   --primary: #6366f1;
