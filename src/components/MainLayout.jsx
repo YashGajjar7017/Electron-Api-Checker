@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import RequestBuilder from './RequestBuilder';
-import ResponseViewer from './ResponseViewer';
-import PerformancePanel from './PerformancePanel';
+import ResponsePanel from './ResponsePanel';
+import PerformanceDashboard from './PerformanceDashboard';
 import Header from './Header';
 import PythonScriptModal from './PythonScriptModal';
 import MCPConfig from './MCPConfig';
@@ -276,6 +276,7 @@ const {
     {backendMessage || localBackendMessage}
   </div>
 )}
+      <PerformanceDashboard />
       <div className="layout-container" ref={containerRef}>
         <div className="sidebar-panel" style={{ width: `${sidebarWidth}px` }}>
           <Sidebar />
@@ -290,8 +291,7 @@ const {
         </div>
 
         <div className="response-panel" style={{ width: `${responseWidth}px` }}>
-          <ResponseViewer />
-          <PerformancePanel />
+          <ResponsePanel />
           <div
             className="resize-handle resize-handle-left"
             onMouseDown={() => handleMouseDown('response')}

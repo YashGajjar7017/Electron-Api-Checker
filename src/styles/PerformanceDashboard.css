@@ -1,0 +1,120 @@
+.performance-dashboard {
+  margin: 0 1rem 1rem;
+  padding: 1rem;
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.92);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  transition: all 0.25s ease;
+}
+
+.performance-dashboard.collapsed {
+  max-height: 72px;
+  overflow: hidden;
+  padding-bottom: 0.5rem;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.dashboard-title {
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.dashboard-subtitle {
+  margin: 0.25rem 0 0;
+  color: #cbd5e1;
+  font-size: 0.88rem;
+}
+
+.dashboard-toggle {
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(148, 163, 184, 0.08);
+  color: #e2e8f0;
+  border-radius: 999px;
+  padding: 0.65rem 1rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.dashboard-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.metric-card {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.metric-card span {
+  color: #94a3b8;
+  font-size: 0.76rem;
+}
+
+.metric-card strong {
+  font-size: 1.2rem;
+}
+
+.dashboard-chart {
+  min-height: 220px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.85);
+  padding: 0.75rem;
+}
+
+.dashboard-footer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.footer-item {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.footer-item span {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.footer-item strong {
+  font-size: 1.1rem;
+  color: #f8fafc;
+}
+
+@media (max-width: 900px) {
+  .performance-dashboard {
+    margin: 0.5rem;
+  }
+
+  .dashboard-metrics,
+  .dashboard-footer {
+    grid-template-columns: 1fr;
+  }
+}

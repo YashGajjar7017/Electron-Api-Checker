@@ -1,0 +1,185 @@
+.otp-auto-fetch {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1rem;
+  margin: 0.75rem;
+}
+
+.otp-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.otp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.otp-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #f8fafc;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.otp-icon {
+  color: #7c3aed;
+}
+
+.otp-refresh {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.otp-refresh:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+}
+
+.otp-refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.otp-refresh svg.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.otp-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: rgba(124, 58, 237, 0.08);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.otp-value {
+  font-family: 'Monaco', 'Courier', monospace;
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: #7c3aed;
+  user-select: all;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.otp-value:hover {
+  transform: scale(1.02);
+}
+
+.otp-timer {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: 'Monaco', 'Courier', monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.otp-loading {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  padding: 0.5rem;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.otp-error {
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: 10px;
+  color: #fca5a5;
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.otp-status-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.otp-status-badge.success {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  color: #a7f3d0;
+}
+
+.otp-status-badge.expired {
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  color: #fca5a5;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.otp-regenerate {
+  background: rgba(248, 113, 113, 0.15);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #fca5a5;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.otp-regenerate:hover {
+  background: rgba(248, 113, 113, 0.25);
+}
+
+.otp-footer {
+  text-align: center;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.otp-status-cached .otp-display {
+  animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

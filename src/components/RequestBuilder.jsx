@@ -16,6 +16,8 @@ import {
   FiExternalLink,
 } from 'react-icons/fi';
 import OTPModal from './OTPModal';
+import DebugPanel from './DebugPanel';
+import OTPAutoFetch from './OTPAutoFetch';
 import { applyTemplateVariables } from '../utils/variableUtils';
 import { useSaveStatusEffect } from './useSaveStatusEffect.js';
 import '../styles/RequestBuilder.css';
@@ -67,6 +69,8 @@ const [activeTab, setActiveTab] = useState('params');
   const [showAuthToken, setShowAuthToken] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
   const [actionMessage, setActionMessage] = useState('');
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const [debugDetails, setDebugDetails] = useState(null);
 
   useSaveStatusEffect(saveStatus, setSaveStatus);
   const pendingSendRef = useRef(false);
@@ -566,13 +570,21 @@ const [activeTab, setActiveTab] = useState('params');
       showActionMessage('Cannot debug: invalid URL');
       return;
     }
-    if (window.electronAPI?.openExternalUrl) {
-      await window.electronAPI.openExternalUrl(url);
-      showActionMessage('Opened URL in external browser');
-    } else {
-      window.open(url, '_blank');
-      showActionMessage('Opened URL in browser');
-    }
+    const debugPayload = {
+      url,
+      method,
+      headers,
+      params,
+      body,
+      auth: {
+        type: authType,
+        token: authTokenState ? '[REDACTED]' : '',
+      },
+      timestamp: Date.now(),
+    };
+    setDebugDetails(debugPayload);
+    setShowDebugPanel(true);
+    showActionMessage('Opened internal debugger');
   };
 
   const handleResendRequest = async () => {
@@ -819,7 +831,7 @@ let responseData;
             {isSending ? 'Sending...' : 'Send'}
           </button>
           <button
-            className="btn btn-primary"
+            className="btn btn-secondary"
             onClick={handleResendRequest}
             disabled={isSending}
             title="Resend the same request"
@@ -1328,7 +1340,9 @@ let responseData;
               </label>
             </div>
 
-<div className="info-box">
+            <OTPAutoFetch />
+
+            <div className="info-box">
               💡 Your auth credentials and certificates are only stored locally in your system.
             </div>
           </div>
@@ -1795,6 +1809,11 @@ let responseData;
           setShowOtpModal(false);
           pendingSendRef.current = false;
         }}
+      />
+      <DebugPanel
+        isOpen={showDebugPanel}
+        request={debugDetails}
+        onClose={() => setShowDebugPanel(false)}
       />
     </div>
   );

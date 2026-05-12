@@ -155,6 +155,7 @@
   gap: 0.5rem;
   padding-right: 1rem;
   border-right: 1px solid var(--border);
+  min-width: 120px;
 }
 
 .cloud-btn:hover {
@@ -204,6 +205,38 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.system-monitor-btn {
+  position: relative;
+}
+
+.status-pulse {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+    opacity: 0.8;
+  }
+}
+
+.logout-btn:hover {
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  border-color: #f87171;
 }
 
 @media (max-width: 1200px) {

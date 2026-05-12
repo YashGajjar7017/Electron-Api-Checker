@@ -323,6 +323,86 @@ addCollection: (collection) => {
       persistData('mcpServers', servers);
       set({ mcpServers: servers });
     },
+
+    // Settings state
+    settings: {
+      fontSize: 'medium',
+      uiScale: 1,
+      fontFamily: 'system',
+      theme: 'dark',
+      compactMode: false,
+      cardRadius: 'medium',
+      animationSpeed: 'normal',
+      transparency: 0.95,
+      accentColor: '#7c3aed',
+      backgroundColor: '#0f172a',
+      showNotifications: true,
+      autoUpdate: true,
+      gpuAcceleration: true,
+      hardwareRendering: true,
+      memoryOptimization: false,
+    },
+    updateSettings: (newSettings) =>
+      set((state) => {
+        const updated = { ...state.settings, ...newSettings };
+        if (window.electronAPI?.saveSettings) {
+          window.electronAPI.saveSettings(updated);
+        }
+        return { settings: updated };
+      }),
+    loadSettings: (loadedSettings) =>
+      set({ settings: { ...get().settings, ...loadedSettings } }),
+
+    // GitHub OAuth state
+    githubToken: null,
+    githubUser: null,
+    setGitHubToken: (token) => set({ githubToken: token }),
+    setGitHubUser: (user) => set({ githubUser: user }),
+    clearGitHub: () => set({ githubToken: null, githubUser: null }),
+
+    // OTP state
+    otpData: {
+      current: null,
+      cached: null,
+      expiry: null,
+      attempts: 0,
+    },
+    setOTPData: (otp, expiry) =>
+      set({
+        otpData: {
+          current: otp,
+          cached: otp,
+          expiry,
+          attempts: 0,
+        },
+      }),
+    clearOTPData: () =>
+      set({
+        otpData: {
+          current: null,
+          cached: null,
+          expiry: null,
+          attempts: 0,
+        },
+      }),
+
+    // System monitor state
+    systemMetrics: {
+      cpu: 0,
+      ram: 0,
+      disk: 0,
+      appMemory: 0,
+      networkUp: 0,
+      networkDown: 0,
+      activeRequests: 0,
+      failedRequests: 0,
+      requestsPerSec: 0,
+      isOnline: true,
+      uptime: 0,
+      automationTasks: 0,
+    },
+    updateSystemMetrics: (metrics) =>
+      set({ systemMetrics: { ...get().systemMetrics, ...metrics } }),
   }))
 );
 

@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import useStore from '../store';
-import { FiLogOut, FiWifi, FiGithub, FiCloud, FiRefreshCcw, FiPower, FiShuffle, FiLayers, FiSettings, FiZap, FiPlay, FiTrash2 } from 'react-icons/fi';
+import { FiLogOut, FiWifi, FiGithub, FiCloud, FiRefreshCcw, FiPower, FiShuffle, FiLayers, FiSettings, FiZap, FiPlay, FiTrash2, FiActivity } from 'react-icons/fi';
 import BackendStatus from './BackendStatus';
+import SystemMonitor from './SystemMonitor';
+import SettingsPanel from './SettingsPanel';
+import GitHubAuth from './GitHubAuth';
+import OTPAutoFetch from './OTPAutoFetch';
 import '../styles/Header.css';
 
 function Header({ onThemeChange, currentTheme }) {
   const [pinging, setPinging] = useState(false);
   const [pingStatus, setPingStatus] = useState(null);
+  const [showSystemMonitor, setShowSystemMonitor] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   
   const { user, logoutUser, serverUrl, setServerUrl, clearResponseHistory, shuffleAPIs, toggleComparisonMode, comparisonMode } = useStore(
     (state) => ({
@@ -26,16 +32,6 @@ function Header({ onThemeChange, currentTheme }) {
       await window.electronAPI.saveUser(null);
     }
     logoutUser();
-  };
-
-  const handleGitHubAuth = async () => {
-    // Placeholder for GitHub authentication
-    alert('GitHub authentication coming soon!');
-  };
-
-  const handleGoogleAuth = async () => {
-    // Placeholder for Google authentication
-    alert('Google authentication coming soon!');
   };
 
   const handleServerUrlChange = (e) => {
@@ -139,7 +135,7 @@ function Header({ onThemeChange, currentTheme }) {
             className="url-input"
           />
         </div>
-        <div className="header-actions">
+        {/* <div className="header-actions">
           <button className="header-action-btn" onClick={handleRunAutomation} title="Run automation workflows">
             <FiPlay size={16} />
             Run Automation
@@ -164,31 +160,31 @@ function Header({ onThemeChange, currentTheme }) {
             <FiPower size={16} />
             Stop Server
           </button>
-        </div>
+        </div> */}
       </div>
 
       <div className="header-right">
         <BackendStatus />
+
+        <button
+          className="header-btn system-monitor-btn"
+          onClick={() => setShowSystemMonitor(true)}
+          title="Open system monitor"
+        >
+          <FiActivity size={18} />
+          <span className="status-pulse" />
+        </button>
+        
+        <button
+          className="header-btn"
+          onClick={() => setShowSettings(true)}
+          title="Open settings"
+        >
+          <FiSettings size={18} />
+        </button>
         
         <div className="cloud-auth">
-          <button
-            className="header-btn cloud-btn"
-            onClick={handleGitHubAuth}
-            title="Connect with GitHub"
-          >
-            <FiGithub size={18} />
-          </button>
-          <button
-            className="header-btn cloud-btn"
-            onClick={handleGoogleAuth}
-            title="Connect with Google"
-          >
-            <FiCloud size={18} />
-          </button>
-        </div>
-        
-        <div className="user-info">
-          <span className="user-email">{user?.email}</span>
+          <GitHubAuth />
         </div>
 
         <button
@@ -204,23 +200,7 @@ function Header({ onThemeChange, currentTheme }) {
             {pingStatus.message}
           </span>
         )}
-
-        <button
-          className="header-btn"
-          onClick={() => shuffleAPIs()}
-          title="Shuffle API collections"
-        >
-          <FiShuffle size={18} />
-        </button>
-
-        <button
-          className={`header-btn ${comparisonMode ? 'active' : ''}`}
-          onClick={() => toggleComparisonMode()}
-          title="Toggle response comparison"
-        >
-          <FiLayers size={18} />
-        </button>
-
+        
         <button
           className="header-btn"
           onClick={() => onThemeChange(currentTheme === 'dark' ? 'light' : 'dark')}
@@ -228,6 +208,10 @@ function Header({ onThemeChange, currentTheme }) {
         >
           {currentTheme === 'dark' ? '☀️' : '🌙'}
         </button>
+
+        <div className="user-info">
+          <span className="user-email">{user?.email}</span>
+        </div>
 
         <button
           className="header-btn logout-btn"
@@ -237,6 +221,9 @@ function Header({ onThemeChange, currentTheme }) {
           <FiLogOut size={18} />
         </button>
       </div>
+
+      <SystemMonitor isOpen={showSystemMonitor} onClose={() => setShowSystemMonitor(false)} />
+      <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </header>
   );
 }
