@@ -2,8 +2,11 @@
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
-  padding: 1rem;
-  margin: 0.75rem;
+  /* padding: 1rem;
+  margin: 0.75rem; */
+  padding: 0.3%;
+  margin: 0.75%;
+  /* padding-left: 3%; */
 }
 
 .github-login-btn {
@@ -15,12 +18,13 @@
   background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #f8fafc;
-  padding: 0.9rem 1.2rem;
+  /* padding: 0.9rem 1.2rem; */
   border-radius: 12px;
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 600;
   transition: all 0.2s ease;
+  padding-left: 2%;
 }
 
 .github-login-btn:hover:not(:disabled) {

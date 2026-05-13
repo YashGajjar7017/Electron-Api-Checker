@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import useStore from '../store';
 import { FiClock, FiRefreshCw, FiCheckCircle } from 'react-icons/fi';
 import '../styles/OTPSystem.css';
@@ -6,21 +6,87 @@ import '../styles/OTPSystem.css';
 function OTPAutoFetch() {
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [status, setStatus] = useState('idle'); // idle, fetching, cached, expired, error
-  const [timeRemaining, setTimeRemaining] = useState(600); // 10 minutes
-  const [attempts, setAttempts] = useState(0);
+  const [status, setStatus] = useState('idle'); // idle, fetching, cached, validated, expired, error
+  const [timeRemaining, setTimeRemaining] = useState(600);
   const [error, setError] = useState('');
+  const attemptsRef = useRef(0);
 
-  const { serverUrl, sessionToken, setSessionToken } = useStore((state) => ({
+  const { serverUrl, setSessionToken, setOTPData, clearOTPData } = useStore((state) => ({
     serverUrl: state.serverUrl,
-    sessionToken: state.sessionToken,
     setSessionToken: state.setSessionToken,
+    setOTPData: state.setOTPData,
+    clearOTPData: state.clearOTPData,
   }));
 
   const OTP_STORAGE_KEY = 'api_checker_otp_cache';
   const OTP_EXPIRY_KEY = 'api_checker_otp_expiry';
 
-  // Fetch OTP from backend
+  const resetAttempts = () => {
+    attemptsRef.current = 0;
+  };
+
+  const clearCachedOtp = () => {
+    localStorage.removeItem(OTP_STORAGE_KEY);
+    localStorage.removeItem(OTP_EXPIRY_KEY);
+    clearOTPData();
+  };
+
+  const validateOTP = useCallback(
+    async (otpCode) => {
+      if (!otpCode) {
+        setStatus('error');
+        setError('OTP missing for verification');
+        return false;
+      }
+
+      try {
+        const verifyUrl = `${serverUrl.replace(/\/$/, '')}/auth/verify-otp`;
+        const result = await window.electronAPI.sendRequest({
+          url: verifyUrl,
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ otp: otpCode, source: 'electron-app' }),
+        });
+
+        if (result.success && result.status >= 200 && result.status < 300) {
+          const response = JSON.parse(result.body || '{}');
+          const token = response.token || response.data?.token;
+
+          if (token) {
+            setSessionToken(token, 10);
+            setStatus('validated');
+            resetAttempts();
+            return true;
+          }
+        }
+
+        attemptsRef.current += 1;
+        setStatus('error');
+        setError('OTP validation failed');
+
+        if (attemptsRef.current >= 3) {
+          setStatus('expired');
+          clearCachedOtp();
+        }
+
+        return false;
+      } catch (err) {
+        attemptsRef.current += 1;
+        setStatus('error');
+        setError(err.message || 'OTP validation failed');
+        console.error('OTP validation error:', err);
+
+        if (attemptsRef.current >= 3) {
+          setStatus('expired');
+          clearCachedOtp();
+        }
+
+        return false;
+      }
+    },
+    [serverUrl, setSessionToken]
+  );
+
   const fetchOTP = useCallback(async () => {
     setIsLoading(true);
     setStatus('fetching');
@@ -39,22 +105,20 @@ function OTPAutoFetch() {
         const fetchedOtp = data.otp || data.code || '';
 
         if (fetchedOtp) {
-          // Store OTP in local storage with expiry
-          const expiryTime = Date.now() + 600000; // 10 minutes
+          const expiryTime = Date.now() + 600000;
           localStorage.setItem(OTP_STORAGE_KEY, fetchedOtp);
           localStorage.setItem(OTP_EXPIRY_KEY, expiryTime.toString());
-
+          setOTPData(fetchedOtp, expiryTime);
           setOtp(fetchedOtp);
           setStatus('cached');
           setTimeRemaining(600);
-          setAttempts(0);
+          resetAttempts();
 
-          // Auto-validate after short delay
           await new Promise((resolve) => setTimeout(resolve, 500));
-          validateOTP(fetchedOtp);
+          await validateOTP(fetchedOtp);
         } else {
           setStatus('error');
-          setError('No OTP in response');
+          setError('No OTP returned from server');
         }
       } else {
         setStatus('error');
@@ -67,88 +131,47 @@ function OTPAutoFetch() {
     } finally {
       setIsLoading(false);
     }
-  }, [serverUrl]);
+  }, [serverUrl, setOTPData, validateOTP]);
 
-  // Validate OTP
-  const validateOTP = useCallback(
-    async (otpCode) => {
-      try {
-        const verifyUrl = `${serverUrl.replace(/\/$/, '')}/auth/verify-otp`;
-        const result = await window.electronAPI.sendRequest({
-          url: verifyUrl,
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ otp: otpCode, source: 'electron-app' }),
-        });
-
-        if (result.success && result.status >= 200 && result.status < 300) {
-          const response = JSON.parse(result.body || '{}');
-          const token = response.token || response.data?.token;
-
-          if (token) {
-            setSessionToken(token, 10);
-            setStatus('validated');
-            setAttempts(0);
-            return true;
-          }
-        }
-
-        setAttempts((prev) => prev + 1);
-        if (attempts >= 2) {
-          setStatus('expired');
-          localStorage.removeItem(OTP_STORAGE_KEY);
-          localStorage.removeItem(OTP_EXPIRY_KEY);
-        }
-        return false;
-      } catch (err) {
-        console.error('OTP validation error:', err);
-        return false;
-      }
-    },
-    [serverUrl, setSessionToken, attempts]
-  );
-
-  // Auto-fetch OTP on mount and set up polling
   useEffect(() => {
-    // Check if cached OTP is still valid
     const cachedOtp = localStorage.getItem(OTP_STORAGE_KEY);
     const cachedExpiry = localStorage.getItem(OTP_EXPIRY_KEY);
+    const expiryValue = cachedExpiry ? parseInt(cachedExpiry, 10) : 0;
 
-    if (cachedOtp && cachedExpiry && Date.now() < parseInt(cachedExpiry)) {
+    if (cachedOtp && expiryValue > Date.now()) {
       setOtp(cachedOtp);
       setStatus('cached');
-      setTimeRemaining(Math.max(0, Math.floor((parseInt(cachedExpiry) - Date.now()) / 1000)));
+      setTimeRemaining(Math.max(0, Math.floor((expiryValue - Date.now()) / 1000)));
+      setOTPData(cachedOtp, expiryValue);
+      validateOTP(cachedOtp);
     } else {
-      // Fetch new OTP
+      clearCachedOtp();
       fetchOTP();
     }
 
-    // Set up countdown timer
     const countdownInterval = setInterval(() => {
       const expiry = localStorage.getItem(OTP_EXPIRY_KEY);
       if (expiry) {
-        const remaining = Math.max(0, Math.floor((parseInt(expiry) - Date.now()) / 1000));
+        const remaining = Math.max(0, Math.floor((parseInt(expiry, 10) - Date.now()) / 1000));
         setTimeRemaining(remaining);
 
         if (remaining === 0) {
           setStatus('expired');
-          localStorage.removeItem(OTP_STORAGE_KEY);
-          localStorage.removeItem(OTP_EXPIRY_KEY);
+          clearCachedOtp();
         }
       }
     }, 1000);
 
     return () => clearInterval(countdownInterval);
-  }, [fetchOTP]);
+  }, [fetchOTP, validateOTP, setOTPData]);
 
   const handleRefreshOTP = () => {
-    localStorage.removeItem(OTP_STORAGE_KEY);
-    localStorage.removeItem(OTP_EXPIRY_KEY);
+    clearCachedOtp();
     fetchOTP();
   };
 
   const copyOTP = () => {
-    navigator.clipboard.writeText(otp);
+    if (otp) navigator.clipboard.writeText(otp);
   };
 
   const formatTime = (seconds) => {
@@ -189,13 +212,20 @@ function OTPAutoFetch() {
         {status === 'cached' && (
           <div className="otp-status-badge success">
             <FiCheckCircle size={14} />
-            Ready to use
+            OTP cached and ready
+          </div>
+        )}
+
+        {status === 'validated' && (
+          <div className="otp-status-badge success">
+            <FiCheckCircle size={14} />
+            Session token validated
           </div>
         )}
 
         {status === 'expired' && (
           <div className="otp-status-badge expired">
-            <span>OTP Expired</span>
+            <span>OTP expired</span>
             <button onClick={handleRefreshOTP} className="otp-regenerate">
               Regenerate
             </button>

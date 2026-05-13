@@ -5,7 +5,6 @@ import BackendStatus from './BackendStatus';
 import SystemMonitor from './SystemMonitor';
 import SettingsPanel from './SettingsPanel';
 import GitHubAuth from './GitHubAuth';
-import OTPAutoFetch from './OTPAutoFetch';
 import '../styles/Header.css';
 
 function Header({ onThemeChange, currentTheme }) {

@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import RequestBuilder from './RequestBuilder';
 import ResponsePanel from './ResponsePanel';
-import PerformanceDashboard from './PerformanceDashboard';
 import Header from './Header';
 import PythonScriptModal from './PythonScriptModal';
 import MCPConfig from './MCPConfig';
@@ -13,7 +12,7 @@ import '../styles/MainLayout.css';
 
 function MainLayout({ onThemeChange, currentTheme }) {
   const [sidebarWidth, setSidebarWidth] = useState(280);
-  const [responseWidth, setResponseWidth] = useState(400);
+  const [responseWidth, setResponseWidth] = useState(340);
   const containerRef = useRef(null);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [isResizingResponse, setIsResizingResponse] = useState(false);
@@ -276,7 +275,6 @@ const {
     {backendMessage || localBackendMessage}
   </div>
 )}
-      <PerformanceDashboard />
       <div className="layout-container" ref={containerRef}>
         <div className="sidebar-panel" style={{ width: `${sidebarWidth}px` }}>
           <Sidebar />

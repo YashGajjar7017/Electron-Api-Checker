@@ -160,6 +160,32 @@ function ResponsePanel() {
     }
   };
 
+  const handleCopyResponse = async (response) => {
+    const text = safeString(response?.body || response?.rawBody || response?.data || response?.response || '');
+    await navigator.clipboard.writeText(text || '');
+  };
+
+  const handleExportResponse = async (response) => {
+    if (!response) return;
+    setIsExporting(true);
+    try {
+      const payload = JSON.stringify(response, null, 2);
+      const blob = new Blob([payload], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `response-${response.id || 'export'}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.warn('Export failed', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const openDebug = (response) => {
     setDebugRequest({
       url: response.url || `${serverUrl.replace(/\/$/, '')}${response.endpoint}`,
@@ -218,56 +244,48 @@ function ResponsePanel() {
       </div>
 
       <div className="response-panel-content">
-        <div className="response-list-panel">
-          <div className="response-list-header">
-            <span>{filteredResponses.length} {responseCountLabel}</span>
-            <button onClick={() => setFilterStatus('all')} title="Reset filters">
-              <FiRefreshCcw /> Reset
-            </button>
-          </div>
-          <div className="response-list-scroll">
-            {filteredResponses.length === 0 ? (
-              <div className="empty-state">
-                <p>No matching responses</p>
-                <small>Adjust your search or filter criteria.</small>
-              </div>
-            ) : (
-              filteredResponses.map((response) => (
-                <div
-                  key={response.id}
-                  className={`response-card ${getStatusClass(response.status)} ${selectedId === response.id ? 'active' : ''}`}
-                  onClick={() => setSelectedId(response.id)}
-                >
-                  <div className="card-header">
-                    <span className={`method-badge method-${(response.method || 'GET').toLowerCase()}`}>{response.method || 'GET'}</span>
-                    <span className="endpoint-preview">{response.endpoint || response.url || 'Unknown endpoint'}</span>
-                  </div>
-                  <div className="card-meta">
-                    <span className="status-pill">{response.status || (response.error ? 'error' : 'running')}</span>
-                    <span>{response.responseTime ? `${response.responseTime} ms` : '—'}</span>
-                    <span>{response.responseSize ? `${Math.round(response.responseSize / 1024)} KB` : '—'}</span>
-                  </div>
-                  <div className="card-footer">
-                    <span>{response.error ? response.error : response.statusText || 'Completed'}</span>
-                    <div className="card-actions">
-                      <button onClick={(e) => { e.stopPropagation(); handleCopy(); }} title="Copy response payload">
-                        <FiCopy />
-                      </button>
-                      <button onClick={(e) => { e.stopPropagation(); handleRerun(response); }} title="Re-run this request">
-                        <FiPlayCircle />
-                      </button>
-                      <button onClick={(e) => { e.stopPropagation(); openDebug(response); }} title="Open internal debugger">
-                        <FiEye />
-                      </button>
-                      <button onClick={(e) => { e.stopPropagation(); handleExport(); }} title="Export this response">
-                        <FiDownload />
-                      </button>
-                    </div>
+        <div className="response-list-strip">
+          {filteredResponses.length === 0 ? (
+            <div className="empty-state horizontal-empty">
+              <p>No matching responses</p>
+              <small>Adjust your search or filter criteria.</small>
+            </div>
+          ) : (
+            filteredResponses.map((response) => (
+              <div
+                key={response.id}
+                className={`response-card response-card-horizontal ${getStatusClass(response.status)} ${selectedId === response.id ? 'active' : ''}`}
+                onClick={() => setSelectedId(response.id)}
+              >
+                <div className="card-header">
+                  <span className={`method-badge method-${(response.method || 'GET').toLowerCase()}`}>{response.method || 'GET'}</span>
+                  <span className="endpoint-preview">{response.endpoint || response.url || 'Unknown'}</span>
+                </div>
+                <div className="card-meta horizontal-meta">
+                  <span className="status-pill">{response.status || (response.error ? 'error' : 'running')}</span>
+                  <span>{response.responseTime ? `${response.responseTime}ms` : '—'}</span>
+                  <span>{response.responseSize ? `${Math.round(response.responseSize / 1024)} KB` : '—'}</span>
+                </div>
+                <div className="card-footer horizontal-footer">
+                  <span className="card-summary-text">{response.error ? response.error : response.statusText || 'Completed'}</span>
+                  <div className="card-actions">
+                    <button onClick={(e) => { e.stopPropagation(); handleCopyResponse(response); }} title="Copy payload">
+                      <FiCopy />
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); handleRerun(response); }} title="Retry">
+                      <FiPlayCircle />
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); openDebug(response); }} title="Open debugger">
+                      <FiEye />
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); handleExportResponse(response); }} title="Export">
+                      <FiDownload />
+                    </button>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+              </div>
+            ))
+          )}
         </div>
 
         <div className="response-detail-panel">
@@ -277,10 +295,10 @@ function ResponsePanel() {
               <p>{selectedResponse?.endpoint || selectedResponse?.url || 'Pick a response to inspect'}</p>
             </div>
             <div className="detail-actions">
-              <button onClick={handleCopy} title="Copy selected payload">
+              <button onClick={() => handleCopyResponse(selectedResponse)} disabled={!selectedResponse} title="Copy selected payload">
                 <FiCopy /> Copy
               </button>
-              <button onClick={handleExport} disabled={isExporting} title="Export selected response">
+              <button onClick={() => handleExportResponse(selectedResponse)} disabled={!selectedResponse || isExporting} title="Export selected response">
                 <FiDownload /> {isExporting ? 'Exporting…' : 'Export'}
               </button>
             </div>
