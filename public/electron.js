@@ -234,8 +234,22 @@ async function createWindow() {
     }
   });
 
-  mainWindow.on('close', () => {
-    stopBackendServer();
+  mainWindow.on('close', (event) => {
+    // Ensure backend is stopped even if close is triggered while backend is still starting
+    try {
+      stopBackendServer();
+    } catch (e) {
+      console.error('Error stopping backend on window close:', e);
+    }
+  });
+
+  // In case app is quit without firing close (some OS behaviors), stop backend before quitting
+  app.once('before-quit', () => {
+    try {
+      stopBackendServer();
+    } catch (e) {
+      console.error('Error stopping backend on before-quit:', e);
+    }
   });
 
   mainWindow.on('closed', () => {

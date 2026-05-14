@@ -305,7 +305,7 @@ function ResponsePanel() {
           </div>
 
           <div className="detail-tabs">
-            {['response', 'headers', 'cookies', 'errors', 'timing', 'batch', 'raw', 'preview'].map((tab) => (
+            {/* {['response', 'headers', 'cookies', 'errors', 'timing', 'batch', 'raw', 'preview'].map((tab) => (
               <button
                 key={tab}
                 className={tab === activeTab ? 'active' : ''}
@@ -313,7 +313,7 @@ function ResponsePanel() {
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
-            ))}
+            ))} */}
           </div>
 
           <div className="detail-viewer">

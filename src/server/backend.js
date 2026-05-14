@@ -451,12 +451,20 @@ startServer();
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully...');
-  process.exit(0);
+  try {
+    httpServer.close(() => process.exit(0));
+  } catch {
+    process.exit(0);
+  }
 });
 
 process.on('SIGINT', () => {
   console.log('SIGINT received, shutting down gracefully...');
-  process.exit(0);
+  try {
+    httpServer.close(() => process.exit(0));
+  } catch {
+    process.exit(0);
+  }
 });
 
 module.exports = app;
