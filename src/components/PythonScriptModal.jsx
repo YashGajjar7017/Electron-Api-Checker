@@ -4,6 +4,7 @@ import '../styles/PythonScriptModal.css';
 
 function PythonScriptModal({ isOpen, onClose, onRun, isRunning, output, token }) {
   const [copied, setCopied] = useState(false);
+  const [otpInput, setOtpInput] = useState('');
 
   const handleCopyOutput = () => {
     navigator.clipboard.writeText(output);
@@ -50,6 +51,30 @@ function PythonScriptModal({ isOpen, onClose, onRun, isRunning, output, token })
             <p className="script-description">
               This script will run the Python automation to fetch API history data with pagination support.
             </p>
+          </div>
+
+          <div className="otp-input-section">
+            <label htmlFor="otp-input">OTP (Optional)</label>
+            <div className="otp-input-group">
+              <input
+                id="otp-input"
+                type="text"
+                placeholder="Enter OTP if required"
+                value={otpInput}
+                onChange={(e) => setOtpInput(e.target.value)}
+                className="otp-input"
+                disabled={isRunning}
+              />
+              <button
+                className="btn btn-secondary"
+                onClick={() => setOtpInput('')}
+                disabled={!otpInput || isRunning}
+                title="Clear OTP"
+              >
+                Clear
+              </button>
+            </div>
+            <small className="otp-hint">OTP will be sent with the automation request if provided</small>
           </div>
 
           <div className="script-controls">

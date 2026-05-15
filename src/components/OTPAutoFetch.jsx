@@ -40,7 +40,9 @@ function OTPAutoFetch() {
       }
 
       try {
-        const verifyUrl = `${serverUrl.replace(/\/$/, '')}/auth/verify-otp`;
+        // Use backend server at port 5000 instead of frontend at port 3000
+        const backendUrl = serverUrl.replace(/localhost:3000/, 'localhost:5000');
+        const verifyUrl = `${backendUrl.replace(/\/$/, '')}/auth/verify-otp`;
         const result = await window.electronAPI.sendRequest({
           url: verifyUrl,
           method: 'POST',
@@ -84,7 +86,7 @@ function OTPAutoFetch() {
         return false;
       }
     },
-    [serverUrl, setSessionToken]
+    [serverUrl, setSessionToken, clearCachedOtp]
   );
 
   const fetchOTP = useCallback(async () => {
@@ -93,8 +95,11 @@ function OTPAutoFetch() {
     setError('');
 
     try {
+      // Use backend server at port 5000 instead of frontend at port 3000
+      const backendUrl = serverUrl.replace(/localhost:3000/, 'localhost:5000');
       const response = await window.electronAPI.sendRequest({
-        url: `${serverUrl.replace(/\/$/, '')}/auth/generate-otp`,
+        // url: `${serverUrl.replace(/\/$/, '')}/auth/generate-otp`,
+        url: `${backendUrl.replace(/\/$/, '')}/api/login`,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ source: 'electron-app', timestamp: Date.now() }),
@@ -102,7 +107,8 @@ function OTPAutoFetch() {
 
       if (response.success && response.status >= 200 && response.status < 300) {
         const data = JSON.parse(response.body || '{}');
-        const fetchedOtp = data.otp || data.code || '';
+        // Handle nested data structures from server
+        const fetchedOtp = data.otp || data.code || data.Data?.otp || data.Data?.code || '';
 
         if (fetchedOtp) {
           const expiryTime = Date.now() + 600000;
@@ -163,7 +169,7 @@ function OTPAutoFetch() {
     }, 1000);
 
     return () => clearInterval(countdownInterval);
-  }, [fetchOTP, validateOTP, setOTPData]);
+  }, [fetchOTP, validateOTP, setOTPData, clearCachedOtp]);
 
   const handleRefreshOTP = () => {
     clearCachedOtp();

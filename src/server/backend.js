@@ -393,6 +393,36 @@ app.delete('/api/presets/:id', (req, res) => {
   }
 });
 
+// GitHub OAuth callback endpoint
+app.post('/api/auth/github/callback', (req, res) => {
+  try {
+    const { code } = req.body;
+    
+    if (!code) {
+      return res.status(400).json({ error: 'Authorization code is required' });
+    }
+
+    // Mock GitHub token exchange (in production, exchange with GitHub API)
+    // This is a simplified version for demonstration
+    const mockAccessToken = `ghu_mock_${Math.random().toString(36).substr(2, 20)}`;
+    const mockUser = {
+      id: Math.floor(Math.random() * 1000000),
+      login: 'github-user',
+      email: 'user@github.com',
+      name: 'GitHub User',
+      avatar_url: 'https://avatars.githubusercontent.com/u/1?v=4',
+    };
+
+    res.json({
+      accessToken: mockAccessToken,
+      user: mockUser,
+      expiresIn: 3600,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Server info endpoint
 app.get('/api/info', (req, res) => {
   res.json({

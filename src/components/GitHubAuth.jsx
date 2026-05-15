@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import useStore from '../store';
 import { FiGithub, FiLogOut, FiRefreshCw } from 'react-icons/fi';
 import '../styles/GitHubAuth.css';
@@ -6,7 +6,9 @@ import '../styles/GitHubAuth.css';
 // GitHub OAuth configuration
 // Note: In production, use environment variables
 const GITHUB_CLIENT_ID = process.env.REACT_APP_GITHUB_CLIENT_ID || 'your_client_id';
-const GITHUB_REDIRECT_URI = 'http://localhost:3000/auth/github/callback';
+// Redirect URI must point back to the React app, not the backend
+const GITHUB_REDIRECT_URI = 'http://localhost:3000/';
+const BACKEND_URL = 'http://localhost:5000';
 
 function GitHubAuth() {
   const { user, loginUser, logoutUser } = useStore((state) => ({
@@ -17,6 +19,60 @@ function GitHubAuth() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Exchange authorization code for access token (memoized)
+  const exchangeCodeForToken = React.useCallback(async (code) => {
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/auth/github/callback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Token exchange failed');
+      }
+
+      const data = await response.json();
+      const { accessToken } = data;
+
+      // Store token securely
+      if (window.electronAPI?.storeToken) {
+        await window.electronAPI.storeToken('github', accessToken);
+      } else {
+        localStorage.setItem('github_token', accessToken);
+      }
+
+      // Fetch user profile
+      fetchGitHubProfile(accessToken);
+    } catch (err) {
+      setError(err.message || 'Token exchange failed');
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // If redirected back with code/state in URL, handle it once.
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const returnedState = urlParams.get('state');
+
+    if (!code) return;
+
+    const storedState = localStorage.getItem('github_oauth_state');
+
+    if (!returnedState || storedState !== returnedState) {
+      setError('State mismatch - possible CSRF attack');
+      return;
+    }
+
+    // One-time use
+    localStorage.removeItem('github_oauth_state');
+
+    exchangeCodeForToken(code);
+  }, [exchangeCodeForToken]);
 
   // Step 1: Initiate GitHub OAuth flow
   const handleGitHubLogin = async () => {
@@ -41,63 +97,9 @@ function GitHubAuth() {
       } else {
         window.open(authUrl.toString(), 'github-auth', 'width=600,height=700');
       }
-
-      // Listen for the callback
-      const handleCallback = (event) => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        const returnedState = urlParams.get('state');
-        const storedState = localStorage.getItem('github_oauth_state');
-
-        if (returnedState !== storedState) {
-          setError('State mismatch - possible CSRF attack');
-          window.removeEventListener('message', handleCallback);
-          return;
-        }
-
-        if (code) {
-          exchangeCodeForToken(code);
-          window.removeEventListener('message', handleCallback);
-        }
-      };
-
-      window.addEventListener('message', handleCallback);
     } catch (err) {
       setError(err.message || 'Failed to initiate GitHub login');
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Step 2: Exchange authorization code for access token
-  const exchangeCodeForToken = async (code) => {
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('http://localhost:3000/api/auth/github/callback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Token exchange failed');
-      }
-
-      const data = await response.json();
-      const { accessToken, user: githubUser } = data;
-
-      // Store token securely
-      if (window.electronAPI?.storeToken) {
-        await window.electronAPI.storeToken('github', accessToken);
-      } else {
-        localStorage.setItem('github_token', accessToken);
-      }
-
-      // Fetch user profile
-      fetchGitHubProfile(accessToken);
-    } catch (err) {
-      setError(err.message || 'Token exchange failed');
       setIsLoading(false);
     }
   };
@@ -183,7 +185,7 @@ function GitHubAuth() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/github/refresh', {
+      const response = await fetch(`${BACKEND_URL}/api/auth/github/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken: user?.refreshToken }),
