@@ -1,11 +1,17 @@
 const { app, BrowserWindow, Menu, ipcMain, screen } = require('electron');
 const path = require('path');
-const fs = require('fs');
-const os = require('os');
+const fs  = require('fs');
+const os  = require('os');
 const http = require('http');
 const https = require('https');
 const { pathToFileURL } = require('url');
 const { spawn } = require('child_process');
+const dotenv = require('dotenv');
+
+// Load environment variables from .env.electron for the main process.
+// CRA/REACT_APP_* variables are injected by webpack DefinePlugin at build time
+// and are automatically available in the renderer bundle.
+dotenv.config({ path: path.join(__dirname, '.env.electron') });
 
 let mainWindow;
 let backendServer;
@@ -13,6 +19,48 @@ let backendPort = null;
 const dataPath = path.join(os.homedir(), '.api-checker');
 const devServerUrl = 'http://localhost:3000';
 const isDev = !app.isPackaged;
+
+// =============================================================================
+// Protocol Handler & Single-Instance Lock
+// =============================================================================
+// Register custom protocol for OAuth / deep-link callbacks (e.g. myapp://…)
+if (process.defaultApp) {
+  app.setAsDefaultProtocolClient(
+    "myapp",
+    process.execPath,
+    [path.resolve(process.argv[1])]
+  );
+} else {
+  app.setAsDefaultProtocolClient("myapp");
+}
+
+// Enforce single-instance: second launch focuses the existing window
+const singleInstanceLock = app.requestSingleInstanceLock();
+if (!singleInstanceLock) {
+  app.quit();
+} else {
+  app.on("second-instance", (_event, argv) => {
+    const deepLink = argv.find(arg => typeof arg === "string" && arg.startsWith("myapp://"));
+
+    if (deepLink) {
+      try {
+        const url   = new URL(deepLink);
+        const token = url.searchParams.get("token");
+
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send("github-token", token);
+        }
+      } catch (_err) {
+        // malformed deep link – ignore
+      }
+    }
+
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
 
 // Ensure data directory exists
 if (!fs.existsSync(dataPath)) {

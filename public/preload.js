@@ -1,41 +1,62 @@
 const { contextBridge, ipcRenderer } = require('electron');
+const {
+  contextBridge,
+  ipcRenderer,
+  shell,
+} = require("electron");
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  // Data persistence
-  saveCollections: (collections) =>
-    ipcRenderer.invoke('save-collections', collections),
+  // ── GitHub OAuth ──────────────────────────────────────────────────────────
+  loginGithub: () => {
+    shell.openExternal("http://localhost:5000/auth/github");
+  },
+  onGithubToken: (callback) => {
+    ipcRenderer.on("github-token", (_, token) => callback(token));
+  },
+  storeToken: async (_provider, token) => {
+    // Persist the auth token via IPC into the main-process data store
+    try {
+      await ipcRenderer.invoke('save-user', token ? { token, savedAt: new Date().toISOString() } : null);
+    } catch (_e) { /* no-op in browser-only fallback */ }
+  },
+
+  // ── Data persistence ──────────────────────────────────────────────────────
+  saveCollections: (collections) => ipcRenderer.invoke('save-collections', collections),
   loadCollections: () => ipcRenderer.invoke('load-collections'),
-  saveUser: (user) => ipcRenderer.invoke('save-user', user),
-  loadUser: () => ipcRenderer.invoke('load-user'),
-  saveAPIs: (apis) => ipcRenderer.invoke('save-apis', apis),
-  loadAPIs: () => ipcRenderer.invoke('load-apis'),
-  
-  // Network requests
-  sendRequest: (requestOptions) => ipcRenderer.invoke('send-request', requestOptions),
-  pingServer: (serverUrl) => ipcRenderer.invoke('ping-server', serverUrl),
-  runPythonScript: (options) => ipcRenderer.invoke('run-python-script', options),
-  reloadApp: () => ipcRenderer.invoke('reload-app'),
-  restartBackend: () => ipcRenderer.invoke('restart-backend'),
-  stopBackend: () => ipcRenderer.invoke('stop-backend'),
-  
-  // Backend info
+  saveUser: (user)     => ipcRenderer.invoke('save-user', user),
+  loadUser: ()         => ipcRenderer.invoke('load-user'),
+  saveAPIs: (apis)     => ipcRenderer.invoke('save-apis', apis),
+  loadAPIs: ()         => ipcRenderer.invoke('load-apis'),
+
+  // ── Store settings (future-proof) ─────────────────────────────────────────
+  saveSettings: (_settings) => Promise.resolve({ success: true }),
+  loadSettings: ()           => Promise.resolve(null),
+
+  // ── Network requests ───────────────────────────────────────────────────────
+  sendRequest:     (requestOptions) => ipcRenderer.invoke('send-request', requestOptions),
+  pingServer:      (serverUrl)        => ipcRenderer.invoke('ping-server', serverUrl),
+  runPythonScript: (options)         => ipcRenderer.invoke('run-python-script', options),
+  reloadApp:       ()                => ipcRenderer.invoke('reload-app'),
+  restartBackend:  ()                => ipcRenderer.invoke('restart-backend'),
+  stopBackend:     ()                => ipcRenderer.invoke('stop-backend'),
+
+  // ── Backend info ───────────────────────────────────────────────────────────
   getBackendInfo: () => ipcRenderer.invoke('get-backend-info'),
-  
-  // New features
+
+  // ── Utilities ──────────────────────────────────────────────────────────────
   openExternalUrl: (url) => ipcRenderer.invoke('open-external-url', url),
-  exportData: (data, filename) => ipcRenderer.invoke('export-data', data, filename),
-  importData: () => ipcRenderer.invoke('import-data'),
-  clearCache: () => ipcRenderer.invoke('clear-cache'),
-  getAppInfo: () => ipcRenderer.invoke('get-app-info'),
-  openFileDialog: () => ipcRenderer.invoke('open-file-dialog'),
-  getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
-  
-  // Event listeners
+  exportData: (data, filename)  => ipcRenderer.invoke('export-data', data, filename),
+  importData: ()                => ipcRenderer.invoke('import-data'),
+  clearCache: ()                => ipcRenderer.invoke('clear-cache'),
+  getAppInfo: ()                => ipcRenderer.invoke('get-app-info'),
+  openFileDialog: ()            => ipcRenderer.invoke('open-file-dialog'),
+  getSystemInfo: ()             => ipcRenderer.invoke('get-system-info'),
+
+  // ── Event listeners ────────────────────────────────────────────────────────
   onWindowResized: (callback) => {
     ipcRenderer.on('window-resized', callback);
     return () => ipcRenderer.removeListener('window-resized', callback);
   },
-  
   onAppReady: (callback) => {
     ipcRenderer.on('app-ready', callback);
     return () => ipcRenderer.removeListener('app-ready', callback);

@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 800;
+  z-index: 2500;
 }
 
 .system-monitor {
@@ -19,6 +19,7 @@
   overflow: hidden;
   max-height: 85vh;
   transition: all 0.3s ease;
+  z-index: 2501;
 }
 
 .system-monitor.minimized {

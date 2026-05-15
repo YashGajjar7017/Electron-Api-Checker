@@ -4,6 +4,7 @@ import './styles/App.css';
 import AuthScreen from './components/AuthScreen';
 import MainLayout from './components/MainLayout';
 
+
 function App() {
   const { isAuthenticated, loginUser } = useStore(
     (state) => ({
@@ -21,7 +22,7 @@ function App() {
         // Check if we're in Electron environment
         const isElectron = window.electronAPI && typeof window.electronAPI.loadUser === 'function';
         console.log('Loading persisted data... Electron:', isElectron);
-        
+
         // Load user
         if (window.electronAPI && window.electronAPI.loadUser) {
           const userResult = await window.electronAPI.loadUser();
@@ -49,7 +50,6 @@ function App() {
             useStore.getState().setAPIs(loadedAPIs);
           }
         }
-
 
         if (loadedAPIs.length === 0 && loadedCollections.length > 0) {
           const recoveredAPIs = loadedCollections.flatMap((collection) =>

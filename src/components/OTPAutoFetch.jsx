@@ -40,8 +40,13 @@ function OTPAutoFetch() {
       }
 
       try {
-        // Use backend server at port 5000 instead of frontend at port 3000
-        const backendUrl = serverUrl.replace(/localhost:3000/, 'localhost:5000');
+      const backendUrl = (() => {
+        // Robustly map UI base URL -> backend base URL
+        // UI default is http://localhost:3000, backend is http://localhost:5000
+        const s = String(serverUrl || '');
+        if (s.startsWith('http://localhost:5000') || s.startsWith('https://localhost:5000')) return s;
+        return s.replace(/localhost:\s*3000\b/i, 'localhost:5000');
+      })();
         const verifyUrl = `${backendUrl.replace(/\/$/, '')}/auth/verify-otp`;
         const result = await window.electronAPI.sendRequest({
           url: verifyUrl,
@@ -96,7 +101,11 @@ function OTPAutoFetch() {
 
     try {
       // Use backend server at port 5000 instead of frontend at port 3000
-      const backendUrl = serverUrl.replace(/localhost:3000/, 'localhost:5000');
+      const backendUrl = (() => {
+        const s = String(serverUrl || '');
+        if (s.startsWith('http://localhost:5000') || s.startsWith('https://localhost:5000')) return s;
+        return s.replace(/localhost:\s*3000\b/i, 'localhost:5000');
+      })();
       const response = await window.electronAPI.sendRequest({
         // url: `${serverUrl.replace(/\/$/, '')}/auth/generate-otp`,
         url: `${backendUrl.replace(/\/$/, '')}/api/login`,
