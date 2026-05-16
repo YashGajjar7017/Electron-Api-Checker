@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import useStore from '../store';
 import { FiLogOut, FiWifi, FiGithub, FiCloud, FiRefreshCcw, FiPower, FiShuffle, FiLayers, FiSettings, FiZap, FiPlay, FiTrash2, FiActivity } from 'react-icons/fi';
 import BackendStatus from './BackendStatus';
@@ -12,6 +12,7 @@ function Header({ onThemeChange, currentTheme }) {
   const [pingStatus, setPingStatus] = useState(null);
   const [showSystemMonitor, setShowSystemMonitor] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [token, setToken] = useState(null);
   
   const { user, logoutUser, serverUrl, setServerUrl, clearResponseHistory, shuffleAPIs, toggleComparisonMode, comparisonMode } = useStore(
     (state) => ({
@@ -25,9 +26,20 @@ function Header({ onThemeChange, currentTheme }) {
       comparisonMode: state.comparisonMode,
     })
   );
-
+  
+  // GitHub JWT token handler
+  useEffect(() => {
+    if (window.electronAPI?.onGithubToken) {
+      window.electronAPI.onGithubToken((jwtToken) => {
+        console.log('JWT Token received:', jwtToken);
+        localStorage.setItem('github_jwt', jwtToken);
+        setToken(jwtToken);
+      });
+    }
+  }, []);
+  
   const handleLogout = async () => {
-    if (window.electronAPI && window.electronAPI.saveUser) {
+  if (window.electronAPI && window.electronAPI.saveUser) {
       await window.electronAPI.saveUser(null);
     }
     logoutUser();

@@ -14,11 +14,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on("github-token", (_, token) => callback(token));
   },
   storeToken: async (_provider, token) => {
-    // Persist the auth token via IPC into the main-process data store
+    // Persist the auth token via IPC into the main-process data store,
+    // merging with any existing saved user state.
     try {
-      await ipcRenderer.invoke('save-user', token ? { token, savedAt: new Date().toISOString() } : null);
+      const existing = await ipcRenderer.invoke('load-user');
+      const currentUser = existing?.success && existing.data ? existing.data : null;
+      const updatedUser = token
+        ? { ...currentUser, token, savedAt: new Date().toISOString() }
+        : null;
+      await ipcRenderer.invoke('save-user', updatedUser);
     } catch (_e) { /* no-op in browser-only fallback */ }
   },
+
+  saveAppState: (state) => ipcRenderer.invoke('save-app-state', state),
+  loadAppState: () => ipcRenderer.invoke('load-app-state'),
 
   // ── Data persistence ──────────────────────────────────────────────────────
   saveCollections: (collections) => ipcRenderer.invoke('save-collections', collections),

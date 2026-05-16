@@ -176,9 +176,89 @@
   to { transform: rotate(360deg); }
 }
 
+.github-response {
+  margin-top: 0.75rem;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 10px;
+  padding: 0.9rem;
+  color: #dbeafe;
+  font-size: 0.85rem;
+}
+
+.github-response pre {
+  margin: 0.5rem 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #c7d2fe;
+}
+
+.github-error-modal {
+  position: fixed;
+  right: 20px;
+  top: 20px;
+  width: min(420px, 90vw);
+  max-height: calc(100vh - 40px);
+  z-index: 11000;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  pointer-events: auto;
+}
+
+.github-error-modal-content {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 24px 68px rgba(15, 23, 42, 0.45);
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.github-error-modal-content h3 {
+  margin: 0 0 0.75rem;
+  color: #93c5fd;
+}
+
+.github-error-modal-content pre {
+  background: rgba(30, 41, 59, 0.95);
+  border: 1px solid rgba(100, 116, 139, 0.25);
+  padding: 0.85rem;
+  border-radius: 10px;
+  max-height: calc(100vh - 220px);
+  overflow: auto;
+  color: #cbd5e1;
+  white-space: pre-wrap;
+}
+
+.github-error-modal-close {
+  margin-top: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  background: rgba(248, 113, 113, 0.12);
+  color: #fecaca;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  cursor: pointer;
+}
+
+.github-error-modal-close:hover {
+  background: rgba(248, 113, 113, 0.2);
+}
+
 @media (max-width: 600px) {
   .github-stats {
     grid-template-columns: 1fr;
+  }
+
+  .github-error-modal-content {
+    width: min(95vw, 500px);
   }
 
   .github-actions {

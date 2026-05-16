@@ -4,11 +4,11 @@ import { FiGithub, FiLogOut, FiRefreshCw } from 'react-icons/fi';
 import '../styles/GitHubAuth.css';
 
 // ── Environment-provided configuration (CRA REACT_APP_ prefix) ───────────────
-const GITHUB_CLIENT_ID     = process.env.REACT_APP_GITHUB_CLIENT_ID       || '';
-const GITHUB_CLIENT_SECRET = process.env.REACT_APP_GITHUB_CLIENT_SECRET   || '';
-const GITHUB_REDIRECT_URI  = process.env.REACT_APP_GITHUB_REDIRECT_URI    || 'myapp://github-auth';
-const BACKEND_URL          = process.env.REACT_APP_BACKEND_URL             || 'http://localhost:5000';
-const AUTH_SCOPE           = process.env.REACT_APP_GITHUB_SCOPE            || 'user:email read:user';
+const GITHUB_CLIENT_ID     = process.env.REACT_APP_GITHUB_CLIENT_ID     || process.env.GITHUB_CLIENT_ID     || '';
+const GITHUB_CLIENT_SECRET = process.env.REACT_APP_GITHUB_CLIENT_SECRET || process.env.GITHUB_CLIENT_SECRET || '';
+const GITHUB_REDIRECT_URI  = process.env.REACT_APP_GITHUB_REDIRECT_URI  || process.env.GITHUB_CALLBACK_URL    || 'myapp://github-auth';
+const BACKEND_URL          = process.env.REACT_APP_BACKEND_URL         || process.env.BACKEND_URL          || 'http://localhost:5000';
+const AUTH_SCOPE           = process.env.REACT_APP_GITHUB_SCOPE         || process.env.GITHUB_SCOPE         || 'user:email read:user';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const NIP07_NAMESPACE  = 'nip07';           // scheme sent by the OAuth provider
@@ -18,12 +18,14 @@ const AUTHORIZE_PARAMS = ['client_id', 'redirect_uri', 'scope', 'state', 'allow_
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /** Build the redirect URI that the provider calls back to (already registered at GitHub App settings). */
-const buildRedirectURL = () =>
-  // In Electron the custom protocol myapp:// is registered in electron.js.
-  // In browser fallback it resolves to localhost:3000.
-  typeof window !== 'undefined' && window.location.protocol === 'myapp:'
-    ? GITHUB_REDIRECT_URI   // e.g. "myapp://github-auth"
-    : `${window.location.origin}/`; // browser fallback
+const buildRedirectURL = () => {
+  if (typeof window === 'undefined') return GITHUB_REDIRECT_URI;
+
+  const isCustomOAuthScheme = window.location.protocol === 'myapp:'
+    || window.location.protocol === `${NIP07_NAMESPACE}:`;
+
+  return isCustomOAuthScheme ? GITHUB_REDIRECT_URI : `${window.location.origin}/`;
+};
 
 /** Extract params from the registered redirect-scheme URL (myapp://…) */
 const parseRedirectParams = () => {
@@ -46,14 +48,19 @@ const parseRedirectParams = () => {
 const exchangeCodeForToken = async (code, onSuccess, onError) => {
   try {
     const url = `${BACKEND_URL}/api/auth/github/callback`;
+    const payload = { code };
+    if (GITHUB_CLIENT_SECRET) {
+      payload.client_secret = GITHUB_CLIENT_SECRET;
+    }
     const res = await fetch(url, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ code }),
+      body:    JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${text}`);
 
-    const data = await res.json();
+    const data = text ? JSON.parse(text) : {};
     onSuccess?.(data);   // { accessToken, refreshToken, expiresIn, scope, tokenType }
   } catch (err) {
     onError?.(err);
@@ -108,7 +115,7 @@ const persistSessionToBackend = async (profile, accessToken) => {
     await fetch(`${BACKEND_URL}/api/auth/github/session`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(profile, accessToken),
+      body:    JSON.stringify({ profile, accessToken }),
     });
   } catch {
     // non-fatal – local Electron/file storage will act as fallback
@@ -127,6 +134,9 @@ function GitHubAuth() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error,    setError]    = useState('');
+  const [detail,   setDetail]   = useState('');
+  const [githubResponse, setGitHubResponse] = useState(null);
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   // ── 1. Handle inbound redirect (code + state in URL) ──────────────────────────
   useEffect(() => {
@@ -145,7 +155,8 @@ function GitHubAuth() {
     setError('');
 
     exchangeCodeForToken(code,
-      async ({ accessToken, refreshToken } = {}) => {
+      async (data = {}) => {
+        const { accessToken, refreshToken } = data;
         // Use real token or fall back to mock (dev / unregistered app)
         const token = accessToken || MOCK_TOKEN;
         const profile = await fetchGitHubProfile(token);
@@ -168,31 +179,47 @@ function GitHubAuth() {
           localStorage.setItem('github_token', token);
         }
 
+        setGitHubResponse(data);
         await persistSessionToBackend(profile, token);
         setIsLoading(false);
       },
       (err) => {
-        setError(err.message || 'Token exchange failed');
+        const message = err.message || 'Token exchange failed';
+        setError(message);
+        setDetail(err.stack || JSON.stringify(err, null, 2));
+        setShowErrorModal(true);
         setIsLoading(false);
       }
     );
-  }, []);
+  }, [loginUser]);
 
   // ── 2. Initiate OAuth flow ───────────────────────────────────────────────────
   const handleGitHubLogin = useCallback(async () => {
     setIsLoading(true);
     setError('');
+    setDetail('');
 
     try {
+      if (!GITHUB_CLIENT_ID) {
+        throw new Error('GitHub OAuth client ID is not configured. Please set REACT_APP_GITHUB_CLIENT_ID in .env.');
+      }
+
       const state = Math.random().toString(36).slice(2, 17);
       localStorage.setItem('github_oauth_state', state);
 
-      const params = new URLSearchParams({
-        client_id:     GITHUB_CLIENT_ID,
-        redirect_uri:  GITHUB_REDIRECT_URI,
-        scope:         AUTH_SCOPE,
+      const params = new URLSearchParams();
+      const values = {
+        client_id:    GITHUB_CLIENT_ID,
+        redirect_uri: buildRedirectURL(),
+        scope:        AUTH_SCOPE,
         state,
-        allow_signup:  'true',
+        allow_signup: 'true',
+      };
+
+      AUTHORIZE_PARAMS.forEach((key) => {
+        if (values[key]) {
+          params.set(key, values[key]);
+        }
       });
 
       const authUrl = `${GITHUB_AUTH_URL}?${params.toString()}`;
@@ -244,6 +271,8 @@ function GitHubAuth() {
   // ── 4. Logout ────────────────────────────────────────────────────────────────
   const handleLogout = useCallback(async () => {
     logoutUser();
+    setGitHubResponse(null);
+    setDetail('');
 
     if (window.electronAPI?.storeToken) {
       await window.electronAPI.storeToken('github', null);
@@ -263,18 +292,35 @@ function GitHubAuth() {
         <button
           className="github-login-btn"
           onClick={handleGitHubLogin}
-          disabled={isLoading || !GITHUB_CLIENT_ID}
-          title={GITHUB_CLIENT_ID ? 'Sign in with GitHub' : 'Configure REACT_APP_GITHUB_CLIENT_ID in .env'}
+          disabled={isLoading}
+          title={GITHUB_CLIENT_ID ? 'Sign in with GitHub' : 'GitHub OAuth not configured (REACT_APP_GITHUB_CLIENT_ID missing)'}
         >
           <FiGithub size={18} />
           Sign in with GitHub
         </button>
         {!GITHUB_CLIENT_ID && (
           <div className="auth-error" style={{ marginTop: '8px' }}>
-            ⚠ REACT_APP_GITHUB_CLIENT_ID is not set — add GitHub credentials in .env
+            ⚠ GitHub OAuth is not configured. Set REACT_APP_GITHUB_CLIENT_ID in .env to enable sign-in.
           </div>
         )}
         {error && <div className="auth-error">{error}</div>}
+        {githubResponse && (
+          <div className="github-response">
+            <strong>GitHub auth response:</strong>
+            <pre>{JSON.stringify(githubResponse, null, 2)}</pre>
+          </div>
+        )}
+        {showErrorModal && detail && (
+          <div className="github-error-modal" role="dialog" aria-modal="true">
+            <div className="github-error-modal-content">
+              <h3>GitHub sign-in failed</h3>
+              <pre>{detail}</pre>
+              <button className="github-error-modal-close" onClick={() => setShowErrorModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

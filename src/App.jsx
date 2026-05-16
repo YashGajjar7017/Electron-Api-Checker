@@ -23,17 +23,29 @@ function App() {
         const isElectron = window.electronAPI && typeof window.electronAPI.loadUser === 'function';
         console.log('Loading persisted data... Electron:', isElectron);
 
-        // Load user
-        if (window.electronAPI && window.electronAPI.loadUser) {
-          const userResult = await window.electronAPI.loadUser();
-          if (userResult.success && userResult.data) {
-            loginUser(userResult.data);
+        // Load unified Electron app state first if available
+        let loadedCollections = [];
+        let loadedAPIs = [];
+        if (window.electronAPI && window.electronAPI.loadAppState) {
+          const appStateResult = await window.electronAPI.loadAppState();
+          if (appStateResult.success && appStateResult.data) {
+            const appState = appStateResult.data;
+            if (appState.user) {
+              loginUser(appState.user);
+            }
+            if (Array.isArray(appState.collections)) {
+              loadedCollections = appState.collections;
+              useStore.getState().setCollections(loadedCollections);
+            }
+            if (Array.isArray(appState.apis)) {
+              loadedAPIs = appState.apis;
+              useStore.getState().setAPIs(loadedAPIs);
+            }
           }
         }
 
-        // Load collections
-        let loadedCollections = [];
-        if (window.electronAPI && window.electronAPI.loadCollections) {
+        // Fallback legacy persistence if the unified state file is missing
+        if (loadedCollections.length === 0 && window.electronAPI && window.electronAPI.loadCollections) {
           const collectionsResult = await window.electronAPI.loadCollections();
           if (collectionsResult.success && collectionsResult.data) {
             loadedCollections = collectionsResult.data;
@@ -41,9 +53,7 @@ function App() {
           }
         }
 
-        // Load APIs
-        let loadedAPIs = [];
-        if (window.electronAPI && window.electronAPI.loadAPIs) {
+        if (loadedAPIs.length === 0 && window.electronAPI && window.electronAPI.loadAPIs) {
           const apisResult = await window.electronAPI.loadAPIs();
           if (apisResult.success && apisResult.data) {
             loadedAPIs = apisResult.data;

@@ -466,11 +466,35 @@ app.on('activate', () => {
   }
 });
 
+// App state helpers
+const getAppStateFile = () => path.join(dataPath, 'user.json');
+const loadAppState = () => {
+  const filePath = getAppStateFile();
+  const defaultState = { user: null, apis: [], collections: [], settings: {} };
+  if (!fs.existsSync(filePath)) return defaultState;
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8')) || defaultState;
+  } catch {
+    return defaultState;
+  }
+};
+const saveAppState = (partialState) => {
+  const filePath = getAppStateFile();
+  const currentState = loadAppState();
+  const nextState = {
+    ...currentState,
+    ...partialState,
+  };
+  fs.writeFileSync(filePath, JSON.stringify(nextState, null, 2));
+  return nextState;
+};
+
 // IPC Handlers for data persistence
 ipcMain.handle('save-collections', async (event, collections) => {
   try {
     const filePath = path.join(dataPath, 'collections.json');
     fs.writeFileSync(filePath, JSON.stringify(collections, null, 2));
+    saveAppState({ collections });
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
@@ -484,7 +508,8 @@ ipcMain.handle('load-collections', async () => {
       const data = fs.readFileSync(filePath, 'utf-8');
       return { success: true, data: JSON.parse(data) };
     }
-    return { success: true, data: [] };
+    const state = loadAppState();
+    return { success: true, data: state.collections || [] };
   } catch (error) {
     return { success: false, error: error.message };
   }
@@ -492,8 +517,9 @@ ipcMain.handle('load-collections', async () => {
 
 ipcMain.handle('save-user', async (event, user) => {
   try {
-    const filePath = path.join(dataPath, 'user.json');
-    fs.writeFileSync(filePath, JSON.stringify(user, null, 2));
+    const currentState = loadAppState();
+    const nextUser = user === null ? null : { ...currentState.user, ...user };
+    saveAppState({ user: nextUser });
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
@@ -502,12 +528,25 @@ ipcMain.handle('save-user', async (event, user) => {
 
 ipcMain.handle('load-user', async () => {
   try {
-    const filePath = path.join(dataPath, 'user.json');
-    if (fs.existsSync(filePath)) {
-      const data = fs.readFileSync(filePath, 'utf-8');
-      return { success: true, data: JSON.parse(data) };
-    }
-    return { success: true, data: null };
+    const state = loadAppState();
+    return { success: true, data: state.user };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('save-app-state', async (event, state) => {
+  try {
+    saveAppState(state);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('load-app-state', async () => {
+  try {
+    return { success: true, data: loadAppState() };
   } catch (error) {
     return { success: false, error: error.message };
   }
@@ -517,6 +556,7 @@ ipcMain.handle('save-apis', async (event, apis) => {
   try {
     const filePath = path.join(dataPath, 'apis.json');
     fs.writeFileSync(filePath, JSON.stringify(apis, null, 2));
+    saveAppState({ apis });
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
@@ -530,7 +570,8 @@ ipcMain.handle('load-apis', async () => {
       const data = fs.readFileSync(filePath, 'utf-8');
       return { success: true, data: JSON.parse(data) };
     }
-    return { success: true, data: [] };
+    const state = loadAppState();
+    return { success: true, data: state.apis || [] };
   } catch (error) {
     return { success: false, error: error.message };
   }

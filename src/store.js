@@ -25,10 +25,18 @@ const useStore = create(
     // Auth state
     user: null,
     isAuthenticated: false,
-    loginUser: (user) =>
-      set({ user, isAuthenticated: true }),
-    logoutUser: () =>
-      set({ user: null, isAuthenticated: false }),
+    loginUser: async (user) => {
+      if (window.electronAPI && window.electronAPI.saveUser) {
+        await window.electronAPI.saveUser(user);
+      }
+      set({ user, isAuthenticated: true });
+    },
+    logoutUser: async () => {
+      if (window.electronAPI && window.electronAPI.saveUser) {
+        await window.electronAPI.saveUser(null);
+      }
+      set({ user: null, isAuthenticated: false });
+    },
 
     // Collections state
     collections: [],
