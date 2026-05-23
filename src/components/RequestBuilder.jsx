@@ -588,10 +588,18 @@ const [activeTab, setActiveTab] = useState('params');
       labels: ['api', 'configuration', 'electron-app']
     };
 
-    // Create GitHub issue URL - prefer configured repository if provided via env
+    // Create GitHub issue URL - require a configured owner/repo and avoid invalid generic GitHub issue pages
     const GITHUB_ISSUE_REPO = process.env.REACT_APP_GITHUB_ISSUE_REPO || process.env.GITHUB_ISSUE_REPO || '';
-    const repoPath = GITHUB_ISSUE_REPO || '';
-    const baseIssueUrl = repoPath ? `https://github.com/${repoPath}/issues/new` : `https://github.com/issues/new`;
+    const repoPath = GITHUB_ISSUE_REPO.trim().replace(/\/\/+$/, '');
+    if (!repoPath) {
+      showActionMessage('GitHub issue share requires GITHUB_ISSUE_REPO to be configured (owner/repo).');
+      return;
+    }
+
+    const baseIssueUrl = repoPath.startsWith('http://') || repoPath.startsWith('https://')
+      ? repoPath.replace(/\/+$/, '')
+      : `https://github.com/${repoPath}/issues/new`;
+
     const githubUrl = `${baseIssueUrl}?title=${encodeURIComponent(shareData.title)}&body=${encodeURIComponent(shareData.body)}&labels=${encodeURIComponent(shareData.labels.join(','))}`;
 
     if (window.electronAPI?.openExternalUrl) {

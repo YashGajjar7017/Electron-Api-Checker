@@ -58,6 +58,14 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
       return;
     }
 
+    if (!window.electronAPI || typeof window.electronAPI.pingServer !== 'function') {
+      setPingStatus({
+        type: 'error',
+        message: 'Ping is unavailable in this environment.',
+      });
+      return;
+    }
+
     setPinging(true);
     setPingStatus(null);
 

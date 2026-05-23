@@ -19,12 +19,35 @@ const AUTHORIZE_PARAMS = ['client_id', 'redirect_uri', 'scope', 'state', 'allow_
 
 /** Build the redirect URI that the provider calls back to (already registered at GitHub App settings). */
 const buildRedirectURL = () => {
-  if (typeof window === 'undefined') return GITHUB_REDIRECT_URI;
+  if (typeof window === 'undefined') {
+    return GITHUB_REDIRECT_URI || '';
+  }
 
-  const isCustomOAuthScheme = window.location.protocol === 'myapp:'
-    || window.location.protocol === `${NIP07_NAMESPACE}:`;
+  const origin = window.location.origin;
+  const isSameOriginRedirect = GITHUB_REDIRECT_URI && GITHUB_REDIRECT_URI.startsWith(origin);
+  const isCustomSchemeRedirect = GITHUB_REDIRECT_URI && GITHUB_REDIRECT_URI.startsWith('myapp://');
 
-  return isCustomOAuthScheme ? GITHUB_REDIRECT_URI : `${window.location.origin}/`;
+  if (isSameOriginRedirect || isCustomSchemeRedirect) {
+    return GITHUB_REDIRECT_URI;
+  }
+
+  return `${origin}/`;
+};
+
+const openAuthUrl = async (url) => {
+  if (typeof window !== 'undefined') {
+    const popup = window.open(url, 'github-auth', 'width=900,height=760');
+    if (popup && !popup.closed) {
+      popup.focus();
+      return;
+    }
+  }
+
+  if (window.electronAPI?.openExternalUrl) {
+    await window.electronAPI.openExternalUrl(url);
+  } else if (typeof window !== 'undefined') {
+    window.open(url, '_blank');
+  }
 };
 
 /** Extract params from the registered redirect-scheme URL (myapp://…) */
@@ -144,7 +167,18 @@ function GitHubAuth() {
 
     const storedState = localStorage.getItem('github_oauth_state');
     if (!returnedState || storedState !== returnedState) {
-      setError(CSRF_ERR);
+      // Surface via bottom toast; avoid inline error under the button.
+      try {
+        window.dispatchEvent(
+          new CustomEvent('app:toast', {
+            detail: { message: 'GitHub login error: State mismatch', detail: CSRF_ERR },
+          })
+        );
+      } catch (e) {
+        /* ignore */
+      }
+      setError('');
+      setDetail('');
       return;
     }
     // One-time-use CSRF token
@@ -185,13 +219,21 @@ function GitHubAuth() {
       (err) => {
         const message = err.message || 'Token exchange failed';
         const d = err.stack || JSON.stringify(err, null, 2);
-        setError(message);
-        setDetail(d);
+        // Surface via bottom toast; avoid inline error under the button.
         try {
-          window.dispatchEvent(new CustomEvent('app:toast', { detail: { message: `GitHub sign-in failed: ${message}`, detail: d } }));
+          window.dispatchEvent(
+            new CustomEvent('app:toast', {
+              detail: {
+                message: `GitHub sign-in failed: ${message}`,
+                detail: d,
+              },
+            })
+          );
         } catch (e) {
           console.warn('dispatch app:toast failed', e);
         }
+        setError('');
+        setDetail('');
         setIsLoading(false);
       }
     );
@@ -227,20 +269,25 @@ function GitHubAuth() {
       });
 
       const authUrl = `${GITHUB_AUTH_URL}?${params.toString()}`;
-
-      if (window.electronAPI?.openExternalUrl) {
-        await window.electronAPI.openExternalUrl(authUrl);
-      } else {
-        window.open(authUrl, 'github-auth', 'width=600,height=700');
-      }
+      await openAuthUrl(authUrl);
     } catch (err) {
       const msg = err.message || 'Failed to initiate GitHub login';
-      setError(msg);
+      // Surface errors via the bottom toast (viewable/clickable) instead of inline button text.
       try {
-        window.dispatchEvent(new CustomEvent('app:toast', { detail: { message: `GitHub login error: ${msg}`, detail: err.stack || '' } }));
+        window.dispatchEvent(
+          new CustomEvent('app:toast', {
+            detail: {
+              message: `GitHub login error: ${msg}`,
+              detail: err.stack || msg,
+            },
+          })
+        );
       } catch (e) {
         /* ignore */
       }
+      // Prevent inline error rendering under the button.
+      setError('');
+      setDetail('');
     } finally {
       setIsLoading(false);
     }
@@ -312,12 +359,12 @@ function GitHubAuth() {
           <FiGithub size={18} />
           Sign in with GitHub
         </button>
-        {!GITHUB_CLIENT_ID && (
+        {/* {!GITHUB_CLIENT_ID && (
           <div className="auth-error" style={{ marginTop: '8px' }}>
             ⚠ GitHub OAuth is not configured. Set REACT_APP_GITHUB_CLIENT_ID in .env to enable sign-in.
           </div>
-        )}
-        {error && <div className="auth-error">{error}</div>}
+        )} */}
+        {/* inline auth errors intentionally omitted; use bottom toasts */}
         {githubResponse && (
           <div className="github-response">
             <strong>GitHub auth response:</strong>
@@ -365,7 +412,7 @@ function GitHubAuth() {
         </button>
       </div>
 
-      {error && <div className="auth-error">{error}</div>}
+      {/* inline auth errors intentionally omitted; use bottom toasts */}
     </div>
   );
 }

@@ -1,11 +1,7 @@
-# TODO - Electron-Api-Checker
+# TODO
 
-- [x] Fix webpack ESLint errors in `src/components/RequestBuilder.jsx`
-  - [x] Implement missing `handleUpdateAPI`
-  - [x] Implement missing `handleShareRequest`
-  - [ ] Re-run build/dev compile to confirm 0 errors
-
-- [ ] (Non-blocking) Clean eslint warnings
-  - [ ] Remove unused icon imports (FiSettings, FiZap)
-  - [ ] Address react-hooks/exhaustive-deps dependency warnings
+- [ ] Update GitHubAuth to replace the hard throw on missing `GITHUB_CLIENT_ID` with a bottom popup/modal.
+- [ ] Implement UI in `src/components/GitHubAuth.jsx` and styles in `src/styles/GitHubAuth.css`.
+- [ ] Ensure the popup is dismissible and does not break the existing auth flow.
+- [ ] Sanity check by running lint/build (if scripts exist).
 

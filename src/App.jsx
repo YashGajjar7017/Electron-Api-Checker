@@ -38,6 +38,24 @@ function App() {
         const isElectron = window.electronAPI && typeof window.electronAPI.loadUser === 'function';
         console.log('Loading persisted data... Electron:', isElectron);
 
+        // Load persisted auth user (GitHub / app state)
+        // This is what enables "sign in once" behavior across app restarts.
+        try {
+          if (window.electronAPI && typeof window.electronAPI.loadUser === 'function') {
+            const userResult = await window.electronAPI.loadUser();
+            if (userResult?.success && userResult?.data) {
+              if (userResult.data?.provider === 'github' || userResult.data?.token) {
+                loginUser(userResult.data);
+              }
+            } else if (userResult?.data) {
+              // tolerate different shapes
+              loginUser(userResult.data);
+            }
+          }
+        } catch (e) {
+          // ignore; will fall back to other persistence sources
+        }
+
         // Load unified Electron app state first if available
         let loadedCollections = [];
         let loadedAPIs = [];
@@ -58,6 +76,7 @@ function App() {
             }
           }
         }
+
 
         // Fallback legacy persistence if the unified state file is missing
         if (loadedCollections.length === 0 && window.electronAPI && window.electronAPI.loadCollections) {
