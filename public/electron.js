@@ -130,7 +130,16 @@ function stopBackendServer() {
   if (backendServer) {
     console.log('Stopping backend server...');
     try {
-      backendServer.kill();
+      // Prefer graceful termination then force kill if needed
+      try {
+        backendServer.kill('SIGTERM');
+      } catch (e) {
+        try {
+          process.kill(backendServer.pid);
+        } catch (err) {
+          console.error('Force kill failed:', err);
+        }
+      }
     } catch (error) {
       console.error('Error killing backend:', error);
     }

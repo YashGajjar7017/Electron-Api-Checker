@@ -5,6 +5,7 @@ import BackendStatus from './BackendStatus';
 import SystemMonitor from './SystemMonitor';
 import SettingsPanel from './SettingsPanel';
 import GitHubAuth from './GitHubAuth';
+import GitHubSignup from './GitHubSignup';
 import '../styles/Header.css';
 
 function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonitor }) {
@@ -42,6 +43,8 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
     }
     logoutUser();
   };
+
+  const [showSignup, setShowSignup] = React.useState(false);
 
   const handleServerUrlChange = (e) => {
     const newUrl = e.target.value;
@@ -204,6 +207,10 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
           <GitHubAuth />
         </div>
 
+        <button className="header-btn" onClick={() => setShowSignup(true)} title="Sign in with username/password">
+          <FiGithub size={18} />
+        </button>
+
         <button
           className={`header-btn ping-btn ${pingStatus?.type}`}
           onClick={handlePing}
@@ -238,6 +245,8 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
           <FiLogOut size={18} />
         </button>
       </div>
+
+      <GitHubSignup isOpen={showSignup} onClose={() => setShowSignup(false)} />
 
       {/* SystemMonitor and SettingsPanel are rendered at the application root to avoid fixed-position containment issues */}
     </header>

@@ -713,6 +713,10 @@ const [activeTab, setActiveTab] = useState('params');
 
       const startTime = performance.now();
 
+      if (!window.electronAPI || typeof window.electronAPI.sendRequest !== 'function') {
+        throw new Error('Native request API unavailable. Are you running inside Electron?');
+      }
+
       const result = await window.electronAPI.sendRequest({
         url,
         method,
