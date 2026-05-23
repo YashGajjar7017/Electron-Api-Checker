@@ -38,6 +38,7 @@ const {
     environments,
     activeEnvironment,
   } = useStore();
+  const { otpData, setOTPData } = useStore();
 
 const [activeTab, setActiveTab] = useState('params');
   const [isSending, setIsSending] = useState(false);
@@ -470,6 +471,8 @@ const [activeTab, setActiveTab] = useState('params');
   const getRequestBody = () => {
     if (['GET', 'HEAD', 'DELETE'].includes(method)) return undefined;
 
+    const otpValue = otpData && otpData.current ? otpData.current : (otpData && otpData.expiry && Date.now() < otpData.expiry ? otpData.cached : null);
+
     if (bodyType === 'form-data' || bodyType === 'x-www-form-urlencoded') {
       const bodyParamsData = new URLSearchParams();
       Object.entries(bodyParams).forEach(([key, value]) => {
@@ -486,16 +489,49 @@ const [activeTab, setActiveTab] = useState('params');
           );
         }
       });
+      if (otpValue) bodyParamsData.append('otp', otpValue);
       return bodyParamsData.toString();
     }
 
-    return applyTemplateVariables(body, {
+    // JSON body injection
+    if (bodyType === 'json') {
+      const substituted = applyTemplateVariables(body, {
+        baseUrl: serverUrl,
+        token: authTokenState || sessionToken || '',
+        timestamp: String(Date.now()),
+        uuid: undefined,
+        randomIntMax: 1000000,
+      }) || '';
+
+      try {
+        const parsed = substituted ? JSON.parse(substituted) : {};
+        if (otpValue) {
+          if (typeof parsed === 'object' && parsed !== null) parsed.otp = parsed.otp || otpValue;
+        }
+        return JSON.stringify(parsed);
+      } catch (e) {
+        if (otpValue) {
+          if (!substituted || substituted.trim() === '') return JSON.stringify({ otp: otpValue });
+          return `${substituted}\n\notp=${otpValue}`;
+        }
+        return substituted || undefined;
+      }
+    }
+
+    const substitutedRaw = applyTemplateVariables(body, {
       baseUrl: serverUrl,
       token: authTokenState || sessionToken || '',
       timestamp: String(Date.now()),
       uuid: undefined,
       randomIntMax: 1000000,
     }) || undefined;
+
+    if (otpValue) {
+      if (!substitutedRaw || substitutedRaw.trim() === '') return JSON.stringify({ otp: otpValue });
+      return `${substitutedRaw}\n\notp=${otpValue}`;
+    }
+
+    return substitutedRaw;
   };
 
   const handleRunPythonScript = async () => {
@@ -552,8 +588,11 @@ const [activeTab, setActiveTab] = useState('params');
       labels: ['api', 'configuration', 'electron-app']
     };
 
-    // Create GitHub issue URL
-    const githubUrl = `https://github.com/issues/new?title=${encodeURIComponent(shareData.title)}&body=${encodeURIComponent(shareData.body)}&labels=${encodeURIComponent(shareData.labels.join(','))}`;
+    // Create GitHub issue URL - prefer configured repository if provided via env
+    const GITHUB_ISSUE_REPO = process.env.REACT_APP_GITHUB_ISSUE_REPO || process.env.GITHUB_ISSUE_REPO || '';
+    const repoPath = GITHUB_ISSUE_REPO || '';
+    const baseIssueUrl = repoPath ? `https://github.com/${repoPath}/issues/new` : `https://github.com/issues/new`;
+    const githubUrl = `${baseIssueUrl}?title=${encodeURIComponent(shareData.title)}&body=${encodeURIComponent(shareData.body)}&labels=${encodeURIComponent(shareData.labels.join(','))}`;
 
     if (window.electronAPI?.openExternalUrl) {
       await window.electronAPI.openExternalUrl(githubUrl);
@@ -633,6 +672,14 @@ const [activeTab, setActiveTab] = useState('params');
       console.log('✅ Session token set for 10 min');
     } else {
       console.log('⚠️ Session token not stored because manual/API token already active');
+    }
+    // Store OTP value for 10 minutes so it can be injected into request bodies
+    try {
+      const expiry = Date.now() + validForMinutes * 60 * 1000;
+      setOTPData(otp, expiry);
+      console.log('✅ OTP cached for 10 min');
+    } catch (e) {
+      console.warn('Failed to cache OTP', e);
     }
 
     setShowOtpModal(false);

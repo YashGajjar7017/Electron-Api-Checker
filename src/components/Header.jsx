@@ -7,11 +7,9 @@ import SettingsPanel from './SettingsPanel';
 import GitHubAuth from './GitHubAuth';
 import '../styles/Header.css';
 
-function Header({ onThemeChange, currentTheme }) {
+function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonitor }) {
   const [pinging, setPinging] = useState(false);
   const [pingStatus, setPingStatus] = useState(null);
-  const [showSystemMonitor, setShowSystemMonitor] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const [token, setToken] = useState(null);
   
   const { user, logoutUser, serverUrl, setServerUrl, clearResponseHistory, shuffleAPIs, toggleComparisonMode, comparisonMode } = useStore(
@@ -179,7 +177,7 @@ function Header({ onThemeChange, currentTheme }) {
 
         <button
           className="header-btn system-monitor-btn"
-          onClick={() => setShowSystemMonitor(true)}
+          onClick={() => onOpenSystemMonitor?.()}
           title="Open system monitor"
         >
           <FiActivity size={18} />
@@ -188,7 +186,7 @@ function Header({ onThemeChange, currentTheme }) {
         
         <button
           className="header-btn"
-          onClick={() => setShowSettings(true)}
+          onClick={() => onOpenSettings?.()}
           title="Open settings"
         >
           <FiSettings size={18} />
@@ -233,8 +231,7 @@ function Header({ onThemeChange, currentTheme }) {
         </button>
       </div>
 
-      <SystemMonitor isOpen={showSystemMonitor} onClose={() => setShowSystemMonitor(false)} />
-      <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
+      {/* SystemMonitor and SettingsPanel are rendered at the application root to avoid fixed-position containment issues */}
     </header>
   );
 }

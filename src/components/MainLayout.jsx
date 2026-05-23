@@ -6,6 +6,8 @@ import Header from './Header';
 import PythonScriptModal from './PythonScriptModal';
 import MCPConfig from './MCPConfig';
 import ArduinoCliConfig from './ArduinoCliConfig';
+import SettingsPanel from './SettingsPanel';
+import SystemMonitor from './SystemMonitor';
 import useStore from '../store';
 import { FiTerminal, FiRefreshCcw, FiTrash2, FiShuffle, FiLayers, FiSettings, FiPower, FiCpu } from 'react-icons/fi';
 import '../styles/MainLayout.css';
@@ -17,6 +19,8 @@ function MainLayout({ onThemeChange, currentTheme }) {
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [isResizingResponse, setIsResizingResponse] = useState(false);
   const [showPythonModal, setShowPythonModal] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showSystemMonitor, setShowSystemMonitor] = useState(false);
   const [pythonScriptOutput, setPythonScriptOutput] = useState('');
   const [isRunningScript, setIsRunningScript] = useState(false);
   const [showMCPModal, setShowMCPModal] = useState(false);
@@ -167,7 +171,7 @@ const {
 
   return (
     <div className="main-layout">
-      <Header onThemeChange={onThemeChange} currentTheme={currentTheme} />
+      <Header onThemeChange={onThemeChange} currentTheme={currentTheme} onOpenSettings={() => setShowSettings(true)} onOpenSystemMonitor={() => setShowSystemMonitor(true)} />
 
       <div className="layout-controls">
         <button
@@ -315,6 +319,8 @@ const {
         isOpen={showArduinoModal}
         onClose={() => setShowArduinoModal(false)}
       />
+      <SystemMonitor isOpen={showSystemMonitor} onClose={() => setShowSystemMonitor(false)} />
+      <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 }

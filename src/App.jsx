@@ -3,6 +3,7 @@ import useStore from './store';
 import './styles/App.css';
 import AuthScreen from './components/AuthScreen';
 import MainLayout from './components/MainLayout';
+import ToastManager from './components/ToastManager';
 
 
 function App() {
@@ -16,6 +17,20 @@ function App() {
   const [theme, setTheme] = useState('dark');
 
   useEffect(() => {
+    // Bridge electron native to in-app toast manager if available
+    try {
+      if (window.electronAPI && typeof window.electronAPI.showToast === 'function') {
+        const original = window.electronAPI.showToast;
+        window.electronAPI.showToast = (...args) => {
+          try {
+            const msg = args[0] || 'Notification';
+            const detail = args[1] && args[1].detail ? args[1].detail : '';
+            window.dispatchEvent(new CustomEvent('app:toast', { detail: { message: msg, detail } }));
+          } catch (e) {}
+          return original(...args);
+        };
+      }
+    } catch (e) {}
     // Load persisted data from Electron storage
     const loadPersistedData = async () => {
       try {
@@ -147,6 +162,7 @@ function App() {
 
   return (
     <div className={`app ${theme}-theme`}>
+      <ToastManager />
       {isAuthenticated ? (
         <MainLayout onThemeChange={setTheme} currentTheme={theme} />
       ) : (

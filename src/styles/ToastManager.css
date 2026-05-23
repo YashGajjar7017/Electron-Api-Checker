@@ -1,0 +1,25 @@
+.toast-container {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 2200;
+}
+
+.toast-item {
+  background: rgba(17, 24, 39, 0.95);
+  color: #f8fafc;
+  padding: 0.6rem 0.85rem;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(2,6,23,0.6);
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.9rem;
+}
+
+.toast-item:hover {
+  transform: translateY(-2px);
+  transition: transform 120ms ease-out;
+}

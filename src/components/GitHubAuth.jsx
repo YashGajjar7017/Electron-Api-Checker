@@ -136,7 +136,6 @@ function GitHubAuth() {
   const [error,    setError]    = useState('');
   const [detail,   setDetail]   = useState('');
   const [githubResponse, setGitHubResponse] = useState(null);
-  const [showErrorModal, setShowErrorModal] = useState(false);
 
   // ── 1. Handle inbound redirect (code + state in URL) ──────────────────────────
   useEffect(() => {
@@ -185,9 +184,14 @@ function GitHubAuth() {
       },
       (err) => {
         const message = err.message || 'Token exchange failed';
+        const d = err.stack || JSON.stringify(err, null, 2);
         setError(message);
-        setDetail(err.stack || JSON.stringify(err, null, 2));
-        setShowErrorModal(true);
+        setDetail(d);
+        try {
+          window.dispatchEvent(new CustomEvent('app:toast', { detail: { message: `GitHub sign-in failed: ${message}`, detail: d } }));
+        } catch (e) {
+          console.warn('dispatch app:toast failed', e);
+        }
         setIsLoading(false);
       }
     );
@@ -230,7 +234,13 @@ function GitHubAuth() {
         window.open(authUrl, 'github-auth', 'width=600,height=700');
       }
     } catch (err) {
-      setError(err.message || 'Failed to initiate GitHub login');
+      const msg = err.message || 'Failed to initiate GitHub login';
+      setError(msg);
+      try {
+        window.dispatchEvent(new CustomEvent('app:toast', { detail: { message: `GitHub login error: ${msg}`, detail: err.stack || '' } }));
+      } catch (e) {
+        /* ignore */
+      }
     } finally {
       setIsLoading(false);
     }
@@ -239,7 +249,9 @@ function GitHubAuth() {
   // ── 3. Refresh access token ──────────────────────────────────────────────────
   const handleRefreshToken = useCallback(async () => {
     if (!user?.refreshToken) {
-      setError('No refresh token available — please sign in again.');
+      const msg = 'No refresh token available — please sign in again.';
+      setError(msg);
+      try { window.dispatchEvent(new CustomEvent('app:toast', { detail: { message: `GitHub: ${msg}` } })); } catch {}
       return;
     }
 
@@ -262,7 +274,9 @@ function GitHubAuth() {
 
       loginUser({ ...user, token: accessToken });
     } catch (err) {
-      setError(err.message || 'Token refresh failed');
+      const msg = err.message || 'Token refresh failed';
+      setError(msg);
+      try { window.dispatchEvent(new CustomEvent('app:toast', { detail: { message: `GitHub refresh failed: ${msg}`, detail: err.stack || '' } })); } catch {}
     } finally {
       setIsLoading(false);
     }
@@ -310,17 +324,7 @@ function GitHubAuth() {
             <pre>{JSON.stringify(githubResponse, null, 2)}</pre>
           </div>
         )}
-        {showErrorModal && detail && (
-          <div className="github-error-modal" role="dialog" aria-modal="true">
-            <div className="github-error-modal-content">
-              <h3>GitHub sign-in failed</h3>
-              <pre>{detail}</pre>
-              <button className="github-error-modal-close" onClick={() => setShowErrorModal(false)}>
-                Close
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Errors are surfaced via app toasts; click the toast to view details in the response viewer. */}
       </div>
     );
   }
