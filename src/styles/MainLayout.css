@@ -18,16 +18,17 @@
 .script-button {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
+  gap: 6px;
+  padding: 6px 10px;
   background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   border: 1px solid rgba(99, 102, 241, 0.3);
   color: #fff;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 0.75rem;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast) var(--ease-out);
+  animation: fadeInUp 0.3s ease-out;
 }
 
 .script-button:hover {
@@ -42,16 +43,16 @@
 .control-button {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
+  gap: 6px;
+  padding: 6px 10px;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: #f5f7ff;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 0.75rem;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast) var(--ease-out);
 }
 
 .control-button:hover {

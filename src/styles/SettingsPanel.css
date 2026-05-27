@@ -22,6 +22,7 @@
   flex-direction: column;
   overflow: hidden;
   z-index: 2001;
+  animation: scaleIn 0.3s ease-out;
 }
 
 .settings-header {
@@ -41,13 +42,13 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.05);
   color: #cbd5e1;
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
   display: grid;
   place-items: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast) var(--ease-out);
 }
 
 .close-btn:hover {

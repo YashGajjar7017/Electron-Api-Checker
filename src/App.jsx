@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import useStore from './store';
+import './styles/animations.css';
 import './styles/App.css';
 import AuthScreen from './components/AuthScreen';
 import MainLayout from './components/MainLayout';
 import ToastManager from './components/ToastManager';
+import { loadUserWithFallback, saveSessionState, restoreSessionState } from './utils/sessionManager';
 
 
 function App() {

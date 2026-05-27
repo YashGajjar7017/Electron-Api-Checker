@@ -605,30 +605,39 @@ function GitHubAuth() {
 
   // ── Not logged-in state ──────────────────────────────────────────────────────
   if (!user || user.provider !== 'github') {
+    const isConfigured = !!GITHUB_CLIENT_ID && GITHUB_CLIENT_ID.trim().length > 0;
+    
     return (
       <div className="github-auth-container">
+        {!isConfigured && (
+          <div className="auth-error" style={{ 
+            marginBottom: '0.75rem',
+            backgroundColor: 'rgba(248, 113, 113, 0.2)',
+            borderColor: 'rgba(248, 113, 113, 0.4)',
+            zIndex: 1001,
+            position: 'relative'
+          }}>
+            <strong>⚠️ GitHub OAuth Not Configured</strong>
+            <div style={{ fontSize: '0.7rem', marginTop: '0.3rem' }}>
+              Set REACT_APP_GITHUB_CLIENT_ID in .env file to enable GitHub sign-in
+            </div>
+          </div>
+        )}
         <button
           className="github-login-btn"
           onClick={handleGitHubLogin}
-          disabled={isLoading}
-          title={GITHUB_CLIENT_ID ? 'Sign in with GitHub' : 'GitHub OAuth not configured (REACT_APP_GITHUB_CLIENT_ID missing)'}
+          disabled={isLoading || !isConfigured}
+          title={isConfigured ? 'Sign in with GitHub' : 'GitHub OAuth not configured (REACT_APP_GITHUB_CLIENT_ID missing)'}
         >
-          <FiGithub size={18} />
-          Sign in with GitHub
+          <FiGithub size={16} />
+          {isLoading ? 'Signing in...' : 'Sign in with GitHub'}
         </button>
-        {/* {!GITHUB_CLIENT_ID && (
-          <div className="auth-error" style={{ marginTop: '8px' }}>
-            ⚠ GitHub OAuth is not configured. Set REACT_APP_GITHUB_CLIENT_ID in .env to enable sign-in.
-          </div>
-        )} */}
-        {/* inline auth errors intentionally omitted; use bottom toasts */}
         {githubResponse && (
           <div className="github-response">
             <strong>GitHub auth response:</strong>
             <pre>{JSON.stringify(githubResponse, null, 2)}</pre>
           </div>
         )}
-        {/* Errors are surfaced via app toasts; click the toast to view details in the response viewer. */}
       </div>
     );
   }

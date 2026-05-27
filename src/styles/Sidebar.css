@@ -70,13 +70,14 @@
 }
 
 .collection-item {
-  margin-bottom: 0.75rem;
-  border-radius: 12px;
+  margin-bottom: 0.5rem;
+  border-radius: 10px;
   overflow: visible;
   background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(99, 102, 241, 0.08) 100%);
   border: 1px solid var(--border);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--ease-in-out);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  animation: fadeInUp 0.3s ease-out;
 }
 
 .collection-item:hover {
