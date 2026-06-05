@@ -203,9 +203,10 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
           <FiSettings size={18} />
         </button>
         
-        <div className="cloud-auth">
+        {/* Github Auth */}
+        {/* <div className="cloud-auth">
           <GitHubAuth />
-        </div>
+        </div> */}
 
         <button className="header-btn" onClick={() => setShowSignup(true)} title="Sign in with username/password">
           <FiGithub size={18} />
