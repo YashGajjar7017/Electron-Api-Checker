@@ -2,18 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import useStore from '../store';
 import Editor from '@monaco-editor/react';
 import {
-  FiSend,
-  FiSave,
-  FiEdit2,
   FiX,
   FiPlus,
-  FiTrash2,
   FiPlay,
-  FiRefreshCw,
   FiEye,
   FiEyeOff,
-  FiShare2,
-  FiExternalLink,
 } from 'react-icons/fi';
 import OTPModal from './OTPModal';
 import DebugPanel from './DebugPanel';
@@ -23,7 +16,7 @@ import { useSaveStatusEffect } from './useSaveStatusEffect.js';
 import '../styles/RequestBuilder.css';
 
 function RequestBuilder() {
-const {
+  const {
     currentAPI,
     updateAPI,
     deleteAPI,
@@ -37,13 +30,13 @@ const {
     clearSessionToken,
     environments,
     activeEnvironment,
+    collections,
   } = useStore();
   const { otpData, setOTPData } = useStore();
 
-const [activeTab, setActiveTab] = useState('params');
+  const [activeTab, setActiveTab] = useState('params');
   const [isSending, setIsSending] = useState(false);
   const [apiName, setApiName] = useState(currentAPI?.name || '');
-  const [isEditingName, setIsEditingName] = useState(false);
   const [method, setMethod] = useState(currentAPI?.method || 'GET');
   const [endpoint, setEndpoint] = useState(currentAPI?.endpoint || '');
   const [headers, setHeaders] = useState(currentAPI?.headers || {});
@@ -72,6 +65,31 @@ const [activeTab, setActiveTab] = useState('params');
   const [actionMessage, setActionMessage] = useState('');
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [debugDetails, setDebugDetails] = useState(null);
+
+  // Split-button dropdown states and refs
+  const [showSendDropdown, setShowSendDropdown] = useState(false);
+  const [showSaveDropdown, setShowSaveDropdown] = useState(false);
+  const [showMoreDropdown, setShowMoreDropdown] = useState(false);
+
+  const sendDropdownRef = useRef(null);
+  const saveDropdownRef = useRef(null);
+  const moreDropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (sendDropdownRef.current && !sendDropdownRef.current.contains(e.target)) {
+        setShowSendDropdown(false);
+      }
+      if (saveDropdownRef.current && !saveDropdownRef.current.contains(e.target)) {
+        setShowSaveDropdown(false);
+      }
+      if (moreDropdownRef.current && !moreDropdownRef.current.contains(e.target)) {
+        setShowMoreDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
 
   useSaveStatusEffect(saveStatus, setSaveStatus);
   const pendingSendRef = useRef(false);
@@ -109,8 +127,6 @@ const [activeTab, setActiveTab] = useState('params');
       setKeyFile(currentAPI.auth?.keyFile || '');
       setCaFile(currentAPI.auth?.caFile || '');
       setSkipOtp(currentAPI.skipOtp || false);
-      setShowAuthToken(false);
-      setIsEditingName(false);
       setShowAuthToken(false);
       // Sync automation state
       setAutomationEnabled(currentAPI.automation?.enabled || false);
@@ -202,6 +218,52 @@ const [activeTab, setActiveTab] = useState('params');
       </div>
     );
   }
+
+  const handleSendAndDownload = async () => {
+    setIsSending(true);
+    try {
+      const url = buildURL();
+      const requestHeaders = buildRequestHeaders();
+      const result = await window.electronAPI.sendRequest({
+        url,
+        method,
+        headers: requestHeaders,
+        body: getRequestBody(),
+      });
+
+      if (result.success) {
+        const contentTypeEntry = result.headers ? result.headers.find(h => h[0].toLowerCase() === 'content-type') : null;
+        const contentType = contentTypeEntry ? contentTypeEntry[1] : '';
+        const ext = contentType.includes('application/json') ? 'json' : contentType.includes('text/html') ? 'html' : 'bin';
+        const defaultFilename = `${apiName.replace(/[^a-zA-Z0-9_-]/g, '_')}_response.${ext}`;
+        
+        await window.electronAPI.exportData(result.body, defaultFilename);
+        showActionMessage('Response downloaded and saved');
+      } else {
+        showActionMessage(`Download failed: ${result.error}`);
+      }
+    } catch (err) {
+      showActionMessage(`Download error: ${err.message}`);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleSaveAs = () => {
+    const newName = window.prompt('Enter new name for the request copy:', `${apiName} Copy`);
+    if (!newName || !newName.trim()) return;
+
+    const newId = Math.random().toString(36).substr(2, 9);
+    const newAPI = {
+      ...currentAPI,
+      id: newId,
+      name: newName.trim(),
+    };
+
+    useStore.getState().addAPI(newAPI);
+    setCurrentAPI(newAPI);
+    showActionMessage('Saved as new request copy');
+  };
 
   const handleShareRequest = async () => {
     const url = buildURL();
@@ -345,13 +407,20 @@ const [activeTab, setActiveTab] = useState('params');
     let url = endpoint;
 
     // Apply variable substitution to endpoint and query params
-    const resolvedEndpoint = applyTemplateVariables(endpoint, {
+    let resolvedEndpoint = applyTemplateVariables(endpoint, {
       baseUrl: base,
       token: authTokenState || sessionToken || '',
       timestamp: String(Date.now()),
       uuid: undefined,
       randomIntMax: 1000000,
     });
+
+    // Auto-prepend http:// protocol if it looks like a raw IP / host and lacks a protocol scheme
+    if (resolvedEndpoint && !/^[a-zA-Z]+:\/\//.test(resolvedEndpoint)) {
+      if (/^(localhost|127\.0\.0\.1|192\.168\.|([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,})/i.test(resolvedEndpoint)) {
+        resolvedEndpoint = 'http://' + resolvedEndpoint;
+      }
+    }
 
     if (!resolvedEndpoint.startsWith('http://') && !resolvedEndpoint.startsWith('https://')) {
       url = `${base.replace(/\/$/, '')}/${resolvedEndpoint.replace(/^\//, '')}`;
@@ -829,159 +898,220 @@ let responseData;
     await executeRequest();
   };
 
+  const currentCollection = collections?.find((c) => c.id === currentAPI?.collectionId);
+  const collectionName = currentCollection ? currentCollection.name : 'Collections';
+
   return (
     <div className="request-builder glass-lg">
       <div className="builder-header">
-        <div className="api-name-section">
-          {isEditingName ? (
-            <div className="name-edit">
-              <input
-                type="text"
-                value={apiName}
-                onChange={(e) => setApiName(e.target.value)}
-                autoFocus
-              />
+        <div className="breadcrumbs">
+          <span className="breadcrumb-collection">{collectionName}</span>
+          <span className="breadcrumb-separator">&gt;</span>
+          <span className="breadcrumb-request">{apiName}</span>
+        </div>
+
+        <div className="request-url-bar-row">
+          <div className="method-endpoint">
+            <select
+              className={`method-select method-${method.toLowerCase()}`}
+              value={method}
+              onChange={(e) => setMethod(e.target.value)}
+            >
+              <option value="GET">GET</option>
+              <option value="POST">POST</option>
+              <option value="PUT">PUT</option>
+              <option value="PATCH">PATCH</option>
+              <option value="DELETE">DELETE</option>
+              <option value="HEAD">HEAD</option>
+            </select>
+
+            <input
+              type="text"
+              className="endpoint-input"
+              value={endpoint}
+              onChange={(e) => setEndpoint(e.target.value)}
+              placeholder="Enter request URL"
+            />
+          </div>
+
+          <div className="builder-actions">
+            {/* Split Send Button */}
+            <div className="btn-split-group" ref={sendDropdownRef}>
               <button
-                className="btn btn-primary btn-sm"
-                onClick={() => {
-                  handleUpdateAPI();
-                  setIsEditingName(false);
-                }}
+                className="btn btn-primary btn-send-main"
+                onClick={handleSendRequest}
+                disabled={isSending}
+              >
+                {isSending ? 'Sending...' : 'Send'}
+              </button>
+              <button
+                className="btn btn-primary btn-split-toggle"
+                onClick={() => setShowSendDropdown(!showSendDropdown)}
+                disabled={isSending}
+                title="Send Options"
+              >
+                <span className="dropdown-arrow">&#9662;</span>
+              </button>
+              {showSendDropdown && (
+                <div className="split-dropdown-menu">
+                  <button
+                    onClick={() => {
+                      handleSendAndDownload();
+                      setShowSendDropdown(false);
+                    }}
+                  >
+                    Send and Download
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Split Save Button */}
+            <div className="btn-split-group" ref={saveDropdownRef}>
+              <button
+                className="btn btn-secondary btn-save-main"
+                onClick={handleUpdateAPI}
+                disabled={isSending}
               >
                 Save
               </button>
-            </div>
-          ) : (
-            <div className="name-display">
-              <h3>{apiName}</h3>
               <button
-                className="edit-btn"
-                onClick={() => setIsEditingName(true)}
+                className="btn btn-secondary btn-split-toggle"
+                onClick={() => setShowSaveDropdown(!showSaveDropdown)}
+                disabled={isSending}
+                title="Save Options"
               >
-                <FiEdit2 size={16} />
+                <span className="dropdown-arrow">&#9662;</span>
               </button>
+              {showSaveDropdown && (
+                <div className="split-dropdown-menu">
+                  <button
+                    onClick={() => {
+                      handleSaveAs();
+                      setShowSaveDropdown(false);
+                    }}
+                  >
+                    Save As...
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+
+            {/* Share Button */}
+            <button
+              className="btn btn-secondary btn-share"
+              onClick={handleShareRequest}
+              disabled={isSending}
+              title="Copy URL and request details"
+            >
+              Share
+            </button>
+
+            {/* More Actions Dropdown */}
+            <div className="btn-more-group" ref={moreDropdownRef}>
+              <button
+                className="btn btn-secondary btn-more-toggle"
+                onClick={() => setShowMoreDropdown(!showMoreDropdown)}
+                disabled={isSending}
+                title="More Actions"
+              >
+                <span>&#8942;</span>
+              </button>
+              {showMoreDropdown && (
+                <div className="more-dropdown-menu">
+                  <button
+                    onClick={() => {
+                      handleResendRequest();
+                      setShowMoreDropdown(false);
+                    }}
+                  >
+                    Resend Request
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleDebugUrl();
+                      setShowMoreDropdown(false);
+                    }}
+                  >
+                    Debug URL
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleShareToGitHub();
+                      setShowMoreDropdown(false);
+                    }}
+                  >
+                    Share to GitHub
+                  </button>
+                  <hr className="dropdown-divider" />
+                  <button
+                    className="btn-danger-item"
+                    onClick={() => {
+                      handleDeleteAPI();
+                      setShowMoreDropdown(false);
+                    }}
+                  >
+                    Delete Request
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        <div className="method-endpoint">
-          <select
-            className="method-select"
-            value={method}
-            onChange={(e) => setMethod(e.target.value)}
-          >
-            <option>GET</option>
-            <option>POST</option>
-            <option>PUT</option>
-            <option>PATCH</option>
-            <option>DELETE</option>
-            <option>HEAD</option>
-          </select>
-
-          <input
-            type="text"
-            className="endpoint-input"
-            value={endpoint}
-            onChange={(e) => setEndpoint(e.target.value)}
-            placeholder="/api/endpoint"
-          />
-        </div>
-
-<div className="builder-actions">
-          <button
-            className="btn btn-primary"
-            onClick={handleSendRequest}
-            disabled={isSending}
-          >
-            <FiSend size={18} />
-            {isSending ? 'Sending...' : 'Send'}
-          </button>
-          <button
-            className="btn btn-secondary"
-            onClick={handleResendRequest}
-            disabled={isSending}
-            title="Resend the same request"
-          >
-            <FiRefreshCw size={18} />
-            Resend
-          </button>
-          <button
-            className="btn btn-secondary"
-            onClick={handleUpdateAPI}
-            title="Save API configuration"
-            disabled={isSending}
-          >
-            <FiSave size={18} />
-            {isSending ? 'Save configuration...' : 'Save Data'}            
-          </button>
-          <button
-            className="btn btn-ghost"
-            onClick={handleShareRequest}
-            type="button"
-            title="Copy URL and request details"
-          >
-            <FiShare2 size={18} />
-            Share
-          </button>
-          <button
-            className="btn btn-ghost"
-            onClick={handleShareToGitHub}
-            type="button"
-            title="Share API configuration to GitHub"
-          >
-            <FiExternalLink size={18} />
-            Share to GitHub
-          </button>
-          <button
-            className="btn btn-ghost"
-            onClick={handleDebugUrl}
-            type="button"
-            title="Open built URL in browser for debugging"
-          >
-            <FiExternalLink size={18} />
-            Debug URL
-          </button>
-          <span className="save-status-message">{saveStatus || actionMessage}</span>
-          <button
-            className="btn btn-danger"
-            onClick={handleDeleteAPI}
-            title="Delete this API"
-          >
-            <FiTrash2 size={18} />
-            Delete
-          </button>
-        </div>
+        {(saveStatus || actionMessage) && (
+          <div className="save-status-row">
+            <span className="save-status-message">{saveStatus || actionMessage}</span>
+          </div>
+        )}
       </div>
 
-<div className="tabs">
-        {['params', 'headers', 'body', 'auth', 'docs', 'scripts', 'automation', 'settings'].map((tab) => (
-          <button
-            key={tab}
-            className={`tab ${activeTab === tab ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab)}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
+      <div className="tabs">
+        {['params', 'authorization', 'headers', 'body', 'scripts', 'settings', 'docs', 'automation'].map((tab) => {
+          const displayLabel = tab === 'authorization' ? 'Authorization' : tab.charAt(0).toUpperCase() + tab.slice(1);
+          const hasGreenDot = tab === 'body' && bodyType !== 'none';
+          return (
+            <button
+              key={tab}
+              className={`tab ${activeTab === (tab === 'authorization' ? 'auth' : tab) ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab === 'authorization' ? 'auth' : tab)}
+            >
+              {displayLabel}
+              {hasGreenDot && <span className="active-dot"></span>}
+            </button>
+          );
+        })}
       </div>
 
       <div className="tab-content">
 {activeTab === 'body' && (
           <div className="body-editor">
             <div className="body-type-selector">
-              <label>Body Type:</label>
-              <select
-                value={bodyType}
-                onChange={(e) => setBodyType(e.target.value)}
-              >
-                <option value="none">None</option>
-                <option value="json">JSON</option>
-                <option value="form-data">Form Data</option>
-                <option value="x-www-form-urlencoded">x-www-form-urlencoded</option>
-                <option value="raw">Raw</option>
-                <option value="binary">Binary</option>
-                <option value="graphql">GraphQL</option>
-              </select>
+              {['none', 'form-data', 'x-www-form-urlencoded', 'raw', 'binary', 'graphql'].map((type) => {
+                const isChecked = type === 'raw' 
+                  ? (bodyType === 'json' || bodyType === 'raw')
+                  : bodyType === type;
+                return (
+                  <label key={type} className="radio-label">
+                    <input
+                      type="radio"
+                      name="bodyType"
+                      value={type}
+                      checked={isChecked}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setBodyType(val === 'raw' ? 'json' : val);
+                      }}
+                    />
+                    <span>{type === 'graphql' ? 'GraphQL' : type}</span>
+                  </label>
+                );
+              })}
+              {(bodyType === 'json' || bodyType === 'raw') && (
+                <div className="raw-format-select-wrapper">
+                  <span className="raw-format-label">JSON</span>
+                </div>
+              )}
             </div>
             {bodyType === 'none' && (
               <div className="empty-body">

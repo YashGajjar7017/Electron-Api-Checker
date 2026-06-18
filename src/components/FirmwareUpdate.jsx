@@ -8,8 +8,8 @@ function FirmwareUpdate() {
   const [downloadedFile, setDownloadedFile] = useState(null);
   const [ports, setPorts] = useState([]);
   const [selectedPort, setSelectedPort] = useState('COM3');
-  const [selectedFqbn, setSelectedFqbn] = useState('esp32:esp32:esp32s3');
-  const [customFqbn, setCustomFqbn] = useState('');
+  const [selectedChip, setSelectedChip] = useState('esp32');
+  const [flashOffset, setFlashOffset] = useState('0x10000');
   const [uploadSpeed, setUploadSpeed] = useState('921600');
   const [flashing, setFlashing] = useState(false);
   const [flashLogs, setFlashLogs] = useState([]);
@@ -99,33 +99,28 @@ function FirmwareUpdate() {
       return;
     }
 
-    const fqbnToUse = selectedFqbn === 'custom' ? customFqbn : selectedFqbn;
-    if (!fqbnToUse.trim()) {
-      setStatus({ type: 'error', message: 'Please specify a Board FQBN' });
+    if (!selectedChip.trim()) {
+      setStatus({ type: 'error', message: 'Please specify a Target Chip' });
+      return;
+    }
+
+    if (!flashOffset.trim()) {
+      setStatus({ type: 'error', message: 'Please specify a Flash Offset Address' });
       return;
     }
 
     setFlashing(true);
     setFlashLogs([`[Client] Initializing upload procedure on port ${selectedPort}...\r\n`]);
-    setStatus({ type: 'info', message: 'Flashing firmware to ESP32...' });
+    setStatus({ type: 'info', message: `Flashing firmware to ${selectedChip.toUpperCase()}...` });
 
     try {
       if (window.electronAPI?.flashFirmware) {
-        // Load Arduino CLI config if available to read customized CLI path
-        let cliPath = '';
-        if (window.electronAPI?.loadArduinoConfig) {
-          const config = await window.electronAPI.loadArduinoConfig();
-          if (config && config.cliPath) {
-            cliPath = config.cliPath;
-          }
-        }
-
         const result = await window.electronAPI.flashFirmware({
           port: selectedPort,
-          fqbn: fqbnToUse,
           binaryPath: downloadedFile.path,
           uploadSpeed,
-          cliPath,
+          chip: selectedChip,
+          offset: flashOffset,
         });
 
         if (result.success) {
@@ -216,31 +211,40 @@ function FirmwareUpdate() {
           </div>
 
           <div className="form-group">
-            <label>Target Board FQBN</label>
+            <label>Target Chip Type</label>
             <select
-              value={selectedFqbn}
-              onChange={(e) => setSelectedFqbn(e.target.value)}
+              value={selectedChip}
+              onChange={(e) => {
+                setSelectedChip(e.target.value);
+                // Auto-adjust default offset address based on selected chip type
+                if (e.target.value === 'esp8266') {
+                  setFlashOffset('0x0');
+                } else if (e.target.value === 'esp32s3' || e.target.value === 'esp32c3') {
+                  setFlashOffset('0x0');
+                } else {
+                  setFlashOffset('0x10000');
+                }
+              }}
               disabled={flashing}
             >
-              <option value="esp32:esp32:esp32s3">ESP32-S3 (esp32:esp32:esp32s3)</option>
-              <option value="esp32:esp32:esp32">ESP32 Dev Module (esp32:esp32:esp32)</option>
-              <option value="esp32:esp32:esp32c3">ESP32-C3 (esp32:esp32:esp32c3)</option>
-              <option value="custom">Custom FQBN...</option>
+              <option value="esp32">ESP32 (Dev Module)</option>
+              <option value="esp32s3">ESP32-S3</option>
+              <option value="esp32c3">ESP32-C3</option>
+              <option value="esp32s2">ESP32-S2</option>
+              <option value="esp8266">ESP8266</option>
             </select>
           </div>
 
-          {selectedFqbn === 'custom' && (
-            <div className="form-group animate-scaleIn">
-              <label>Custom Board FQBN String</label>
-              <input
-                type="text"
-                placeholder="arduino:avr:uno"
-                value={customFqbn}
-                onChange={(e) => setCustomFqbn(e.target.value)}
-                disabled={flashing}
-              />
-            </div>
-          )}
+          <div className="form-group">
+            <label>Flash Offset Address</label>
+            <input
+              type="text"
+              placeholder="0x10000"
+              value={flashOffset}
+              onChange={(e) => setFlashOffset(e.target.value)}
+              disabled={flashing}
+            />
+          </div>
 
           <div className="form-group">
             <label>Flashing Baud Rate</label>

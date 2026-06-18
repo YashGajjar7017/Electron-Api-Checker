@@ -133,8 +133,8 @@ addCollection: (collection) => {
     currentAPI: null,
     setCurrentAPI: (api) => set({ currentAPI: api }),
 
-    // Server URL state - default to localhost:3000 (React dev server)
-    serverUrl: 'http://localhost:3000',
+    // Server URL state - default to localhost:5000 (API server)
+    serverUrl: 'http://localhost:5000',
     setServerUrl: (url) => set({ serverUrl: url }),
 
     // Auth token state
@@ -178,7 +178,7 @@ addCollection: (collection) => {
 
     // Environment support
     environments: [
-      { id: 'dev', name: 'Development', baseUrl: 'http://localhost:3000', values: {} },
+      { id: 'dev', name: 'Development', baseUrl: 'http://localhost:5000', values: {} },
       { id: 'staging', name: 'Staging', baseUrl: 'https://staging.api.local', values: {} },
       { id: 'prod', name: 'Production', baseUrl: 'https://api.production.com', values: {} },
     ],

@@ -1,8 +1,791 @@
 [
   {
+    "id": "3bwodt0ku",
+    "name": "Default",
+    "apis": [],
+    "createdAt": "2026-06-18T07:46:40.228Z"
+  },
+  {
     "id": "wxe1irkfk",
     "name": "Default",
     "apis": [],
     "createdAt": "2026-06-18T07:46:40.233Z"
+  },
+  {
+    "id": "9mfnk7qmr",
+    "name": "FIRMware (6/18/2026)",
+    "apis": [
+      {
+        "id": "2qtf27bny",
+        "name": "Login_Page",
+        "method": "POST",
+        "endpoint": "/api/login",
+        "headers": {},
+        "params": {},
+        "body": "{ \r\n\"username\": \"RMS-D8EC\", \r\n\"password\": \"Admin@123\" \r\n}",
+        "auth": {
+          "type": "none",
+          "token": ""
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/login",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "l1vxgl4qp",
+        "name": "Login_Page_Get",
+        "method": "GET",
+        "endpoint": "/api/auth/status",
+        "headers": {},
+        "params": {},
+        "body": "",
+        "auth": {
+          "type": "bearer",
+          "token": "1541"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/auth/status",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "d768gn8kt",
+        "name": "Broker_Post_Data",
+        "method": "POST",
+        "endpoint": "/api/device/broker/connect",
+        "headers": {},
+        "params": {},
+        "body": "",
+        "auth": {
+          "type": "bearer",
+          "token": "14913"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/device/broker/connect",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "xcs88orqf",
+        "name": "Broker_Get_Data",
+        "method": "GET",
+        "endpoint": "/api/device/broker/status",
+        "headers": {},
+        "params": {},
+        "body": "",
+        "auth": {
+          "type": "bearer",
+          "token": "96219"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/device/broker/status",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "jmoyleqsr",
+        "name": "Post_UUID *",
+        "method": "POST",
+        "endpoint": "/api/config/parameters?table=1",
+        "headers": {},
+        "params": {
+          "table": "1"
+        },
+        "body": "{\r\n    \"status\": \"success\",\r\n    \"vdinterval\": 5,\r\n    \"table\": 1,\r\n    \"parameters\": [\r\n        {\r\n            \"tagName\": \"MS-10-2-3--VD\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 13,\r\n            \"reg\": 461,\r\n            \"mf\": 1.00,\r\n            \"vd\": 3,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"MS-10-2-3--TIMESTAMP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 13,\r\n            \"reg\": 462,\r\n            \"mf\": 1.00,\r\n            \"vd\": 3,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"MS-10-2-3--MAXINDEX\",\r\n            \"requestID\": 3,\r\n            \"dataType\": 13,\r\n            \"reg\": 463,\r\n            \"mf\": 1.00,\r\n            \"vd\": 3,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"MS-10-2-3--INDEX\",\r\n            \"requestID\": 4,\r\n            \"dataType\": 13,\r\n            \"reg\": 464,\r\n            \"mf\": 1.00,\r\n            \"vd\": 3,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        }\r\n    ]\r\n}",
+        "auth": {
+          "type": "bearer",
+          "token": "67950"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/parameters?table=1",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "r2e92y44i",
+        "name": "Post_UUID_Correct",
+        "method": "POST",
+        "endpoint": "/",
+        "headers": {},
+        "params": {},
+        "body": "{\r\n    \"vdinterval\": 25,\r\n    \"table\": 1,\r\n    \"parameters\": [\r\n    {\r\n            \"id\": \"1\",\r\n            \"tagName\": \"IS-1-0---ASN_31\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 70,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"add\": 1,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"2\",\r\n            \"tagName\": \"IS-1-0---IST\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 1,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"add\": 3,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"3\",\r\n            \"tagName\": \"IS-1-0---FREQ\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 38,\r\n            \"mf\": 0.01,\r\n            \"vd\": 5,\r\n            \"add\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"4\",\r\n            \"tagName\": \"IS-1-0---PF\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 71,\r\n            \"mf\": 0.01,\r\n            \"vd\": 5,\r\n            \"add\": 7,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"5\",\r\n            \"tagName\": \"IS-1-0---DCV1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 4,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 9,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"6\",\r\n            \"tagName\": \"IS-1-0---DCI1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 5,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 11,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"7\",\r\n            \"tagName\": \"IS-1-0---DCKW1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 2,\r\n            \"mf\": 0.00,\r\n            \"vd\": 5,\r\n            \"add\": 13,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"8\",\r\n            \"tagName\": \"IS-1-0---VN\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 39,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 15,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"9\",\r\n            \"tagName\": \"IS-1-0---I\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 40,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 17,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"10\",\r\n            \"tagName\": \"IS-1-0---POW\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 36,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 19,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"11\",\r\n            \"tagName\": \"IS-1-0---TON\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 72,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 21,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"12\",\r\n            \"tagName\": \"IS-1-0---LON\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 58,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 23,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"13\",\r\n            \"tagName\": \"IS-1-0---TEMP\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 94,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 25,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"14\",\r\n            \"tagName\": \"IS-1-0---FT1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 98,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"add\": 27,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"15\",\r\n            \"tagName\": \"IS-1-0---APOW\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 41,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 29,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"16\",\r\n            \"tagName\": \"IS-1-0---RPOW\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 89,\r\n            \"mf\": 0.70,\r\n            \"vd\": 5,\r\n            \"add\": 31,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"17\",\r\n            \"tagName\": \"IS-1-0---TKWH\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 54,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 33,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"18\",\r\n            \"tagName\": \"IS-1-0---LKWH\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 56,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"add\": 35,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"19\",\r\n            \"tagName\": \"IS-1-0---FT2\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 73,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"add\": 37,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"20\",\r\n            \"tagName\": \"IS-1-0---FT3\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 74,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"add\": 39,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"21\",\r\n            \"tagName\": \"IS-1-0---FT4\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 75,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"add\": 41,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"22\",\r\n            \"tagName\": \"IS-1-0---FT5\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 76,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"add\": 43,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"23\",\r\n            \"tagName\": \"IS-1-0---VSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 53,\r\n            \"mf\": 0.10,\r\n            \"vd\": 10,\r\n            \"add\": 45,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"24\",\r\n            \"tagName\": \"IS-1-0---POWSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 77,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"add\": 47,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"25\",\r\n            \"tagName\": \"IS-1-0---RPOWSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 5,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"add\": 49,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"26\",\r\n            \"tagName\": \"IS-1-0---PFSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 6,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"add\": 51,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"27\",\r\n            \"tagName\": \"IS-1-0---INVCMD\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 1,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"add\": 53,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        }\r\n    ]\r\n}",
+        "auth": {
+          "type": "none",
+          "token": ""
+        },
+        "serverUrl": "http://localhost:5000",
+        "fullUrl": "",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "xauzny12l",
+        "name": "Post_UUID_Correct_MTR+IG *",
+        "method": "POST",
+        "endpoint": "/",
+        "headers": {},
+        "params": {},
+        "body": "{\r\n    \"vdinterval\": 25,\r\n    \"table\": 1,\r\n    \"parameters\": [\r\n    {\r\n            \"id\": \"1\",\r\n            \"tagName\": \"IS-1-0---ASN_31\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 70,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"add\": 1,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"2\",\r\n            \"tagName\": \"IS-1-0---IST\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 1,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"add\": 3,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"3\",\r\n            \"tagName\": \"IS-1-0---FREQ\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 38,\r\n            \"mf\": 0.01,\r\n            \"vd\": 5,\r\n            \"add\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"4\",\r\n            \"tagName\": \"IS-1-0---PF\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 71,\r\n            \"mf\": 0.01,\r\n            \"vd\": 5,\r\n            \"add\": 7,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"5\",\r\n            \"tagName\": \"IS-1-0---DCV1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 4,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 9,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"6\",\r\n            \"tagName\": \"IS-1-0---DCI1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 5,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 11,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"7\",\r\n            \"tagName\": \"IS-1-0---DCKW1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 2,\r\n            \"mf\": 0.00,\r\n            \"vd\": 5,\r\n            \"add\": 13,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"8\",\r\n            \"tagName\": \"IS-1-0---VN\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 39,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 15,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"9\",\r\n            \"tagName\": \"IS-1-0---I\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 40,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 17,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"10\",\r\n            \"tagName\": \"IS-1-0---POW\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 36,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 19,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"11\",\r\n            \"tagName\": \"IS-1-0---TON\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 72,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 21,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"12\",\r\n            \"tagName\": \"IS-1-0---LON\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 58,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 23,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"13\",\r\n            \"tagName\": \"IS-1-0---TEMP\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 94,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 25,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"14\",\r\n            \"tagName\": \"IS-1-0---FT1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 98,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"add\": 27,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"15\",\r\n            \"tagName\": \"IS-1-0---APOW\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 41,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 29,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"16\",\r\n            \"tagName\": \"IS-1-0---RPOW\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 89,\r\n            \"mf\": 0.70,\r\n            \"vd\": 5,\r\n            \"add\": 31,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"17\",\r\n            \"tagName\": \"IS-1-0---TKWH\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 54,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"add\": 33,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"18\",\r\n            \"tagName\": \"IS-1-0---LKWH\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 56,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"add\": 35,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"19\",\r\n            \"tagName\": \"IS-1-0---FT2\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 73,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"add\": 37,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"20\",\r\n            \"tagName\": \"IS-1-0---FT3\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 74,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"add\": 39,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"21\",\r\n            \"tagName\": \"IS-1-0---FT4\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 75,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"add\": 41,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"22\",\r\n            \"tagName\": \"IS-1-0---FT5\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 76,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"add\": 43,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"23\",\r\n            \"tagName\": \"IS-1-0---VSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 53,\r\n            \"mf\": 0.10,\r\n            \"vd\": 10,\r\n            \"add\": 45,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"24\",\r\n            \"tagName\": \"IS-1-0---POWSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 77,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"add\": 47,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"25\",\r\n            \"tagName\": \"IS-1-0---RPOWSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 5,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"add\": 49,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"26\",\r\n            \"tagName\": \"IS-1-0---PFSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 6,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"add\": 51,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        },\r\n        {\r\n            \"id\": \"27\",\r\n            \"tagName\": \"IS-1-0---INVCMD\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 1,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"add\": 53,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0.00,\r\n            \"Low\": 0.00\r\n        }\r\n    ]\r\n}",
+        "auth": {
+          "type": "none",
+          "token": ""
+        },
+        "serverUrl": "http://localhost:5000",
+        "fullUrl": "",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "5yxdbm7x6",
+        "name": "Post_UUID_Correct_MTR+IG",
+        "method": "POST",
+        "endpoint": "/",
+        "headers": {},
+        "params": {},
+        "body": "{\r\n    \"vdinterval\": 25,\r\n    \"table\": 1,\r\n    \"parameters\": [\r\n      {\r\n        \"id\": \"1\",\r\n        \"requestID\": 1,\r\n        \"tagName\": \"MN-1-0---ASN_21\",\r\n        \"dataType\": 13,\r\n        \"reg\": 461,\r\n        \"mf\": 1.0,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 1,\r\n        \",vd\": 5 \r\n      },\r\n      {\r\n        \"id\": \"2\",\r\n        \"requestID\": 2,\r\n        \"tagName\": \"MN-1-0---MTDET\",\r\n        \"dataType\": 13,\r\n        \"reg\": 435,\r\n        \"mf\": 1.0,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 3,\r\n        \",vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"3\",\r\n        \"requestID\": 3,\r\n        \"tagName\": \"MN-1-0---MTBLDATE\",\r\n        \"dataType\": 2,\r\n        \"reg\": 23,\r\n        \"mf\": 1.0,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 5,\r\n        \",vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"4\",\r\n        \"requestID\": 4,\r\n        \"tagName\": \"MN-1-0---DATE\",\r\n        \"dataType\": 2,\r\n        \"reg\": 13,\r\n        \"mf\": 1.0,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 7,\r\n        \",vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"5\",\r\n        \"requestID\": 5,\r\n        \"tagName\": \"MN-1-0---TIME\",\r\n        \"dataType\": 2,\r\n        \"reg\": 15,\r\n        \"mf\": 1.0,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 9,\r\n        \",vd\": 5\r\n      }, \r\n      {\r\n        \"id\": \"6\",\r\n        \"requestID\": 6,\r\n        \"tagName\": \"MN-1-0---I\",  \r\n        \"dataType\": 2,\r\n        \"reg\": 47,\r\n        \"mf\": 0.01,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 11,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"7\",\r\n        \"requestID\": 9,\r\n        \"tagName\": \"MN-1-0---VN\",\r\n        \"dataType\": 2,\r\n        \"reg\": 49,\r\n        \"mf\": 0.01,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 13,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"8\",\r\n        \"requestID\": 15,\r\n        \"tagName\": \"MN-1-0---PF\",\r\n        \"dataType\": 2,\r\n        \"reg\": 43,\r\n        \"mf\": 0.01,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 15,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"9\",\r\n        \"requestID\": 19,\r\n        \"tagName\": \"MN-1-0---FRQ\",\r\n        \"dataType\": 2,\r\n        \"reg\": 45,\r\n        \"mf\": 0.01,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 17,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"10\",\r\n        \"requestID\": 23,\r\n        \"tagName\": \"MN-1-0---POW\",\r\n        \"dataType\": 2,\r\n        \"reg\": 29,\r\n        \"mf\": 0.01,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 19,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"11\",\r\n        \"requestID\": 24,\r\n        \"tagName\": \"MN-1-0---RPOW\",\r\n        \"dataType\": 2,\r\n        \"reg\": 33,\r\n        \"mf\": 0.01,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 21,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"12\",\r\n        \"requestID\": 28,\r\n        \"tagName\": \"MN-1-0---APOW\",\r\n        \"dataType\": 2,\r\n        \"reg\": 39,\r\n        \"mf\": 0.01,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 23,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"13\",\r\n        \"requestID\": 32,\r\n        \"tagName\": \"MN-1-0---KWHNET\",\r\n        \"dataType\": 2,\r\n        \"reg\": 45,\r\n        \"mf\": 0.01,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 25,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"14\",\r\n        \"requestID\": 33,\r\n        \"tagName\": \"MN-1-0---KWHEXP\",\r\n        \"dataType\": 2,\r\n        \"reg\": 71,\r\n        \"mf\": 0.01,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 27,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"15\",\r\n        \"requestID\": 34,\r\n        \"tagName\": \"MN-1-0---KWHIMP\",\r\n        \"dataType\": 2,\r\n        \"reg\": 31,\r\n        \"mf\": 0.01,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 29,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"16\",\r\n        \"requestID\": 35,\r\n        \"tagName\": \"MN-1-0---KVAHNET\",\r\n        \"dataType\": 2,\r\n        \"reg\": 1,\r\n        \"mf\": 0.01,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 31,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"17\",\r\n        \"requestID\": 36,\r\n        \"tagName\": \"MN-1-0---KVAHIMP\",\r\n        \"dataType\": 2,\r\n        \"reg\": 41,\r\n        \"mf\": 0.01,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 33,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"18\",\r\n        \"requestID\": 37,\r\n        \"tagName\": \"MN-1-0---KVAHEXP\",\r\n        \"dataType\": 2,\r\n        \"reg\": 77,\r\n        \"mf\": 0.01,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 35,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"19\",\r\n        \"requestID\": 38,\r\n        \"tagName\": \"MN-1-0---MDKWIMP\",\r\n        \"dataType\": 2,\r\n        \"reg\": 85,\r\n        \"mf\": 0.01,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 37,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"20\",\r\n        \"requestID\": 39,\r\n        \"tagName\": \"MN-1-0---MDKWEXP\",\r\n        \"dataType\": 2,\r\n        \"reg\": 97,\r\n        \"mf\": 0.01,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 39,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"21\",\r\n        \"requestID\": 40,\r\n        \"tagName\": \"MN-1-0---POFF\",\r\n        \"dataType\": 2,\r\n        \"reg\": 27,\r\n        \"mf\": 1.0,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 41,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"22\",\r\n        \"requestID\": 41,\r\n        \"tagName\": \"MN-1-0---TC\",\r\n        \"dataType\": 2,\r\n        \"reg\": 113,\r\n        \"mf\": 1.0,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 43,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"23\",\r\n        \"requestID\": 52,\r\n        \"tagName\": \"IG-1-0---FREQ\",\r\n        \"dataType\": 1,\r\n        \"reg\": 38,\r\n        \"mf\": 0.01,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 1,\r\n        \"vd\": 5      },\r\n      {\r\n        \"id\": \"24\",\r\n        \"requestID\": 53,\r\n        \"tagName\": \"IG-1-0---PF\",\r\n        \"dataType\": 1,\r\n        \"reg\": 0,\r\n        \"mf\": 0.001,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 3,\r\n        \"vd\": 5      },\r\n      {\r\n        \"id\": \"25\",\r\n        \"requestID\": 54,\r\n        \"tagName\": \"IG-1-0---DCV1\",\r\n        \"dataType\": 1,\r\n        \"reg\": 4,\r\n        \"mf\": 0.1,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 5,\r\n        \"vd\": 5      },\r\n      {\r\n        \"id\": \"26\",\r\n        \"requestID\": 55,\r\n        \"tagName\": \"IG-1-0---DCI1\",\r\n        \"dataType\": 1,\r\n        \"reg\": 5,\r\n        \"mf\": 0.1,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 7,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"27\",\r\n        \"requestID\": 56,\r\n        \"tagName\": \"IG-1-0---DCKW1\",\r\n        \"dataType\": 3,\r\n        \"reg\": 2,\r\n        \"mf\": 0.0001,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 9,\r\n        \"vd\": 5      \r\n      },\r\n      {\r\n        \"id\": \"28\",\r\n        \"requestID\": 57,\r\n        \"tagName\": \"IG-1-0---VN\",\r\n        \"dataType\": 1,\r\n        \"reg\": 39,\r\n        \"mf\": 0.1,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 11,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"29\",\r\n        \"requestID\": 58,\r\n        \"tagName\": \"IG-1-0---I\",\r\n        \"dataType\": 2,\r\n        \"reg\": 109,\r\n        \"mf\": 1.0,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 13,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"30\",\r\n        \"requestID\": 59,\r\n        \"tagName\": \"IG-1-0---POW\",\r\n        \"dataType\": 1,\r\n        \"reg\": 38,\r\n        \"mf\": 0.01,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 15,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"31\",\r\n        \"requestID\": 60,\r\n        \"tagName\": \"IG-1-0---TON\",\r\n        \"dataType\": 1,\r\n        \"reg\": 0,\r\n        \"mf\": 0.001,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 17,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"32\",\r\n        \"requestID\": 61,\r\n        \"tagName\": \"IG-1-0---LON\",\r\n        \"dataType\": 3,\r\n        \"reg\": 58,\r\n        \"mf\": 0.1,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 19,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"33\",\r\n        \"requestID\": 62,\r\n        \"tagName\": \"IG-1-0---TEMP\",\r\n        \"dataType\": 1,\r\n        \"reg\": 94,\r\n        \"mf\": 0.1,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 21,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"34\",\r\n        \"requestID\": 63,\r\n        \"tagName\": \"IG-1-0---FT1\",\r\n        \"dataType\": 1,\r\n        \"reg\": 105,\r\n        \"mf\": 1.0,\r\n        \"Alarm\": 1,\r\n        \"High\": 0.9,\r\n        \"Low\": -1,\r\n        \"add\": 23,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"35\",\r\n        \"requestID\": 64,\r\n        \"tagName\": \"IG-1-0---APOW\",\r\n        \"dataType\": 3,\r\n        \"reg\": 41,\r\n        \"mf\": 0.1,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 25,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"36\",\r\n        \"requestID\": 65,\r\n        \"tagName\": \"IG-1-0---RPOW\",\r\n        \"dataType\": 1,\r\n        \"reg\": 89,\r\n        \"mf\": 1.0,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 27,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"37\",\r\n        \"requestID\": 66,\r\n        \"tagName\": \"IG-1-0---TKWH\",\r\n        \"dataType\": 3,\r\n        \"reg\": 54,\r\n        \"mf\": 0.01,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 29,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"38\",\r\n        \"requestID\": 67,\r\n        \"tagName\": \"IG-1-0---LKWH\",\r\n        \"dataType\": 3,\r\n        \"reg\": 56,\r\n        \"mf\": 0.001,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 31,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"39\",\r\n        \"requestID\": 68,\r\n        \"tagName\": \"IG-1-0---FT2\",\r\n        \"dataType\": 11,\r\n        \"reg\": 1,\r\n        \"mf\": 1.0,\r\n        \"Alarm\": 1,\r\n        \"High\": 1.0,\r\n        \"Low\": 2,\r\n        \"add\": 33,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"40\",\r\n        \"requestID\": 69,\r\n        \"tagName\": \"IG-1-0---FT3\",\r\n        \"dataType\": 123,\r\n        \"reg\": 1,\r\n        \"mf\": 1.0,\r\n        \"Alarm\": 1,\r\n        \"High\": 0.9,\r\n        \"Low\": -1,\r\n        \"add\": 35,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"41\",\r\n        \"requestID\": 70,\r\n        \"tagName\": \"IG-1-0---FT4\",\r\n        \"dataType\": 125,\r\n        \"reg\": 1,\r\n        \"mf\": 1.0,\r\n        \"Alarm\": 1,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 37,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"42\",\r\n        \"requestID\": 71,\r\n        \"tagName\": \"IG-1-0---FT5\",\r\n        \"dataType\": 126,\r\n        \"reg\": 1,\r\n        \"mf\": 1.0,\r\n        \"Alarm\": 1,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 39,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"43\",\r\n        \"requestID\": 72,\r\n        \"tagName\": \"IG-1-0---VSP\",\r\n        \"dataType\": 1,\r\n        \"reg\": 53,\r\n        \"mf\": 1.0,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 41,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"44\",\r\n        \"requestID\": 73,\r\n        \"tagName\": \"IG-1-0---POWSP\",\r\n        \"dataType\": 1,\r\n        \"reg\": 1,\r\n        \"mf\": 0.01,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 43,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"45\",\r\n        \"requestID\": 74,\r\n        \"tagName\": \"IG-1-0---RPOWSP\",\r\n        \"dataType\": 1,\r\n        \"reg\": 5,\r\n        \"mf\": 0.0,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 45,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"46\",\r\n        \"requestID\": 75,\r\n        \"tagName\": \"IG-1-0---PFSP\",\r\n        \"dataType\": 1,\r\n        \"reg\": 11,\r\n        \"mf\": 0.1,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 47,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"47\",\r\n        \"requestID\": 76,\r\n        \"tagName\": \"IG-1-0---INVCMD\",\r\n        \"dataType\": 1,\r\n        \"reg\": 21,\r\n        \"mf\": 0.1,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 49,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"48\",\r\n        \"requestID\": 77,\r\n        \"tagName\": \"IG-1-0---POWSPPER\",\r\n        \"dataType\": 1,\r\n        \"reg\": 23,\r\n        \"mf\": 0.0,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 51,\r\n        \"vd\": 5\r\n      },\r\n      {\r\n        \"id\": \"49\",\r\n        \"requestID\": 78,\r\n        \"tagName\": \"IG-1-0---IST\",\r\n        \"dataType\": 1,\r\n        \"reg\": 25,\r\n        \"mf\": 0.0,\r\n        \"Alarm\": 1,\r\n        \"High\": 0.9,\r\n        \"Low\": -1,\r\n        \"add\": 53,\r\n        \"vd\": 5\r\n\r\n      },\r\n      {\r\n        \"id\": \"50\",\r\n        \"requestID\": 79,\r\n        \"tagName\": \"IG-1-0---ASN_31\",\r\n        \"dataType\": 1,\r\n        \"reg\": 27,\r\n        \"mf\": 0.0,\r\n        \"Alarm\": 0,\r\n        \"High\": 0.0,\r\n        \"Low\": 0,\r\n        \"add\": 55,\r\n        \"vd\": 5\r\n      }\r\n    ]\r\n}",
+        "auth": {
+          "type": "none",
+          "token": ""
+        },
+        "serverUrl": "http://localhost:5000",
+        "fullUrl": "",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "5y5s5wsyj",
+        "name": "Post_UUID_1-phase Inverter",
+        "method": "POST",
+        "endpoint": "/api/config/parameters",
+        "headers": {},
+        "params": {},
+        "body": "{\r\n    \"vdinterval\": 5,\r\n    \"table\": 1,\r\n    \"parameters\": [\r\n        {\r\n            \"tagName\": \"IS-1-0---ASN_31\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 70,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---IST\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 1,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FREQ\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 38,\r\n            \"mf\": 0.01,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---PF\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 71,\r\n            \"mf\": 0.01,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---DCV1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 4,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---DCI1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 5,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---DCKW1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 2,\r\n            \"mf\": 0.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---VN\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 39,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---I\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 40,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---POW\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 36,\r\n            \"mf\": 0.1,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---TON\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 72,\r\n            \"mf\": 0.1,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---LON\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 58,\r\n            \"mf\": 0.1,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---TEMP\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 94,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 98,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---APOW\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 41,\r\n            \"mf\": 0.1,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---RPOW\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 89,\r\n            \"mf\": 0.70,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---TKWH\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 54,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---LKWH\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 56,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT2\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 73,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT3\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 74,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT4\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 75,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT5\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 76,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---VSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 53,\r\n            \"mf\": 0.10,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---POWSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 77,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---RPOWSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 5,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---PFSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 6,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---INVCMD\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 1,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---POWSPPER\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 4,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        }\r\n    ]\r\n}",
+        "auth": {
+          "type": "bearer",
+          "token": "44590"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/parameters",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "qf5qt4ai7",
+        "name": "Post_UUID_DAQ",
+        "method": "POST",
+        "endpoint": "/api/config/parameters",
+        "headers": {},
+        "params": {},
+        "body": "{\r\n    \"vdinterval\": 25,\r\n    \"table\": 1,\r\n    \"parameters\": [\r\n        {\r\n            \"tagName\": \"D-1-0---ASN_1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 70,\r\n            \"mf\": 1.00,\r\n            \"vd\": 25,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"D-1-0---MODTMP1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 1,\r\n            \"mf\": 1.00,\r\n            \"vd\": 25,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"D-1-0---AMBTMP1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 38,\r\n            \"mf\": 0.01,\r\n            \"vd\": 25,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"D-1-0---POA1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 71,\r\n            \"mf\": 0.01,\r\n            \"vd\": 25,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"D-1-0---GHI1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 4,\r\n            \"mf\": 0.10,\r\n            \"vd\": 25,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"D-1-0---DHRPOA1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 25,\r\n            \"mf\": 0.10,\r\n            \"vd\": 25,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"D-1-0---DHRGHI1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 2,\r\n            \"mf\": 0.00,\r\n            \"vd\": 25,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"D-1-0---VD\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 39,\r\n            \"mf\": 0.10,\r\n            \"vd\": 25,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        }\r\n    ]\r\n}",
+        "auth": {
+          "type": "bearer",
+          "token": "93547"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/parameters",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "98udm53rl",
+        "name": "Post_UUID_3-phase Inverter",
+        "method": "POST",
+        "endpoint": "/api/config/parameters",
+        "headers": {},
+        "params": {},
+        "body": "{\r\n    \"vdinterval\": 5,\r\n    \"table\": 1,\r\n    \"parameters\": [\r\n        {\r\n            \"tagName\": \"IS-1-0---ASN_31\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 70,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---IST\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 1,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FREQ\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 38,\r\n            \"mf\": 0.01,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---PF\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 71,\r\n            \"mf\": 0.01,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---DCV1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 4,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---DCI1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 5,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---DCKW1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 2,\r\n            \"mf\": 0.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---VN\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 39,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---I\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 40,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---POW\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 36,\r\n            \"mf\": 0.1,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---TON\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 72,\r\n            \"mf\": 0.1,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---LON\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 58,\r\n            \"mf\": 0.1,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---TEMP\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 94,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 98,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---APOW\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 41,\r\n            \"mf\": 0.1,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---RPOW\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 89,\r\n            \"mf\": 0.70,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---TKWH\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 54,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---LKWH\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 56,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT2\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 73,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT3\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 74,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT4\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 75,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT5\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 76,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---VSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 53,\r\n            \"mf\": 0.10,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---POWSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 77,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---RPOWSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 5,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---PFSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 6,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---INVCMD\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 1,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---POWSPPER\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 4,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        }\r\n    ]\r\n}",
+        "auth": {
+          "type": "bearer",
+          "token": "18667"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/parameters",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "lcacm6vw5",
+        "name": "Post_UUID_DLMS Inverter",
+        "method": "POST",
+        "endpoint": "/api/config/parameters",
+        "headers": {},
+        "params": {},
+        "body": "{\r\n    \"vdinterval\": 5,\r\n    \"table\": 1,\r\n    \"parameters\": [\r\n        {\r\n            \"tagName\": \"IS-1-0---ASN_31\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 70,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---IST\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 1,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FREQ\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 38,\r\n            \"mf\": 0.01,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---PF\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 71,\r\n            \"mf\": 0.01,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---DCV1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 4,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---DCI1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 5,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---DCKW1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 2,\r\n            \"mf\": 0.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---VN\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 39,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---I\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 40,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---POW\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 36,\r\n            \"mf\": 0.1,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---TON\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 72,\r\n            \"mf\": 0.1,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---LON\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 58,\r\n            \"mf\": 0.1,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---TEMP\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 94,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 98,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---APOW\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 41,\r\n            \"mf\": 0.1,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---RPOW\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 89,\r\n            \"mf\": 0.70,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---TKWH\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 54,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---LKWH\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 56,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT2\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 73,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT3\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 74,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT4\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 75,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT5\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 76,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---VSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 53,\r\n            \"mf\": 0.10,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---POWSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 77,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---RPOWSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 5,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---PFSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 6,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---INVCMD\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 1,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---POWSPPER\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 4,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        }\r\n    ]\r\n}",
+        "auth": {
+          "type": "bearer",
+          "token": "18667"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/parameters",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "xggj1a2bz",
+        "name": "Post_UUID_DLMS Inverter Copy",
+        "method": "POST",
+        "endpoint": "/api/config/parameters",
+        "headers": {},
+        "params": {},
+        "body": "{\r\n    \"vdinterval\": 5,\r\n    \"table\": 1,\r\n    \"parameters\": [\r\n        {\r\n            \"tagName\": \"IS-1-0---ASN_31\",\r\n            \"requestID\": 6,\r\n            \"dataType\": 1,\r\n            \"reg\": 70,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---IST\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 1,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FREQ\",\r\n            \"requestID\": 6,\r\n            \"dataType\": 1,\r\n            \"reg\": 38,\r\n            \"mf\": 0.01,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---PF\",\r\n            \"requestID\": 6,\r\n            \"dataType\": 1,\r\n            \"reg\": 71,\r\n            \"mf\": 0.01,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---DCV1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 4,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---DCI1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 1,\r\n            \"reg\": 5,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---DCKW1\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 3,\r\n            \"reg\": 2,\r\n            \"mf\": 0.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---VN\",\r\n            \"requestID\": 6,\r\n            \"dataType\": 1,\r\n            \"reg\": 39,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---I\",\r\n            \"requestID\": 6,\r\n            \"dataType\": 1,\r\n            \"reg\": 40,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---POW\",\r\n            \"requestID\": 6,\r\n            \"dataType\": 3,\r\n            \"reg\": 36,\r\n            \"mf\": 0.1,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---TON\",\r\n            \"requestID\": 6,\r\n            \"dataType\": 1,\r\n            \"reg\": 72,\r\n            \"mf\": 0.1,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---LON\",\r\n            \"requestID\": 6,\r\n            \"dataType\": 3,\r\n            \"reg\": 58,\r\n            \"mf\": 0.1,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---TEMP\",\r\n            \"requestID\": 6,\r\n            \"dataType\": 1,\r\n            \"reg\": 94,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT1\",\r\n            \"requestID\": 6,\r\n            \"dataType\": 1,\r\n            \"reg\": 98,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---APOW\",\r\n            \"requestID\": 6,\r\n            \"dataType\": 3,\r\n            \"reg\": 41,\r\n            \"mf\": 0.1,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---RPOW\",\r\n            \"requestID\": 6,\r\n            \"dataType\": 1,\r\n            \"reg\": 89,\r\n            \"mf\": 0.70,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---TKWH\",\r\n            \"requestID\": 6,\r\n            \"dataType\": 3,\r\n            \"reg\": 54,\r\n            \"mf\": 0.10,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---LKWH\",\r\n            \"requestID\": 6,\r\n            \"dataType\": 3,\r\n            \"reg\": 56,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT2\",\r\n            \"requestID\": 6,\r\n            \"dataType\": 1,\r\n            \"reg\": 73,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT3\",\r\n            \"requestID\": 6,\r\n            \"dataType\": 1,\r\n            \"reg\": 74,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT4\",\r\n            \"requestID\": 6,\r\n            \"dataType\": 1,\r\n            \"reg\": 75,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---FT5\",\r\n            \"requestID\": 6,\r\n            \"dataType\": 1,\r\n            \"reg\": 76,\r\n            \"mf\": 1.00,\r\n            \"vd\": 5,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---VSP\",\r\n            \"requestID\": 6,\r\n            \"dataType\": 1,\r\n            \"reg\": 53,\r\n            \"mf\": 0.10,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---POWSP\",\r\n            \"requestID\":6,\r\n            \"dataType\": 1,\r\n            \"reg\": 77,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---RPOWSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 5,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---PFSP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 6,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---INVCMD\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 1,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"IS-1-0---POWSPPER\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 1,\r\n            \"reg\": 4,\r\n            \"mf\": 1.00,\r\n            \"vd\": 10,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 5,\r\n            \"Low\": 0\r\n        }\r\n//uuid inverter1\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---ASN_31\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 70,\r\n        //     \"mf\": 1.00,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---IST\",\r\n        //     \"requestID\": 1,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 1,\r\n        //     \"mf\": 1.00,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---FREQ\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 38,\r\n        //     \"mf\": 0.01,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---PF\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 71,\r\n        //     \"mf\": 0.01,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---DCV1\",\r\n        //     \"requestID\": 1,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 4,\r\n        //     \"mf\": 0.10,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---DCI1\",\r\n        //     \"requestID\": 1,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 5,\r\n        //     \"mf\": 0.10,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---DCKW1\",\r\n        //     \"requestID\": 1,\r\n        //     \"dataType\": 3,\r\n        //     \"reg\": 2,\r\n        //     \"mf\": 0.70,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---VN\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 39,\r\n        //     \"mf\": 0.10,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---I\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 40,\r\n        //     \"mf\": 0.10,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---POW\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 3,\r\n        //     \"reg\": 36,\r\n        //     \"mf\": 0.1,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---TON\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 72,\r\n        //     \"mf\": 0.1,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---LON\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 3,\r\n        //     \"reg\": 58,\r\n        //     \"mf\": 0.1,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---TEMP\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 94,\r\n        //     \"mf\": 0.10,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---FT1\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 98,\r\n        //     \"mf\": 1.00,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---APOW\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 3,\r\n        //     \"reg\": 41,\r\n        //     \"mf\": 0.1,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---RPOW\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 89,\r\n        //     \"mf\": 0.70,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---TKWH\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 3,\r\n        //     \"reg\": 54,\r\n        //     \"mf\": 0.10,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---LKWH\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 3,\r\n        //     \"reg\": 56,\r\n        //     \"mf\": 1.00,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---FT2\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 73,\r\n        //     \"mf\": 1.00,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---FT3\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 74,\r\n        //     \"mf\": 1.00,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---FT4\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 75,\r\n        //     \"mf\": 1.00,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---FT5\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 76,\r\n        //     \"mf\": 1.00,\r\n        //     \"vd\": 5,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---VSP\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 53,\r\n        //     \"mf\": 0.10,\r\n        //     \"vd\": 10,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---POWSP\",\r\n        //     \"requestID\": 6,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 77,\r\n        //     \"mf\": 1.00,\r\n        //     \"vd\": 10,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---RPOWSP\",\r\n        //     \"requestID\": 2,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 5,\r\n        //     \"mf\": 1.00,\r\n        //     \"vd\": 10,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---PFSP\",\r\n        //     \"requestID\": 2,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 6,\r\n        //     \"mf\": 1.00,\r\n        //     \"vd\": 10,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---INVCMD\",\r\n        //     \"requestID\": 2,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 1,\r\n        //     \"mf\": 1.00,\r\n        //     \"vd\": 10,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // },\r\n        // {\r\n        //     \"tagName\": \"IS-1-0---POWSPPER\",\r\n        //     \"requestID\": 2,\r\n        //     \"dataType\": 1,\r\n        //     \"reg\": 4,\r\n        //     \"mf\": 1.00,\r\n        //     \"vd\": 10,\r\n        //     \"Alarm\": \"false\",\r\n        //     \"High\": 5,\r\n        //     \"Low\": 0\r\n        // }\r\n    ]\r\n}",
+        "auth": {
+          "type": "bearer",
+          "token": "77804"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/parameters",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "3krzabs1i",
+        "name": "Get_UUID_Data_Table1",
+        "method": "GET",
+        "endpoint": "/api/config/parameters?table=1",
+        "headers": {},
+        "params": {
+          "table": "1"
+        },
+        "body": "",
+        "auth": {
+          "type": "bearer",
+          "token": "15904"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/parameters?table=1",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "qbzf0cy60",
+        "name": "Get_UUID_Data_Table2",
+        "method": "GET",
+        "endpoint": "/api/config/parameters?table=2",
+        "headers": {},
+        "params": {
+          "table": "2"
+        },
+        "body": "",
+        "auth": {
+          "type": "bearer",
+          "token": "92056"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/parameters?table=2",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "4hnn72v3b",
+        "name": "Get_UUID_Data_Table3",
+        "method": "GET",
+        "endpoint": "/api/config/parameters?table=3",
+        "headers": {},
+        "params": {
+          "table": "3"
+        },
+        "body": "",
+        "auth": {
+          "type": "bearer",
+          "token": "92056"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/parameters?table=3",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "hq7f0i2fs",
+        "name": "Post_Inverter_Data",
+        "method": "POST",
+        "endpoint": "/api/config/inverter-communication",
+        "headers": {},
+        "params": {},
+        "body": "{\r\n        \"asn\": \"1234\",\r\n        \"baudrate\": 9600,\r\n        \"parity\": 1,\r\n        \"stopBit\": 1,\r\n        \"databits\": 8,\r\n        \"reqCount_1\": 1,\r\n        \"slaveID_11\": 1,\r\n        \"startAddr_11\": 1,\r\n        \"length_11\": 120,\r\n        \"funcType_11\": 3,\r\n        \"slaveID_12\": 1,\r\n        \"startAddr_12\": 2,\r\n        \"length_12\": 3,\r\n        \"funcType_12\": 1,\r\n        \"slaveID_13\": 1,\r\n        \"startAddr_13\": 1,\r\n        \"length_13\": 2,\r\n        \"funcType_13\": 2,\r\n        \"slaveID_14\": 1,\r\n        \"startAddr_14\": 2,\r\n        \"length_14\": 3,\r\n        \"funcType_14\": 4,\r\n        \"slaveID_15\": 5,\r\n        \"startAddr_15\": 14,\r\n        \"length_15\": 10,\r\n        \"funcType_15\": 3\r\n    }",
+        "auth": {
+          "type": "bearer",
+          "token": "14913"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/inverter-communication",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "h127ievp4",
+        "name": "Get_Invertor_Page",
+        "method": "GET",
+        "endpoint": "/api/config/inverter-communication",
+        "headers": {},
+        "params": {},
+        "body": "",
+        "auth": {
+          "type": "bearer",
+          "token": "15904"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/inverter-communication",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "7b4gcugqh",
+        "name": "Post_Remote_Server_Page_Params_1",
+        "method": "POST",
+        "endpoint": "/api/config/remote-server",
+        "headers": {},
+        "params": {},
+        "body": "{\r\n    \"server_url\": \"rms.iotscada-pmsg.com\",\r\n    \"server_port\": 8883,\r\n    \"solution_type\": \"ongridrooftop\",\r\n    \"client_id\": \"d:866082075799826$ongridrooftop$500092\",\r\n    \"username\": \"866082075799826$ongridrooftop$500092\",\r\n    \"password\": \"f886db2f\",\r\n    \"server_url1\": \"rms.iotscada-pmsg.com\",\r\n    \"server_port1\": 8883,\r\n    \"solution_type1\": \"ongridrooftop\",\r\n    \"client_id1\": \"d:866082075799828$ongridrooftop$500092\",\r\n    \"username1\": \"866082075799828$ongridrooftop$500092\",\r\n    \"password1\": \"466b856f\",\r\n    \"imei\": \"866082075799826\",\r\n    \"imei1\": \"866082075799828\"\r\n}",
+        "auth": {
+          "type": "bearer",
+          "token": "45163"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/remote-server",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "or5ee9tzz",
+        "name": "Post_Remote_Server_Page_Params_2",
+        "method": "POST",
+        "endpoint": "/api/config/remote-server",
+        "headers": {},
+        "params": {},
+        "body": "{\r\n  \"server_url\": \"rms.iotscada-pmsg.com\",\r\n  \"server_port\" : 8883,\r\n  \"solution_type\": \"ongridrooftop\",\r\n  \"client_id\": \"d:869742085795505$ongridrooftop$500092\",\r\n  \"username\": \"869742085795505$ongridrooftop$500092\",\r\n  \"password\": \"09d68059\",\r\n  \"server_url1\": \"rms.iotscada-pmsg.com\",\r\n  \"server_port1\" : 8883,\r\n  \"solution_type1\": \"ongridrooftop\",\r\n  \"client_id1\": \"d:869742085795506$ongridrooftop$500092\",\r\n  \"username1\": \"869742085795506$ongridrooftop$500092\",\r\n  \"password1\": \"01b6de98\",\r\n  \"imei\": \"869742085795505\",\r\n  \"imei1\": \"869742085795506\"\r\n}",
+        "auth": {
+          "type": "bearer",
+          "token": "60150"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/remote-server",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "642p0zoks",
+        "name": "Post_Remote_Server_Page_Params_3",
+        "method": "POST",
+        "endpoint": "/api/config/remote-server",
+        "headers": {},
+        "params": {},
+        "body": "{\r\n  \"server_url\": \"rms.iotscada-pmsg.com\",\r\n  \"server_port\" : 8883,\r\n  \"solution_type\": \"ongridrooftop\",\r\n  \"client_id\": \"d:869742085815840$ongridrooftop$500097\",\r\n  \"username\": \"869742085815840$ongridrooftop$500097\",\r\n  \"password\": \"d04cb427\",\r\n  \"server_url1\": \"rms.iotscada-pmsg.com\",\r\n  \"server_port1\" : 8883,\r\n  \"solution_type1\": \"ongridrooftop\",\r\n  \"client_id1\": \"d:869366088390922$ongridrooftop$510017\",\r\n  \"username1\": \"869366088390922$ongridrooftop$510017\",\r\n  \"password1\": \"3dae5f26\",\r\n  \"imei\": \"869742085815840\",\r\n  \"imei1\": \"869742085815790\"\r\n}",
+        "auth": {
+          "type": "bearer",
+          "token": "05866"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/remote-server",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "ksvoc9hlo",
+        "name": "Post_Remote_Server_Page_Params_4",
+        "method": "POST",
+        "endpoint": "/api/config/remote-server",
+        "headers": {},
+        "params": {},
+        "body": "{\r\n  \"server_url\": \"rms.iotscada-pmsg.com\",\r\n  \"server_port\" : 8883,\r\n  \"solution_type\": \"ongridrooftop\",\r\n  \"client_id\": \"d:869742085815840$ongridrooftop$500097\",\r\n  \"username\": \"869742085815840$ongridrooftop$500097\",\r\n  \"password\": \"d04cb427\",\r\n  \"server_url1\": \"rms.iotscada-pmsg.com\",\r\n  \"server_port1\" : 8883,\r\n  \"solution_type1\": \"ongridrooftop\",\r\n  \"client_id1\": \"d:869742085815840$ongridrooftop$500092\",\r\n  \"username1\": \"869742085815790$ongridrooftop$500092\",\r\n  \"password1\": \"7b08cc46\",\r\n  \"imei\": \"869742085815791\",\r\n  \"imei1\": \"869742085815790\"\r\n}\r\n\r\n",
+        "auth": {
+          "type": "bearer",
+          "token": "18667"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/remote-server",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "a43x7c56d",
+        "name": "Post_Remote_Server_Page_Params_AWS",
+        "method": "POST",
+        "endpoint": "/api/config/remote-server",
+        "headers": {},
+        "params": {},
+        "body": "{\r\n    \"server_url\": \"a8byqykzbqlaw-ats.iot.ap-south-1.amazonaws.com\",\r\n    \"server_port\": 8883,\r\n    \"solution_type\": \"ongridrooftop\",\r\n    \"client_id\": \"d:866082075799826$ongridrooftop$500092\",\r\n    \"username\": \"1\",\r\n    \"password\": \"1\"\r\n}",
+        "auth": {
+          "type": "bearer",
+          "token": "11545"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/remote-server",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "c9uzexq5l",
+        "name": "Get_Remote_Server_Page",
+        "method": "GET",
+        "endpoint": "/api/config/remote-server",
+        "headers": {},
+        "params": {},
+        "body": "",
+        "auth": {
+          "type": "bearer",
+          "token": "44590"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/remote-server",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "agq5ih670",
+        "name": "Post_MQTT_Server_Page_Params_26",
+        "method": "POST",
+        "endpoint": "/api/config/mqtt-server",
+        "headers": {},
+        "params": {},
+        "body": "{\r\n\"http_url\": \"api.iotscada-pmsg.com\",\r\n\"http_port\":443,\r\n\"imei\":\"866082075799826\",\r\n\"username\":\"866082075799826\",\r\n\"password\":\"f886db2f\"\r\n}",
+        "auth": {
+          "type": "bearer",
+          "token": "86122"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/mqtt-server",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "069skuhdo",
+        "name": "Post_MQTT_Server_Page_Params_05",
+        "method": "POST",
+        "endpoint": "/api/config/mqtt-server",
+        "headers": {},
+        "params": {},
+        "body": "{\r\n\"http_url\": \"api.iotscada-pmsg.com\",\r\n\"http_port\":443,\r\n\"imei\":\"866082075799826\",\r\n\"username\":\"866082075799826\",\r\n\"password\":\"f886db2f\"\r\n}",
+        "auth": {
+          "type": "bearer",
+          "token": "86122"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/mqtt-server",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "w8ewz4sob",
+        "name": "Post_MQTT_Server_Page_Params",
+        "method": "GET",
+        "endpoint": "/api/config/mqtt-server",
+        "headers": {},
+        "params": {},
+        "body": "{\r\n\"http_url\": \"api.iotscada-pmsg.com\",\r\n\"http_port\":443,\r\n\"imei\":\"869742085795505\",\r\n\"username\":\"869742085795505\",\r\n\"password\":\"5344ce0\"\r\n}",
+        "auth": {
+          "type": "bearer",
+          "token": "05511"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/mqtt-server",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "dfgpzogca",
+        "name": "Post_ISP_Configuration",
+        "method": "POST",
+        "endpoint": "/api/config/isp",
+        "headers": {},
+        "params": {},
+        "body": "{\r\n\"apn\":\"airtelgprs.com\",\r\n\"apn2\":\"airtelgprs.com\",\r\n\"current_sim\":\"1\"\r\n}",
+        "auth": {
+          "type": "bearer",
+          "token": "39938"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/isp",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "6rnaydmdp",
+        "name": "Get_ISP_Data",
+        "method": "GET",
+        "endpoint": "/api/config/isp",
+        "headers": {
+          "Authorization": "Bearer 82794"
+        },
+        "params": {},
+        "body": "",
+        "auth": {
+          "type": "bearer",
+          "token": "67409"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/config/isp",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "cezy316r9",
+        "name": "Certificate_RootCA",
+        "method": "POST",
+        "endpoint": "/write.html?filename=rootCA.pem",
+        "headers": {
+          "Content-Type": "text/plain",
+          "Authorization": "Bearer 11131"
+        },
+        "params": {
+          "filename": "rootCA.pem"
+        },
+        "body": "-----BEGIN CERTIFICATE-----\nMIICyTCCAbGgAwIBAgIUNNDf2Nc1apj4ZNrhqdlEh4lGvwQwDQYJKoZIhvcNAQEL\nBQAwDzENMAsGA1UEAwwEcm9vdDAeFw0yNTA5MDIxNjE4MjlaFw0zMjA4MzExNjE4\nMjlaMA8xDTALBgNVBAMMBHJvb3QwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\nAoIBAQDjWfgumybA/tq/saHcDEE/+KMgWdfOI+iRhE4Ud/YLXeaoN7ruVBjuwNMT\n8s2CJxuKP4p++psr1T+NtxK8QyKTs+BQc1MHGI/SC5oQ2wBBUlLIvQ/pifPOuVFO\nyEogGmCvv8XikQmkmo/alyUnf9KmVEdCs4PDk8Uf67QgYLXpeA/fxshk7kPhclU8\nTRbICMVBXbL+VKX1H5xexbAbTCYBUbJP9p+zUVy8IS8A4ZFNfDWuV2L690o5XfvG\ntoCxnrvFusEgB/JViXqnEKu44Xj+jXsi/wZz0parY2eEQlfI4ZGyx/SUDoEGBsoa\npdowg5zLLFgwSEb0QDA+8pzq4c97AgMBAAGjHTAbMAwGA1UdEwQFMAMBAf8wCwYD\nVR0PBAQDAgEGMA0GCSqGSIb3DQEBCwUAA4IBAQAYtxxiW7tvBl4uJIUwou+fbPPo\nJ7bTELpUWbwe1HA4S1jHBDu/tOl1hCf+f2XsqsmS1De4V5ksN3Ez8XDmOzIYRqJZ\nXMFpdXXSn6Fb2dE2MKmb9D7DYCAuoOYr9cLICJ1NJsqKs9sl61JeEWrDWxfm2xjM\n6Cq06ikeEX1K6z5Bc4qrvu5rMmKBK2c+XwyguGgobj6qfGQi8rs+qiAlIoadW8Ow\nBrxJwmhrm5Uq/ww/UCugaZTdgWXG4DOKz56yJMqewuF0GHk477qiRBLAd4BqGI0a\nm9s3tRSU1+2IvvPvYDZXALwu+s0YF/T54OLQ3QBK6+Hylyjck9uo7iOjQQCr\n-----END CERTIFICATE-----\n",
+        "auth": {
+          "type": "bearer",
+          "token": "67694"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/write.html?filename=rootCA.pem",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "b2f2gmusl",
+        "name": "Certificate_key_RSA",
+        "method": "POST",
+        "endpoint": "/write.html?filename=key.pem",
+        "headers": {},
+        "params": {
+          "filename": "key.pem"
+        },
+        "body": "-----BEGIN RSA PRIVATE KEY-----\r\nMIIEpAIBAAKCAQEA23WOA9LyzUIEPyXakpxkxEJfj1mzkeWNOyjeL61l6IkCQ70Z\r\naAggvlSAzCOymiRY1/ZibyP1XiueEANOmhlHXo+D+Iq26ofbUeXACSpesehgb/pU\r\ntHzJ8KCUB9jBXHBcIAAPjUqARUCfEJTZBDW/0JEfZxn8gj76/BTIuO6xsKBp/dUs\r\n85GgaAsUbJq61cY+2iDJFTpHa1i52XtSjwAhr8GoJOJXWjDU5AAsJwi3YLEOVLMf\r\nDcJLrBTIEy4A/GESTDDh6CiRtjEs0iIKTcQ3hAKE2V/lT+wsskQI/bSU4kCmygeA\r\nF3315VANyBgGc3tntl7p31oMYstzNDyUJw83pwIDAQABAoIBAQCcyUZVew7WD7UC\r\n/GNEXREsmZK10ksVD5+vxUm/XC0zTTbd+Co/hZcHA04lCdfegdsrJy454sG4roa1\r\nP/eW5jpz1ypclZWKxtaskux4X9nZVoAXYAvGCmUnUUGQvY2fIfLfNcvmkHRFhZ5e\r\ndUj51gCc3CFIQmuBDce38o1YecdevFkkhcAHV5xQ6G4XIdARv2mU/HUOTKUmisKl\r\n1jNgWydqYqwWrN42HmhHBmGWTdVuaIF8pLFcq+rFkUCKbdyN0h1hxzXwSNUTRGRZ\r\nFDANNOGBEKCW+bLrRv23JOLleSnxPO5hZ/ya9wQSOmpGdI6WX0JR51v0EEZIiARw\r\ngblYnaRxAoGBAPcShij2gTFwLKDluz5WYvoBvAP7+eFOAj1fSuk8cwrle90oQLml\r\nCW7ZIT0UsK+JgNb3MH5QckS3KxSUzNNdu/07K0cnl3FV4XBQ9Ilb+kjdFHbqgJGk\r\nG7OG72UPqrJA0pi/Hv0H5kaG/7SQq804RHhTgaeBHjiAdQWq+tXvw2SPAoGBAONj\r\nmkTgvQVpqwzR3LJclWqPD8Dj0APEbHcPowA533AzCZYTHUzKzsyGgFcqiSzWtod7\r\nTtELRifaUA9ianqOdmSgaET79onDp+HUXWZBO95LD+ELxzWuatzl69TCYRYVkvPY\r\naD3CSalm4mtEDzJw3oqk6Nn2G1vl49ItDiPsS/dpAoGAZsXo0o8/TE5J8h+9lH+g\r\nqjggelPNLIAjhF3oLj675/NvY55D1jUlSFu/bMX3fP0of8LRBCn4bkb2/5ep394k\r\nvYBoTy/T2gwMO4khPyXoZXi484I2Ot7VuwbM++/ZZE58i5csj7pCemHbacOoAzR9\r\nnsO1sfSOmpgslU/7CRSz5VcCgYA3vxx8FGji4dQIkY68v4v2Etq23GML+WTqD5BT\r\nptyLgkewXkFJqVLnu3XNaOU2c/FN58Ib59qsPI5yJxuZrkGCS/0kJG19utT2vXyk\r\nbAvEZLyg3KVbGMakH04g3AK3SlS7qWts8Kvkdw+9YnMjV56HeQSJIxf0ALlItrkH\r\nv4+kOQKBgQC9809wJrVrxCTBACdQo69FZmOMZn5ct9AzRQM8htZBTiaB5Qj13yBw\r\nA1Z2+ylSrTaYe6Yc9pTGwfqQrVo449yr3z3zp92bZTRzZfL/jeC+rINZnhF6mVLF\r\nIpqOcV7PkWNeMJjvZDSC6nTqxnwHlBGAPRvhT+YaR8aUGKb6LbWeHQ==\r\n-----END RSA PRIVATE KEY-----\r\n",
+        "auth": {
+          "type": "bearer",
+          "token": "09572"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/write.html?filename=key.pem",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "klzvrxk8r",
+        "name": "Client_Certificate_Page",
+        "method": "POST",
+        "endpoint": "/write.html?filename=client.pem",
+        "headers": {},
+        "params": {
+          "filename": "client.pem"
+        },
+        "body": "-----BEGIN CERTIFICATE-----\r\nMIIC+jCCAeKgAwIBAgICAPswDQYJKoZIhvcNAQELBQAwDzENMAsGA1UEAwwEcm9v\r\ndDAeFw0yNjAzMDIwNDE1NDlaFw0zMzAyMjgwNDE1NDlaMEAxLTArBgNVBAMMJDg2\r\nNjA4MjA3NTc5OTgyNiRvbmdyaWRyb29mdG9wJDUwMDA5MjEPMA0GA1UECgwGNTAw\r\nMDkyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwyvAuYuG7iQVajFM\r\nICZwYOQNcLE+koEXQz7DYr/O2K3Kha903f3QpIDHVA1eftD6J9BjkZf2SPy6A8Eu\r\n8Y/Occ0REfGS2T8/2aSqz7iPpk+vS8kHPv50aMMYWMnsctBEILjIJh49A6OoiFuM\r\nkNB1TH3kIHq/aiZ09ShLzpi94qH8wiisQygmMBtsohK6IQqEu/NNQxSVzkhuJxuv\r\nliyUzkIvybVpHrmRjvVpW2i0xhdjDnZ5penyZCqPTq29pfS46SzyeGCRLb8e8KY/\r\n1OYCHGVzr5oItzdjI4cT6CQXKRyp4Og/fC52fXe69Rv9dikqXGZkqz/UOPGDZfGa\r\nOR+MPQIDAQABoy8wLTAJBgNVHRMEAjAAMAsGA1UdDwQEAwIFoDATBgNVHSUEDDAK\r\nBggrBgEFBQcDAjANBgkqhkiG9w0BAQsFAAOCAQEAIsuSQ/VL6tl8dtjEZbB78kXY\r\nlwbOv8C9XWpco+0IdH/l0ouhx0xOj7a7GMffiRA64MOC8ckJuLXl5O0HJbIdDs8F\r\nrxVo54q0GwAdJRnMeWESgteGrSQS1gCD8jkVw4zRM4wUk2ZMcG6S8I/h+hJXzOkE\r\nwP799AEy0ul5Km60IMD1OsZPw23l2vFHh42wCD0LW9/KYG/ONFZCe8/HAlMWgaKz\r\nKWwZ0yY0enAmN9WpEAHGmMdZoN7oFTBcOHl8wdtzOf6Zvn644ARl0ATZapBGW+ya\r\nzovem5VjXqxq1y63MzgAilfXOvg1QdPRGoFxK7c1sZe4oa+4MK2HRPcVtJsAEg==\r\n-----END CERTIFICATE-----\r\n",
+        "auth": {
+          "type": "bearer",
+          "token": "94942"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/write.html?filename=client.pem",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "6y8gxtxdj",
+        "name": "Certificate_key_RSA_AWS",
+        "method": "POST",
+        "endpoint": "/write.html?filename=key.pem",
+        "headers": {},
+        "params": {
+          "filename": "key.pem"
+        },
+        "body": "-----BEGIN RSA PRIVATE KEY-----\r\nMIIEowIBAAKCAQEAvD5ZL7XzyGfdZAsPu3qnTafNgZzgHYRJGZTBSvF5B3etTRph\r\nCzNz3f+afiaj0m7aJ831pXyjBO+VOMKKoD/LdAkdbfGewiKz4L6PHAmXCP+QwWQI\r\nXY3TPRsKg1w6SUSUEkYQcSRHoukd1BYn7IDn1kewwOwKPTayq92Z2dgB/LIPvm3s\r\nYrGzyI9zoiRcBxn925xIQyQ72AuSRseu27U8LyCVY5a7eV5F2uKpd7fi06qGrA44\r\n2SIA4SutG+k6RoiKf0osYafPZw0en/x/jEKZyIofyaZGgv/Vub0pKFmJFy5kAXpR\r\nBXLPzWIhn/h1AcLs+cRcJu6/L0lSZoT4s6X4aQIDAQABAoIBACSX6jaAJHfc2QjN\r\nra1AVq2d5TFBEcArKxqx9DFhZ6mv9hx6+Ep5IhkRyzKiyE3sBrSeMRaOeBJJkLSL\r\n/O7R9/cCnpn00mvi2xzhbmiA5L93DujJTWcCXwIN86k9kIcVscMro56a8uIUdxv3\r\ngqNTG75oCVA3knX74BfQ6EuU1i4NCeLHmEPqGuptjNNCXAZtF3r8VHaiFdyDh9Rv\r\nywcet4dPWhcshwk42wRxBotiaFYE4cnZTi8IPfScIF1sii+7UJzJxXlKH+aZYh3Y\r\np2JOpxFq+n2PpR+a9ugr+JvDRkICeSZxZsSe03v6imz4zpA8+xduTYZSqdZV/LRD\r\nrq2bmRECgYEA45sy+dbncVkxj6xHKpwWfLp/1zZvYdSTTrSOYhfI4j9bDsEjMGh1\r\n2BoKIenKud2WnTT/OQlBKh89rcdyTjfZY5DhJ4U2ss1/FZcZfNm10OJ9gjy141PP\r\nkTpTKtTQEjGbwOKeXN43WB1up1kZ/31UZl+0UzKCXioYQCbDSS2JkLsCgYEA07oR\r\nVNtQwNtiPu4+n8Jw8HMZZfp9dktMc6McS2u3Ah/cANY94zRGoB+b8iAxZ86rL1aG\r\nMoXiBlLOoX/E+cvcZbQW1Bddt407O5twNTHn/Bji+2t1mSHYH8hrLvWoxVGVoMVt\r\n0C8oVfP9UM/tQfmMwsu1HBJmbYn6Rgv8dlmd6ysCgYEAjtFc3D6IPaytF60PfuIw\r\njhVskHt8ypNb16AeU9j+2VDN72Urkn2JrI8yWnNcHOK5Vm3h1EVFWYv+5ONoi0Iq\r\nK3rGfUjuuKWPn9mPSbNGjgsAnE9CBqIZddR2SUL+SNxOEmtg2X8qlSTqwSF82b8n\r\nzZEyEp54BWQ+kUqBcZKcZm8CgYAE9ldxpbI+0uV6lBrjo6sB97Cgsz49h4ZDL496\r\nNQwVAKonWt4YdSEyn4sIIbkGtdFNSrnadUjW3Rn6rwPu1thTieT/E40ewDCjNQFs\r\nPb8yKWMogVxAOorWM9xPPXK3LTJUkkwAlRpc6VsGidkFstOZvSyBe+zqpFE5Uw6X\r\nt4H8AQKBgF9driFv/7z9n4RqLnHBKAbXPSq8l3rH4QaIiAP5/GhXZuhjeTg8LJO9\r\n1VHrXVIjKBnecbDZ5bwtMeJwQpvpHfWcTU5YvmBGNnuWpUQaEZWcmAQH2tHfekUL\r\nCfEfIl34akCnV9doFJwJmN1CmyWt0xFAUMLfVz/UKNzcS8lTfD15\r\n-----END RSA PRIVATE KEY-----\r\n",
+        "auth": {
+          "type": "bearer",
+          "token": "76616"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/write.html?filename=key.pem",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "21ize0gdy",
+        "name": "Certificate_RootCA_AWS",
+        "method": "POST",
+        "endpoint": "/write.html?filename=rootCA.pem",
+        "headers": {
+          "Content-Type": "text/plain",
+          "Authorization": "Bearer 11131"
+        },
+        "params": {
+          "filename": "rootCA.pem"
+        },
+        "body": "-----BEGIN CERTIFICATE-----\nMIIDQTCCAimgAwIBAgITBmyfz5m/jAo54vB4ikPmljZbyjANBgkqhkiG9w0BAQsF\nADA5MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRkwFwYDVQQDExBBbWF6\nb24gUm9vdCBDQSAxMB4XDTE1MDUyNjAwMDAwMFoXDTM4MDExNzAwMDAwMFowOTEL\nMAkGA1UEBhMCVVMxDzANBgNVBAoTBkFtYXpvbjEZMBcGA1UEAxMQQW1hem9uIFJv\nb3QgQ0EgMTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALJ4gHHKeNXj\nca9HgFB0fW7Y14h29Jlo91ghYPl0hAEvrAIthtOgQ3pOsqTQNroBvo3bSMgHFzZM\n9O6II8c+6zf1tRn4SWiw3te5djgdYZ6k/oI2peVKVuRF4fn9tBb6dNqcmzU5L/qw\nIFAGbHrQgLKm+a/sRxmPUDgH3KKHOVj4utWp+UhnMJbulHheb4mjUcAwhmahRWa6\nVOujw5H5SNz/0egwLX0tdHA114gk957EWW67c4cX8jJGKLhD+rcdqsq08p8kDi1L\n93FcXmn/6pUCyziKrlA4b9v7LWIbxcceVOF34GfID5yHI9Y/QCB/IIDEgEw+OyQm\njgSubJrIqg0CAwEAAaNCMEAwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMC\nAYYwHQYDVR0OBBYEFIQYzIU07LwMlJQuCFmcx7IQTgoIMA0GCSqGSIb3DQEBCwUA\nA4IBAQCY8jdaQZChGsV2USggNiMOruYou6r4lK5IpDB/G/wkjUu0yKGX9rbxenDI\nU5PMCCjjmCXPI6T53iHTfIUJrU6adTrCC2qJeHZERxhlbI1Bjjt/msv0tadQ1wUs\nN+gDS63pYaACbvXy8MWy7Vu33PqUXHeeE6V/Uq2V8viTO96LXFvKWlJbYK8U90vv\no/ufQJVtMVT8QtPHRh8jrdkPSHCa2XV4cdFyQzR1bldZwgJcJmApzyMZFo6IQ6XU\n5MsI+yMRQ+hDKXJioaldXgjUkK642M4UwtBV8ob2xJNDd2ZhwLnoQdeXeGADbkpy\nrqXRfboQnoZsG4q5WTP468SQvvG5\n-----END CERTIFICATE-----",
+        "auth": {
+          "type": "bearer",
+          "token": "48499"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/write.html?filename=rootCA.pem",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "x7juxlvxv",
+        "name": "Client_Certificate_Page_AWS",
+        "method": "POST",
+        "endpoint": "/write.html?filename=client.pem",
+        "headers": {},
+        "params": {
+          "filename": "client.pem"
+        },
+        "body": "-----BEGIN CERTIFICATE-----\r\nMIIC+jCCAeKgAwIBAgICAR8wDQYJKoZIhvcNAQELBQAwDzENMAsGA1UEAwwEcm9v\r\ndDAeFw0yNjA0MDYxMjUxMjhaFw0zMzA0MDQxMjUxMjhaMEAxLTArBgNVBAMMJDg2\r\nOTc0MjA4NTc5NTUwNSRvbmdyaWRyb29mdG9wJDUwMDA5MjEPMA0GA1UECgwGNTAw\r\nMDkyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA23WOA9LyzUIEPyXa\r\nkpxkxEJfj1mzkeWNOyjeL61l6IkCQ70ZaAggvlSAzCOymiRY1/ZibyP1XiueEANO\r\nmhlHXo+D+Iq26ofbUeXACSpesehgb/pUtHzJ8KCUB9jBXHBcIAAPjUqARUCfEJTZ\r\nBDW/0JEfZxn8gj76/BTIuO6xsKBp/dUs85GgaAsUbJq61cY+2iDJFTpHa1i52XtS\r\njwAhr8GoJOJXWjDU5AAsJwi3YLEOVLMfDcJLrBTIEy4A/GESTDDh6CiRtjEs0iIK\r\nTcQ3hAKE2V/lT+wsskQI/bSU4kCmygeAF3315VANyBgGc3tntl7p31oMYstzNDyU\r\nJw83pwIDAQABoy8wLTAJBgNVHRMEAjAAMAsGA1UdDwQEAwIFoDATBgNVHSUEDDAK\r\nBggrBgEFBQcDAjANBgkqhkiG9w0BAQsFAAOCAQEAuF7z9RdB3Dg6k38pwv5HJiB6\r\nPnpFonMCt5iqIR7PeTIeLEykhEhemehyB3dKIrzC1qvFBSeIdFi2y4skgpEmhaap\r\noB0RLZzp2NXrb8NHmpXhfA+5GxyZ34AlCh29nKFbK21NCy+YvUPyAp+Oz0WqeQEa\r\ntAUOT3xM2sU0RXsEHAeFa3l6eoRD5VW4v89H3PiIzQ1YWy8p/2588eqOYI0HrW3p\r\nHBvJoQfFtbzjWRCB3zKfRy8fFvzMJxmJLrJ3pz1uzDZmGkJixrGvdk701tBaG1uA\r\ndP3Mf+m5VAeAY19aa7yjeIuAcs7HMjU5GAGb69+U3uYJstKVL7Sn2e57uydwtA==\r\n-----END CERTIFICATE-----\r\n",
+        "auth": {
+          "type": "bearer",
+          "token": "59576"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/write.html?filename=client.pem",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "2casyr2o3",
+        "name": "Firmware Update",
+        "method": "GET",
+        "endpoint": "/",
+        "headers": {},
+        "params": {},
+        "body": "",
+        "auth": {
+          "type": "none",
+          "token": ""
+        },
+        "serverUrl": "http://localhost:5000",
+        "fullUrl": "",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "jlxgcgw0z",
+        "name": "Fiddler Request",
+        "method": "GET",
+        "endpoint": "/data.html",
+        "headers": {},
+        "params": {},
+        "body": "{\r\n    \"type\":\"file\",\r\n    \"cmd\":\"read\",\r\n    \"name\":\"uuid.csv\"\r\n}",
+        "auth": {
+          "type": "none",
+          "token": ""
+        },
+        "serverUrl": "http://192.168.4.1:85",
+        "fullUrl": "http://192.168.4.1:85/data.html",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "eqrcee6nb",
+        "name": "Fiddler Request write",
+        "method": "POST",
+        "endpoint": "/write.html?dev.csv=null",
+        "headers": {},
+        "params": {
+          "dev.csv": ""
+        },
+        "body": "id,busId,slaveId,active,ip,port,protocol\r\n1,1,1,1,0.0.0.0,502,0",
+        "auth": {
+          "type": "none",
+          "token": ""
+        },
+        "serverUrl": "http://192.168.4.1:85",
+        "fullUrl": "http://192.168.4.1:85/write.html?dev.csv",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "6mcr3i7z0",
+        "name": "History",
+        "method": "GET",
+        "endpoint": "/api/history?day=2026-04-12&vd=5&offset=150",
+        "headers": {},
+        "params": {
+          "day": "2026-04-12",
+          "vd": "5",
+          "offset": "150"
+        },
+        "body": "",
+        "auth": {
+          "type": "bearer",
+          "token": "08689"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/history?day=2026-04-12&vd=5&offset=150",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "38emucrqz",
+        "name": "WIFI_Data",
+        "method": "GET",
+        "endpoint": "/api/device/config/update",
+        "headers": {},
+        "params": {},
+        "body": "",
+        "auth": {
+          "type": "bearer",
+          "token": "66583"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/device/config/update",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "xpktiki8x",
+        "name": "WIFI_Data",
+        "method": "POST",
+        "endpoint": "/api/device/config/update",
+        "headers": {},
+        "params": {},
+        "body": "    {\r\n        \"wifi_ssid\": \"HK_Automation\",\r\n        \"wifi_password\":\"Airte1@12\"\r\n    }\r\n",
+        "auth": {
+          "type": "bearer",
+          "token": "21909"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/api/device/config/update",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "u39t877vn",
+        "name": "Restart",
+        "method": "POST",
+        "endpoint": "/restart",
+        "headers": {},
+        "params": {},
+        "body": "{ \r\n\"username\": \"admin\", \r\n\"password\": \"admin\" \r\n}",
+        "auth": {
+          "type": "bearer",
+          "token": "85399"
+        },
+        "serverUrl": "http://192.168.4.1",
+        "fullUrl": "http://192.168.4.1/restart",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "eypkcem96",
+        "name": "Server_Config",
+        "method": "GET",
+        "endpoint": "/",
+        "headers": {},
+        "params": {},
+        "body": "",
+        "auth": {
+          "type": "none",
+          "token": ""
+        },
+        "serverUrl": "http://localhost:5000",
+        "fullUrl": "",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "iva24wmc4",
+        "name": "Webhook",
+        "method": "GET",
+        "endpoint": "/",
+        "headers": {},
+        "params": {},
+        "body": "",
+        "auth": {
+          "type": "none",
+          "token": ""
+        },
+        "serverUrl": "http://localhost:5000",
+        "fullUrl": "",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "whpunups1",
+        "name": "Versel_Login",
+        "method": "GET",
+        "endpoint": "/",
+        "headers": {},
+        "params": {},
+        "body": "",
+        "auth": {
+          "type": "none",
+          "token": ""
+        },
+        "serverUrl": "http://localhost:5000",
+        "fullUrl": "",
+        "collectionId": "9mfnk7qmr"
+      },
+      {
+        "id": "0a8b9x7f0",
+        "name": "Ngrok_Request",
+        "method": "GET",
+        "endpoint": "/",
+        "headers": {},
+        "params": {},
+        "body": "",
+        "auth": {
+          "type": "none",
+          "token": ""
+        },
+        "serverUrl": "http://localhost:5000",
+        "fullUrl": "",
+        "collectionId": "9mfnk7qmr"
+      }
+    ],
+    "createdAt": "2026-06-18T07:56:54.165Z"
   }
 ]

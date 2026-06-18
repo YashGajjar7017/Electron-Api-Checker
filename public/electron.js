@@ -1086,6 +1086,17 @@ ipcMain.handle('download-firmware', async (event, downloadUrl) => {
       timeout: 30000,
     });
 
+    // Check status code
+    if (response.status && response.status !== 200) {
+      throw new Error(`HTTP Error ${response.status}: Failed to download binary.`);
+    }
+
+    // Check Content-Type to prevent downloading React fallback HTML pages
+    const contentType = response.headers['content-type'] || '';
+    if (contentType.toLowerCase().includes('text/html')) {
+      throw new Error('Server returned HTML instead of a binary firmware file (Check if resource exists).');
+    }
+
     const writer = fs.createWriteStream(binaryPath);
     response.data.pipe(writer);
 
@@ -1095,6 +1106,10 @@ ipcMain.handle('download-firmware', async (event, downloadUrl) => {
     });
 
     const stats = fs.statSync(binaryPath);
+    if (stats.size === 0) {
+      throw new Error('Downloaded file is empty (0 bytes).');
+    }
+
     return { 
       success: true, 
       path: binaryPath,
@@ -1106,30 +1121,74 @@ ipcMain.handle('download-firmware', async (event, downloadUrl) => {
   }
 });
 
-// Flash binary using arduino-cli
+function findEsptool() {
+  const fs = require('fs');
+  const os = require('os');
+
+  // 1. Try to find it in the Arduino15 directory dynamically
+  const localAppData = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
+  const arduinoEsp32Dir = path.join(localAppData, 'Arduino15', 'packages', 'esp32', 'tools', 'esptool_py');
+  
+  if (fs.existsSync(arduinoEsp32Dir)) {
+    const versions = fs.readdirSync(arduinoEsp32Dir);
+    if (versions.length > 0) {
+      versions.sort();
+      const latestVersion = versions[versions.length - 1];
+      const exePath = path.join(arduinoEsp32Dir, latestVersion, 'esptool.exe');
+      if (fs.existsSync(exePath)) {
+        return exePath;
+      }
+    }
+  }
+
+  // 2. Check the user's explicit Python script scripts and other locations
+  const fallbackPaths = [
+    'A:\\All-Windows-Download\\esptool-windows-amd64\\esptool.exe',
+    path.join(os.homedir(), 'AppData\\Local\\Programs\\Python\\Python314\\Scripts\\esptool.exe'),
+    path.join(os.homedir(), 'AppData\\Local\\Programs\\Python\\Python37\\Scripts\\esptool.exe')
+  ];
+
+  for (const p of fallbackPaths) {
+    if (fs.existsSync(p)) {
+      return p;
+    }
+  }
+
+  // 3. Fallback to just executing 'esptool' (using system PATH resolution)
+  return 'esptool';
+}
+
+// Flash binary using esptool
 ipcMain.handle('flash-firmware', async (event, options) => {
   return new Promise((resolve) => {
-    const { port, fqbn, binaryPath, cliPath, uploadSpeed } = options;
-    const arduinoCli = cliPath || 'arduino-cli';
-    
+    const { port, binaryPath, uploadSpeed, chip, offset } = options;
+    const esptool = findEsptool();
+    const baud = uploadSpeed || '921600';
+    const targetChip = chip || 'esp32';
+    const flashAddress = offset || '0x10000';
+
     const args = [
-      'upload',
-      '-p', port,
-      '--fqbn', fqbn,
+      '--chip', targetChip,
+      '--port', port,
+      '--baud', baud,
+      '--before', 'default_reset',
+      '--after', 'hard_reset',
+      'write_flash',
+      '-z',
+      '--flash_mode', 'dio',
+      '--flash_freq', '80m',
+      '--flash_size', 'detect',
+      flashAddress,
+      binaryPath,
     ];
 
-    if (uploadSpeed) {
-      args.push('--upload-property', `upload.speed=${uploadSpeed}`);
-    }
-
-    args.push('--input-file', binaryPath);
-
-    console.log(`Executing upload: "${arduinoCli}" ${args.join(' ')}`);
+    console.log(`Executing flashing: "${esptool}" ${args.join(' ')}`);
     if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('flash-log', `Starting flashing: ${fqbn} on ${port}...\r\n`);
+      mainWindow.webContents.send('flash-log', `[Client] Flashing using esptool: ${esptool}\r\n`);
+      mainWindow.webContents.send('flash-log', `Command: esptool --chip ${targetChip} --port ${port} --baud ${baud} write_flash ${flashAddress} ${path.basename(binaryPath)}\r\n\r\n`);
     }
 
-    const child = spawn(arduinoCli, args, { shell: true });
+    const child = spawn(esptool, args, { shell: true });
 
     child.stdout.on('data', (data) => {
       const logStr = data.toString();

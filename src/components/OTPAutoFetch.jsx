@@ -11,12 +11,10 @@ function OTPAutoFetch() {
   const [error, setError] = useState('');
   const attemptsRef = useRef(0);
 
-  const { serverUrl, setSessionToken, setOTPData, clearOTPData } = useStore((state) => ({
-    serverUrl: state.serverUrl,
-    setSessionToken: state.setSessionToken,
-    setOTPData: state.setOTPData,
-    clearOTPData: state.clearOTPData,
-  }));
+  const serverUrl = useStore((state) => state.serverUrl);
+  const setSessionToken = useStore((state) => state.setSessionToken);
+  const setOTPData = useStore((state) => state.setOTPData);
+  const clearOTPData = useStore((state) => state.clearOTPData);
 
   const OTP_STORAGE_KEY = 'api_checker_otp_cache';
   const OTP_EXPIRY_KEY = 'api_checker_otp_expiry';
@@ -25,11 +23,12 @@ function OTPAutoFetch() {
     attemptsRef.current = 0;
   };
 
-  const clearCachedOtp = () => {
+  const clearCachedOtp = useCallback(() => {
     localStorage.removeItem(OTP_STORAGE_KEY);
     localStorage.removeItem(OTP_EXPIRY_KEY);
     clearOTPData();
-  };
+  }, [clearOTPData]);
+
 
   const validateOTP = useCallback(
     async (otpCode) => {
