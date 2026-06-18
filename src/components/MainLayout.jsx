@@ -8,13 +8,28 @@ import MCPConfig from './MCPConfig';
 import ArduinoCliConfig from './ArduinoCliConfig';
 import SettingsPanel from './SettingsPanel';
 import SystemMonitor from './SystemMonitor';
+import FirmwareUpdate from './FirmwareUpdate';
 import useStore from '../store';
-import { FiTerminal, FiRefreshCcw, FiTrash2, FiShuffle, FiLayers, FiSettings, FiPower, FiCpu } from 'react-icons/fi';
+import { 
+  FiFolder, 
+  FiGlobe, 
+  FiCpu, 
+  FiSettings, 
+  FiTerminal, 
+  FiRefreshCcw, 
+  FiTrash2, 
+  FiShuffle, 
+  FiLayers, 
+  FiPower, 
+  FiDatabase,
+  FiCode,
+  FiInfo
+} from 'react-icons/fi';
 import '../styles/MainLayout.css';
 
 function MainLayout({ onThemeChange, currentTheme }) {
   const [sidebarWidth, setSidebarWidth] = useState(280);
-  const [responseWidth, setResponseWidth] = useState(340);
+  const [responseHeight, setResponseHeight] = useState(300);
   const containerRef = useRef(null);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [isResizingResponse, setIsResizingResponse] = useState(false);
@@ -26,29 +41,22 @@ function MainLayout({ onThemeChange, currentTheme }) {
   const [showMCPModal, setShowMCPModal] = useState(false);
   const [showArduinoModal, setShowArduinoModal] = useState(false);
 
-const {
+  const {
     sessionToken,
     clearResponseHistory,
     shuffleAPIs,
     clearBatchResults,
     toggleComparisonMode,
     comparisonMode,
-    currentAPI,
-    setCurrentAPI,
+    selectedSidebar,
+    setSelectedSidebar,
     backendMessage,
     setBackendMessage,
-  } = useStore((state) => ({
-    sessionToken: state.sessionToken,
-    clearResponseHistory: state.clearResponseHistory,
-    shuffleAPIs: state.shuffleAPIs,
-    clearBatchResults: state.clearBatchResults,
-    toggleComparisonMode: state.toggleComparisonMode,
-    comparisonMode: state.comparisonMode,
-    currentAPI: state.currentAPI,
-    setCurrentAPI: state.setCurrentAPI,
-    backendMessage: state.backendMessage,
-    setBackendMessage: state.setBackendMessage,
-  }));
+    environments,
+    activeEnvironment,
+    setActiveEnvironment,
+    updateEnvironment,
+  } = useStore();
 
   const [localBackendMessage, setLocalBackendMessage] = useState('');
 
@@ -65,15 +73,15 @@ const {
       if (!containerRef.current) return;
 
       if (isResizingSidebar) {
-        const newWidth = e.clientX - containerRef.current.getBoundingClientRect().left;
+        const newWidth = e.clientX - containerRef.current.getBoundingClientRect().left - 60; // adjust for vertical switcher
         if (newWidth > 200 && newWidth < 500) {
           setSidebarWidth(newWidth);
         }
       } else if (isResizingResponse) {
-        const containerRight = containerRef.current.getBoundingClientRect().right;
-        const newWidth = containerRight - e.clientX;
-        if (newWidth > 250 && newWidth < 600) {
-          setResponseWidth(newWidth);
+        const containerBottom = containerRef.current.getBoundingClientRect().bottom;
+        const newHeight = containerBottom - e.clientY;
+        if (newHeight > 150 && newHeight < window.innerHeight - 250) {
+          setResponseHeight(newHeight);
         }
       }
     };
@@ -128,17 +136,13 @@ const {
   const handleRestartBackend = async () => {
     try {
       setLocalBackendMessage('Restarting backend server...');
-      
-      // Call electron API to restart backend
       if (window.electronAPI?.restartBackend) {
         await window.electronAPI.restartBackend();
         setLocalBackendMessage('Backend restarted successfully!');
       } else {
         setLocalBackendMessage('Backend restart requested (electronAPI unavailable)');
-        // Fallback: reload app which may restart backend
         window.electronAPI?.reloadApp?.();
       }
-      
       setTimeout(() => setLocalBackendMessage(''), 3000);
     } catch (error) {
       setLocalBackendMessage(`Backend restart failed: ${error.message}`);
@@ -149,14 +153,12 @@ const {
   const handleStopBackend = async () => {
     try {
       setLocalBackendMessage('Stopping backend server...');
-      
       if (window.electronAPI?.stopBackend) {
         await window.electronAPI.stopBackend();
         setLocalBackendMessage('Backend stopped successfully!');
       } else {
         setLocalBackendMessage('Backend stop requested (electronAPI unavailable)');
       }
-      
       setTimeout(() => setLocalBackendMessage(''), 3000);
     } catch (error) {
       setLocalBackendMessage(`Backend stop failed: ${error.message}`);
@@ -166,141 +168,201 @@ const {
 
   const handleResetLayout = () => {
     setSidebarWidth(280);
-    setResponseWidth(400);
+    setResponseHeight(300);
+  };
+
+  const renderEnvironmentsSidebar = () => {
+    return (
+      <div className="sidebar-details-inner">
+        <div className="sidebar-detail-header">
+          <h3>Environments</h3>
+        </div>
+        <div className="sidebar-detail-search">
+          <div className="search-pill">Active environment selector</div>
+        </div>
+        <div className="environments-list">
+          {environments.map((env) => (
+            <div
+              key={env.id}
+              className={`env-item ${activeEnvironment === env.id ? 'active' : ''}`}
+              onClick={() => setActiveEnvironment(env.id)}
+            >
+              <div className="env-item-header">
+                <span className="env-bullet" />
+                <span className="env-name">{env.name}</span>
+              </div>
+              <div className="env-item-url">{env.baseUrl}</div>
+              {activeEnvironment === env.id && (
+                <div className="env-edit-box" onClick={(e) => e.stopPropagation()}>
+                  <label>Base URL:</label>
+                  <input
+                    type="text"
+                    value={env.baseUrl}
+                    onChange={(e) => updateEnvironment(env.id, { baseUrl: e.target.value })}
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderSettingsSidebar = () => {
+    return (
+      <div className="sidebar-details-inner">
+        <div className="sidebar-detail-header">
+          <h3>Settings & Tools</h3>
+        </div>
+        <div className="settings-nav-list">
+          <button className="settings-nav-item" onClick={() => setShowSettings(true)}>
+            <FiSettings size={16} /> General Settings
+          </button>
+          <button className="settings-nav-item" onClick={() => setShowMCPModal(true)}>
+            <FiDatabase size={16} /> MCP Configuration
+          </button>
+          <button className="settings-nav-item" onClick={() => setShowArduinoModal(true)}>
+            <FiCode size={16} /> Arduino CLI settings
+          </button>
+          <button className="settings-nav-item" onClick={() => setShowSystemMonitor(true)}>
+            <FiTerminal size={16} /> System Monitor
+          </button>
+        </div>
+      </div>
+    );
   };
 
   return (
     <div className="main-layout">
-      <Header onThemeChange={onThemeChange} currentTheme={currentTheme} onOpenSettings={() => setShowSettings(true)} onOpenSystemMonitor={() => setShowSystemMonitor(true)} />
+      {/* Top Header */}
+      <Header 
+        onThemeChange={onThemeChange} 
+        currentTheme={currentTheme} 
+        onOpenSettings={() => setShowSettings(true)} 
+        onOpenSystemMonitor={() => setShowSystemMonitor(true)} 
+      />
 
-      <div className="layout-controls">
-        <button
-          className="script-button"
-          onClick={() => setShowPythonModal(true)}
-          title="Open automation script modal"
-        >
-          <FiTerminal size={16} />
-          Run Automation
-        </button>
+      <div className="layout-body-wrapper">
+        <div className="layout-container" ref={containerRef}>
+          
+          {/* Column 1: Leftmost Vertical Switcher Bar */}
+          <div className="vertical-switcher">
+            <button 
+              className={`switcher-btn ${selectedSidebar === 'collections' ? 'active' : ''}`} 
+              onClick={() => setSelectedSidebar('collections')}
+              title="Collections"
+            >
+              <FiFolder size={20} />
+              <span className="switcher-text">Collections</span>
+            </button>
+            <button 
+              className={`switcher-btn ${selectedSidebar === 'environments' ? 'active' : ''}`} 
+              onClick={() => setSelectedSidebar('environments')}
+              title="Environments"
+            >
+              <FiGlobe size={20} />
+              <span className="switcher-text">Environments</span>
+            </button>
+            <button 
+              className={`switcher-btn ${selectedSidebar === 'firmware' ? 'active' : ''}`} 
+              onClick={() => setSelectedSidebar('firmware')}
+              title="Firmware Update"
+            >
+              <FiCpu size={20} />
+              <span className="switcher-text">Firmware</span>
+            </button>
+            <div className="switcher-spacer"></div>
+            <button 
+              className={`switcher-btn ${selectedSidebar === 'settings' ? 'active' : ''}`} 
+              onClick={() => setSelectedSidebar('settings')}
+              title="Settings"
+            >
+              <FiSettings size={20} />
+              <span className="switcher-text">Settings</span>
+            </button>
+          </div>
 
-        <button
-          className="control-button"
-          onClick={handleResetLayout}
-          title="Reset panel widths to defaults"
-        >
-          <FiRefreshCcw size={16} />
-          Reset Layout
-        </button>
+          {/* Column 2: Sidebar Details Panel */}
+          {selectedSidebar && selectedSidebar !== 'firmware' && (
+            <div className="sidebar-panel" style={{ width: `${sidebarWidth}px` }}>
+              {selectedSidebar === 'collections' && <Sidebar />}
+              {selectedSidebar === 'environments' && renderEnvironmentsSidebar()}
+              {selectedSidebar === 'settings' && renderSettingsSidebar()}
+              
+              <div
+                className="resize-handle resize-handle-right"
+                onMouseDown={() => handleMouseDown('sidebar')}
+              />
+            </div>
+          )}
 
-        <button
-          className="control-button"
-          onClick={() => clearResponseHistory()}
-          title="Clear all response history"
-        >
-          <FiTrash2 size={16} />
-          Clear History
-        </button>
+          {/* Column 3: Workspace / Content split */}
+          <div className="main-content-split">
+            {selectedSidebar === 'firmware' ? (
+              <div className="workspace-panel full-height">
+                <FirmwareUpdate />
+              </div>
+            ) : (
+              <>
+                {/* Active Request Builder */}
+                <div className="workspace-panel flex-grow">
+                  <RequestBuilder />
+                </div>
 
-        <button
-          className="control-button"
-          onClick={() => setShowMCPModal(true)}
-          title="Open MCP configuration"
-        >
-          <FiSettings size={16} />
-          MCP Configuration
-        </button>
+                {/* Horizontal Resizer */}
+                <div
+                  className="resize-handle resize-handle-bottom"
+                  onMouseDown={() => handleMouseDown('response')}
+                />
 
-        <button
-          className="control-button"
-          onClick={() => setShowArduinoModal(true)}
-          title="Configure Arduino CLI settings"
-        >
-          <FiCpu size={16} />
-          Arduino CLI
-        </button>
-
-        <button
-          className="control-button"
-          onClick={() => shuffleAPIs()}
-          title="Shuffle API list to randomize testing"
-        >
-          <FiShuffle size={16} />
-          Shuffle APIs
-        </button>
-
-        <button
-          className="control-button"
-          onClick={() => window.electronAPI?.reloadApp()}
-          title="Reload the app and ignore cache"
-        >
-          <FiRefreshCcw size={16} />
-          Dev Reload
-        </button>
-
-        <button
-          className="control-button"
-          onClick={handleRestartBackend}
-          title="Restart backend server only"
-        >
-          <FiRefreshCcw size={16} />
-          Restart Server
-        </button>
-
-        <button
-          className="control-button"
-          onClick={handleStopBackend}
-          title="Stop backend server only"
-        >
-          <FiPower size={16} />
-          Stop Server
-        </button>
-
-        <button
-          className="control-button"
-          onClick={() => clearBatchResults()}
-          title="Clear batch testing results"
-        >
-          <FiLayers size={16} />
-          Clear Batch
-        </button>
-
-        <button
-          className={`control-button ${comparisonMode ? 'active' : ''}`}
-          onClick={() => toggleComparisonMode()}
-          title="Toggle response comparison mode"
-        >
-          <FiLayers size={16} />
-          {comparisonMode ? 'Comparison On' : 'Comparison Off'}
-        </button>
-      </div>
-
-{(backendMessage || localBackendMessage) && (
-  <div className={`backend-action-message ${backendMessage ? 'server-message' : 'local-message'}`}>
-    {backendMessage || localBackendMessage}
-  </div>
-)}
-      <div className="layout-container" ref={containerRef}>
-        <div className="sidebar-panel" style={{ width: `${sidebarWidth}px` }}>
-          <Sidebar />
-          <div
-            className="resize-handle resize-handle-right"
-            onMouseDown={() => handleMouseDown('sidebar')}
-          />
-        </div>
-
-        <div className="workspace-panel" style={{ flex: 1 }}>
-          <RequestBuilder />
-        </div>
-
-        <div className="response-panel" style={{ width: `${responseWidth}px` }}>
-          <ResponsePanel />
-          <div
-            className="resize-handle resize-handle-left"
-            onMouseDown={() => handleMouseDown('response')}
-          />
+                {/* Bottom Response Panel */}
+                <div className="response-panel" style={{ height: `${responseHeight}px` }}>
+                  <ResponsePanel />
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Bottom Status Bar */}
+      <footer className="status-bar">
+        <div className="status-bar-left">
+          <span className="git-branch"><FiCode size={12} /> main</span>
+          <span className="server-status-pill">Local Node Server Port: 5000</span>
+          {(backendMessage || localBackendMessage) && (
+            <span className="backend-notification animate-pulse">
+              {backendMessage || localBackendMessage}
+            </span>
+          )}
+        </div>
+        <div className="status-bar-right">
+          <button className="status-btn" onClick={() => setShowPythonModal(true)} title="Run Script.py Automation">
+            <FiTerminal size={12} /> Run Automation
+          </button>
+          <button className="status-btn" onClick={() => toggleComparisonMode()} title="Toggle Response Comparison Mode">
+            <FiLayers size={12} /> {comparisonMode ? 'Comparison Mode: ON' : 'Comparison Mode: OFF'}
+          </button>
+          <button className="status-btn" onClick={() => shuffleAPIs()} title="Randomize APIs order">
+            <FiShuffle size={12} /> Shuffle APIs
+          </button>
+          <button className="status-btn" onClick={clearResponseHistory} title="Clear API responses history">
+            <FiTrash2 size={12} /> Clear Logs
+          </button>
+          <button className="status-btn" onClick={handleRestartBackend} title="Restart local Express API server">
+            <FiRefreshCcw size={12} /> Restart Server
+          </button>
+          <button className="status-btn danger" onClick={handleStopBackend} title="Stop local Express API server">
+            <FiPower size={12} /> Stop Server
+          </button>
+          <button className="status-btn" onClick={handleResetLayout} title="Reset panel layouts to defaults">
+            <FiRefreshCcw size={12} /> Reset Layout
+          </button>
+        </div>
+      </footer>
+
+      {/* Modals & Dialogs */}
       <PythonScriptModal
         isOpen={showPythonModal}
         onClose={() => setShowPythonModal(false)}

@@ -417,20 +417,27 @@ const [activeTab, setActiveTab] = useState('params');
         }
       }
 
-      if (!requestHeaders['Authorization']) {
-        const hasValidSessionToken = sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry;
-        if (hasValidSessionToken) {
-          requestHeaders['Authorization'] = `Bearer ${sessionToken}`;
-          console.log('🔑 Using SESSION token');
-        }
-      }
+      const isLoginRequest = ['POST'].includes(method.toUpperCase()) && 
+        (endpoint.toLowerCase().includes('login') || endpoint.toLowerCase().includes('/api/v1/auth'));
 
-      if (!requestHeaders['Authorization']) {
-        const apiToken = useStore.getState().getAPIResponseToken();
-        if (apiToken) {
-          requestHeaders['Authorization'] = `Bearer ${apiToken}`;
-          console.log('🔑 Using API response token');
+      if (!isLoginRequest) {
+        if (!requestHeaders['Authorization']) {
+          const hasValidSessionToken = sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry;
+          if (hasValidSessionToken) {
+            requestHeaders['Authorization'] = `Bearer ${sessionToken}`;
+            console.log('🔑 Using SESSION token');
+          }
         }
+
+        if (!requestHeaders['Authorization']) {
+          const apiToken = useStore.getState().getAPIResponseToken();
+          if (apiToken) {
+            requestHeaders['Authorization'] = `Bearer ${apiToken}`;
+            console.log('🔑 Using API response token');
+          }
+        }
+      } else {
+        console.log('🔑 Skipping token injection for login endpoint');
       }
       
       if (!requestHeaders['Authorization']) {

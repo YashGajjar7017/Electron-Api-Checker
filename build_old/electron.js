@@ -5,7 +5,7 @@ const os  = require('os');
 const http = require('http');
 const https = require('https');
 const { pathToFileURL } = require('url');
-const { spawn, exec } = require('child_process');
+const { spawn } = require('child_process');
 const dotenv = require('dotenv');
 
 // Load environment variables from .env.electron for the main process.
@@ -16,11 +16,9 @@ dotenv.config({ path: path.join(__dirname, '.env.electron') });
 let mainWindow;
 let backendServer;
 let backendPort = null;
-const isDev = !app.isPackaged;
-const dataPath = app.isPackaged 
-  ? path.join(path.dirname(app.getPath('exe')), 'data')
-  : path.join(app.getAppPath(), 'data');
+const dataPath = path.join(os.homedir(), '.api-checker');
 const devServerUrl = 'http://localhost:3000';
+const isDev = !app.isPackaged;
 
 // =============================================================================
 // Protocol Handler & Single-Instance Lock
@@ -132,16 +130,7 @@ function stopBackendServer() {
   if (backendServer) {
     console.log('Stopping backend server...');
     try {
-      // Prefer graceful termination then force kill if needed
-      try {
-        backendServer.kill('SIGTERM');
-      } catch (e) {
-        try {
-          process.kill(backendServer.pid);
-        } catch (err) {
-          console.error('Force kill failed:', err);
-        }
-      }
+      backendServer.kill();
     } catch (error) {
       console.error('Error killing backend:', error);
     }
@@ -998,169 +987,6 @@ ipcMain.handle('get-system-info', async () => {
     freeMemory: Math.round(osModule.freemem() / 1024 / 1024),
   };
 });
-
-// Expose save/load Arduino configuration
-ipcMain.handle('save-arduino-config', async (event, config) => {
-  try {
-    const filePath = path.join(dataPath, 'arduino-config.json');
-    fs.writeFileSync(filePath, JSON.stringify(config, null, 2));
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
-
-ipcMain.handle('load-arduino-config', async () => {
-  try {
-    const filePath = path.join(dataPath, 'arduino-config.json');
-    if (fs.existsSync(filePath)) {
-      const data = fs.readFileSync(filePath, 'utf-8');
-      return JSON.parse(data);
-    }
-    return null;
-  } catch (error) {
-    console.error('Error loading Arduino config:', error);
-    return null;
-  }
-});
-
-// Expose testing Arduino CLI connection
-ipcMain.handle('test-arduino-connection', async (event, cliPath) => {
-  return new Promise((resolve) => {
-    const arduinoCli = cliPath || 'arduino-cli';
-    exec(`"${arduinoCli}" version`, (error, stdout, stderr) => {
-      if (error) {
-        resolve({ success: false, error: stderr || error.message });
-      } else {
-        resolve({ success: true, version: stdout.trim() });
-      }
-    });
-  });
-});
-
-// Dynamic Serial Port list handler
-ipcMain.handle('list-serial-ports', async () => {
-  return new Promise((resolve) => {
-    if (process.platform === 'win32') {
-      exec('powershell -Command "[System.IO.Ports.SerialPort]::GetPortNames()"', (error, stdout, stderr) => {
-        if (error) {
-          exec('wmic path Win32_SerialPort get DeviceID', (err, wmicOut) => {
-            if (err) {
-              resolve(['COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9']);
-            } else {
-              const lines = wmicOut.split('\n').map(l => l.trim()).filter(l => l && l !== 'DeviceID');
-              resolve(lines.length > 0 ? lines : ['COM3']);
-            }
-          });
-        } else {
-          const ports = stdout.split('\r\n').map(p => p.trim()).filter(p => p);
-          resolve(ports.length > 0 ? ports : ['COM3']);
-        }
-      });
-    } else {
-      exec('ls /dev/tty.* /dev/ttyUSB* /dev/ttyACM* 2>/dev/null', (error, stdout) => {
-        if (error) {
-          resolve(['/dev/ttyUSB0']);
-        } else {
-          const ports = stdout.split('\n').map(p => p.trim()).filter(p => p);
-          resolve(ports.length > 0 ? ports : ['/dev/ttyUSB0']);
-        }
-      });
-    }
-  });
-});
-
-// Download firmware binary file
-ipcMain.handle('download-firmware', async (event, downloadUrl) => {
-  try {
-    const tempDir = path.join(dataPath, 'firmware');
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
-    }
-    const binaryPath = path.join(tempDir, 'firmware.bin');
-    const axios = require('axios');
-    const response = await axios({
-      method: 'GET',
-      url: downloadUrl,
-      responseType: 'stream',
-      timeout: 30000,
-    });
-
-    const writer = fs.createWriteStream(binaryPath);
-    response.data.pipe(writer);
-
-    await new Promise((resolve, reject) => {
-      writer.on('finish', resolve);
-      writer.on('error', reject);
-    });
-
-    const stats = fs.statSync(binaryPath);
-    return { 
-      success: true, 
-      path: binaryPath,
-      size: stats.size,
-      filename: path.basename(binaryPath)
-    };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
-
-// Flash binary using arduino-cli
-ipcMain.handle('flash-firmware', async (event, options) => {
-  return new Promise((resolve) => {
-    const { port, fqbn, binaryPath, cliPath, uploadSpeed } = options;
-    const arduinoCli = cliPath || 'arduino-cli';
-    
-    const args = [
-      'upload',
-      '-p', port,
-      '--fqbn', fqbn,
-    ];
-
-    if (uploadSpeed) {
-      args.push('--upload-property', `upload.speed=${uploadSpeed}`);
-    }
-
-    args.push('--input-file', binaryPath);
-
-    console.log(`Executing upload: "${arduinoCli}" ${args.join(' ')}`);
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('flash-log', `Starting flashing: ${fqbn} on ${port}...\r\n`);
-    }
-
-    const child = spawn(arduinoCli, args, { shell: true });
-
-    child.stdout.on('data', (data) => {
-      const logStr = data.toString();
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('flash-log', logStr);
-      }
-    });
-
-    child.stderr.on('data', (data) => {
-      const logStr = data.toString();
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('flash-log', `STDERR: ${logStr}`);
-      }
-    });
-
-    child.on('error', (err) => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('flash-log', `CRITICAL ERROR: ${err.message}\r\n`);
-      }
-      resolve({ success: false, error: err.message });
-    });
-
-    child.on('close', (code) => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('flash-log', `\r\nFlashing process completed with exit code: ${code}\r\n`);
-      }
-      resolve({ success: code === 0, code });
-    });
-  });
-});
-
 
 // Create application menu (old template - keeping for backward compatibility)
 const template = [

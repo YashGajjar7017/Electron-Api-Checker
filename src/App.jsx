@@ -46,9 +46,7 @@ function App() {
           if (window.electronAPI && typeof window.electronAPI.loadUser === 'function') {
             const userResult = await window.electronAPI.loadUser();
             if (userResult?.success && userResult?.data) {
-              if (userResult.data?.provider === 'github' || userResult.data?.token) {
-                loginUser(userResult.data);
-              }
+              loginUser(userResult.data);
             } else if (userResult?.data) {
               // tolerate different shapes
               loginUser(userResult.data);
@@ -76,6 +74,19 @@ function App() {
               loadedAPIs = appState.apis;
               useStore.getState().setAPIs(loadedAPIs);
             }
+            if (appState.settings && Object.keys(appState.settings).length > 0) {
+              useStore.getState().loadSettings(appState.settings);
+            }
+            // Restore session token if not expired
+            if (appState.sessionToken && appState.sessionTokenExpiry && Date.now() < appState.sessionTokenExpiry) {
+              const minutes = Math.ceil((appState.sessionTokenExpiry - Date.now()) / 60000);
+              useStore.getState().setSessionToken(appState.sessionToken, minutes);
+            }
+            // Restore OTP data if not expired
+            if (appState.otpData && appState.otpData.expiry && Date.now() < appState.otpData.expiry) {
+              useStore.getState().setOTPData(appState.otpData.current, appState.otpData.expiry);
+            }
+
           }
         }
 

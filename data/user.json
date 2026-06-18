@@ -1,0 +1,49 @@
+{
+  "user": {
+    "id": "lytaet8ps",
+    "email": "yash@yash.com",
+    "createdAt": "2026-06-18T07:46:54.742Z"
+  },
+  "apis": [
+    {
+      "id": "bdleb8ou6",
+      "collectionId": "wxe1irkfk",
+      "name": "Auth",
+      "method": "POST",
+      "endpoint": "/api/v1/auth/login",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "params": {},
+      "body": "{\n  \"username\": \"\",\n  \"password\": \"\"\n}",
+      "auth": {
+        "type": "none",
+        "token": "",
+        "certFile": "",
+        "keyFile": "",
+        "caFile": ""
+      },
+      "skipOtp": true,
+      "bodyType": "none",
+      "bodyParams": {},
+      "automation": {
+        "enabled": false,
+        "variable": "{{id}}",
+        "start": 1,
+        "end": 10,
+        "step": 1,
+        "padding": 0,
+        "delay": 500
+      }
+    }
+  ],
+  "collections": [
+    {
+      "id": "wxe1irkfk",
+      "name": "Default",
+      "apis": [],
+      "createdAt": "2026-06-18T07:46:40.233Z"
+    }
+  ],
+  "settings": {}
+}

@@ -25,12 +25,6 @@ function Sidebar() {
   const [activeCollectionMenu, setActiveCollectionMenu] = useState(null);
   const [activeApiMenu, setActiveApiMenu] = useState(null);
 
-  // REMOVED: Redundant - store handles persistence
-  useEffect(() => {
-    if (window.electronAPI && window.electronAPI.saveAPIs) {
-      window.electronAPI.saveAPIs(apis);
-    }
-  }, [apis]);
 
   const toggleFolder = (collectionId) => {
     const newExpanded = new Set(expandedFolders);
@@ -70,12 +64,6 @@ function Sidebar() {
     setActiveApiMenu((current) => (current === apiId ? null : apiId));
   };
 
-  // Auto-save collections when they change
-  useEffect(() => {
-    if (collections.length > 0 && window.electronAPI && window.electronAPI.saveCollections) {
-      window.electronAPI.saveCollections(collections);
-    }
-  }, [collections]);
 
   const handleAddAPI = (collectionId) => {
     const api = {

@@ -20,6 +20,22 @@ const persistData = async (key, data) => {
   }
 };
 
+const persistSessionData = async (sessionToken, sessionTokenExpiry, otpData) => {
+  if (window.electronAPI && window.electronAPI.saveAppState) {
+    try {
+      await window.electronAPI.saveAppState({
+        sessionToken,
+        sessionTokenExpiry,
+        otpData,
+      });
+      console.log('✅ Session and OTP persisted successfully');
+    } catch (error) {
+      console.error('❌ Failed to persist session data:', error);
+    }
+  }
+};
+
+
 const useStore = create(
   subscribeWithSelector((set, get) => ({
     // Auth state
@@ -62,7 +78,6 @@ addCollection: (collection) => {
         return { collections: newCollections };
       }),
     setCollections: (collections) => {
-      persistData('collections', collections);
       set({ collections });
     },
     shuffleCollections: () =>
@@ -100,7 +115,6 @@ addCollection: (collection) => {
         return { apis: newApis };
       }),
     setAPIs: (apis) => {
-      persistData('apis', apis);
       set({ apis });
     },
     shuffleAPIs: () =>
@@ -214,8 +228,10 @@ addCollection: (collection) => {
       // Set up auto-clear when expires
       const timeoutId = setTimeout(() => {
         set({ sessionToken: '', sessionTokenExpiry: null, sessionTokenTimeoutId: null });
+        persistSessionData('', null, get().otpData);
       }, validForMinutes * 60 * 1000);
       set({ sessionToken: token, sessionTokenExpiry: expiryTime, sessionTokenTimeoutId: timeoutId });
+      persistSessionData(token, expiryTime, state.otpData);
     },
     clearSessionToken: () => {
       const state = get();
@@ -223,6 +239,7 @@ addCollection: (collection) => {
         clearTimeout(state.sessionTokenTimeoutId);
       }
       set({ sessionToken: '', sessionTokenExpiry: null, sessionTokenTimeoutId: null });
+      persistSessionData('', null, state.otpData);
     },
     getSessionTokenRemainingTime: () => {
       const state = get();
@@ -295,7 +312,7 @@ addCollection: (collection) => {
     setBatchTestDelay: (delay) => set({ batchTestDelay: Math.max(100, delay) }),
 
     // UI state
-    selectedSidebar: null,
+    selectedSidebar: 'collections',
     setSelectedSidebar: (sidebar) => set({ selectedSidebar: sidebar }),
 
     // Theme
@@ -375,24 +392,28 @@ addCollection: (collection) => {
       expiry: null,
       attempts: 0,
     },
-    setOTPData: (otp, expiry) =>
-      set({
-        otpData: {
-          current: otp,
-          cached: otp,
-          expiry,
-          attempts: 0,
-        },
-      }),
-    clearOTPData: () =>
-      set({
-        otpData: {
-          current: null,
-          cached: null,
-          expiry: null,
-          attempts: 0,
-        },
-      }),
+    setOTPData: (otp, expiry) => {
+      const state = get();
+      const updatedOtpData = {
+        current: otp,
+        cached: otp,
+        expiry,
+        attempts: 0,
+      };
+      set({ otpData: updatedOtpData });
+      persistSessionData(state.sessionToken, state.sessionTokenExpiry, updatedOtpData);
+    },
+    clearOTPData: () => {
+      const state = get();
+      const clearedOtpData = {
+        current: null,
+        cached: null,
+        expiry: null,
+        attempts: 0,
+      };
+      set({ otpData: clearedOtpData });
+      persistSessionData(state.sessionToken, state.sessionTokenExpiry, clearedOtpData);
+    },
 
     // System monitor state
     systemMetrics: {

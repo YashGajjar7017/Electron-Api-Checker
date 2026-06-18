@@ -1,4 +1,9 @@
-const { contextBridge, ipcRenderer, shell } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
+const {
+  contextBridge,
+  ipcRenderer,
+  shell,
+} = require("electron");
 
 contextBridge.exposeInMainWorld('electronAPI', {
   // ── GitHub OAuth ──────────────────────────────────────────────────────────
@@ -56,18 +61,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openFileDialog: ()            => ipcRenderer.invoke('open-file-dialog'),
   getSystemInfo: ()             => ipcRenderer.invoke('get-system-info'),
 
-  // ── Arduino & Firmware Flashing ──────────────────────────────────────────
-  saveArduinoConfig: (config)   => ipcRenderer.invoke('save-arduino-config', config),
-  loadArduinoConfig: ()         => ipcRenderer.invoke('load-arduino-config'),
-  testArduinoConnection: (path) => ipcRenderer.invoke('test-arduino-connection', path),
-  listSerialPorts: ()           => ipcRenderer.invoke('list-serial-ports'),
-  downloadFirmware: (url)       => ipcRenderer.invoke('download-firmware', url),
-  flashFirmware: (options)      => ipcRenderer.invoke('flash-firmware', options),
-  onFlashLog: (callback) => {
-    ipcRenderer.on('flash-log', (_, data) => callback(data));
-    return () => ipcRenderer.removeAllListeners('flash-log');
-  },
-
   // ── Event listeners ────────────────────────────────────────────────────────
   onWindowResized: (callback) => {
     ipcRenderer.on('window-resized', callback);
@@ -78,4 +71,3 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('app-ready', callback);
   },
 });
-
