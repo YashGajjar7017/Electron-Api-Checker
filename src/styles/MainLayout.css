@@ -409,3 +409,63 @@
   color: #f87171;
   background: rgba(239, 68, 68, 0.1);
 }
+
+/* Add Environment Box Styling */
+.add-environment-box {
+  margin-top: 20px;
+  padding: 14px;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.2);
+  border: 1px dashed var(--border);
+}
+
+.add-environment-box h4 {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.add-environment-box .form-group {
+  margin-bottom: 10px;
+}
+
+.add-environment-box input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.4);
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+}
+
+.add-environment-box input:focus {
+  border-color: var(--accent);
+}
+
+.env-edit-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.env-delete-btn {
+  margin-top: 8px;
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+  transition: all 0.2s ease;
+  width: 100%;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.env-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}

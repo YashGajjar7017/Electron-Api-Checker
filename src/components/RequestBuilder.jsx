@@ -417,7 +417,12 @@ function RequestBuilder() {
 
     // Auto-prepend http:// protocol if it looks like a raw IP / host and lacks a protocol scheme
     if (resolvedEndpoint && !/^[a-zA-Z]+:\/\//.test(resolvedEndpoint)) {
-      if (/^(localhost|127\.0\.0\.1|192\.168\.|([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,})/i.test(resolvedEndpoint)) {
+      const firstSlash = resolvedEndpoint.indexOf('/');
+      const hostPart = firstSlash === -1 ? resolvedEndpoint : resolvedEndpoint.slice(0, firstSlash);
+      
+      if (/^(localhost|127\.0\.0\.1|192\.168\.)/i.test(hostPart) || 
+          (hostPart.includes('.') && !hostPart.startsWith('.')) || 
+          hostPart.includes(':')) {
         resolvedEndpoint = 'http://' + resolvedEndpoint;
       }
     }

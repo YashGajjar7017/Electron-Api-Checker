@@ -77,6 +77,13 @@ function App() {
             if (appState.settings && Object.keys(appState.settings).length > 0) {
               useStore.getState().loadSettings(appState.settings);
             }
+            // Restore environments if saved
+            if (Array.isArray(appState.environments)) {
+              useStore.getState().setEnvironments(appState.environments);
+            }
+            if (appState.activeEnvironment) {
+              useStore.getState().setActiveEnvironment(appState.activeEnvironment);
+            }
             // Restore session token if not expired
             if (appState.sessionToken && appState.sessionTokenExpiry && Date.now() < appState.sessionTokenExpiry) {
               const minutes = Math.ceil((appState.sessionTokenExpiry - Date.now()) / 60000);

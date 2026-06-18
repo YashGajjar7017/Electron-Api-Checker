@@ -35,6 +35,20 @@ const persistSessionData = async (sessionToken, sessionTokenExpiry, otpData) => 
   }
 };
 
+const persistEnvironments = async (environments, activeEnvironment) => {
+  if (window.electronAPI && window.electronAPI.saveAppState) {
+    try {
+      await window.electronAPI.saveAppState({
+        environments,
+        activeEnvironment,
+      });
+      console.log('✅ Environments persisted successfully');
+    } catch (error) {
+      console.error('❌ Failed to persist environments:', error);
+    }
+  }
+};
+
 
 const useStore = create(
   subscribeWithSelector((set, get) => ({
@@ -183,13 +197,40 @@ addCollection: (collection) => {
       { id: 'prod', name: 'Production', baseUrl: 'https://api.production.com', values: {} },
     ],
     activeEnvironment: 'dev',
-    setActiveEnvironment: (id) => set({ activeEnvironment: id }),
+    setActiveEnvironment: (id) => {
+      set({ activeEnvironment: id });
+      persistEnvironments(get().environments, id);
+    },
+    setEnvironments: (envs) => {
+      set({ environments: envs });
+      persistEnvironments(envs, get().activeEnvironment);
+    },
+    addEnvironment: (env) => {
+      set((state) => {
+        const nextEnvironments = [...state.environments, env];
+        persistEnvironments(nextEnvironments, state.activeEnvironment);
+        return { environments: nextEnvironments };
+      });
+    },
+    deleteEnvironment: (id) => {
+      set((state) => {
+        const nextEnvironments = state.environments.filter((e) => e.id !== id);
+        let nextActive = state.activeEnvironment;
+        if (nextActive === id) {
+          nextActive = nextEnvironments[0]?.id || 'dev';
+        }
+        persistEnvironments(nextEnvironments, nextActive);
+        return { environments: nextEnvironments, activeEnvironment: nextActive };
+      });
+    },
     updateEnvironment: (id, values) =>
-      set((state) => ({
-        environments: state.environments.map((env) =>
+      set((state) => {
+        const nextEnvironments = state.environments.map((env) =>
           env.id === id ? { ...env, ...values } : env
-        ),
-      })),
+        );
+        persistEnvironments(nextEnvironments, state.activeEnvironment);
+        return { environments: nextEnvironments };
+      }),
 
     // Automation and workflow state
     automationWorkflows: [],

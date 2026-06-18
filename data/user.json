@@ -1632,9 +1632,9 @@
   "sessionToken": "",
   "sessionTokenExpiry": null,
   "otpData": {
-    "current": "395738",
-    "cached": "395738",
-    "expiry": 1781778907600,
+    "current": null,
+    "cached": null,
+    "expiry": null,
     "attempts": 0
   }
 }

@@ -1,7 +1,7 @@
 const { app, BrowserWindow, Menu, ipcMain, screen } = require('electron');
 const path = require('path');
-const fs  = require('fs');
-const os  = require('os');
+const fs = require('fs');
+const os = require('os');
 const http = require('http');
 const https = require('https');
 const { pathToFileURL } = require('url');
@@ -16,8 +16,9 @@ dotenv.config({ path: path.join(__dirname, '.env.electron') });
 let mainWindow;
 let backendServer;
 let backendPort = null;
+let activeFlashProcess = null;
 const isDev = !app.isPackaged;
-const dataPath = app.isPackaged 
+const dataPath = app.isPackaged
   ? path.join(path.dirname(app.getPath('exe')), 'data')
   : path.join(app.getAppPath(), 'data');
 const devServerUrl = 'http://localhost:3000';
@@ -46,7 +47,7 @@ if (!singleInstanceLock) {
 
     if (deepLink) {
       try {
-        const url   = new URL(deepLink);
+        const url = new URL(deepLink);
         const token = url.searchParams.get("token");
 
         if (mainWindow && !mainWindow.isDestroyed()) {
@@ -59,7 +60,11 @@ if (!singleInstanceLock) {
 
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
       mainWindow.focus();
+      // On Windows, setting always-on-top briefly pulls the window to the foreground
+      mainWindow.setAlwaysOnTop(true);
+      mainWindow.setAlwaysOnTop(false);
     }
   });
 }
@@ -204,7 +209,7 @@ async function createWindow() {
   // Get the primary display's work area (screen size minus taskbar)
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width, height } = primaryDisplay.workAreaSize;
-  
+
   mainWindow = new BrowserWindow({
     width: Math.round(width * 0.98),
     height: Math.round(height * 0.98),
@@ -384,7 +389,7 @@ function createAppMenu() {
             if (mainWindow) mainWindow.setFullScreen(!mainWindow.isFullScreen());
           },
         },
-{
+        {
           label: 'Toggle DevTools',
           accelerator: 'F12',
           click: () => {
@@ -450,10 +455,10 @@ function registerGlobalShortcuts() {
 app.on('ready', async () => {
   // Launch backend server first
   await launchBackendServer();
-  
+
   // Create the window
   await createWindow();
-  
+
   // Setup menu and shortcuts
   createAppMenu();
   registerGlobalShortcuts();
@@ -629,11 +634,11 @@ ipcMain.handle('send-request', async (event, requestOptions) => {
   return new Promise((resolve) => {
     try {
       const { url, method, headers, body, sslOptions } = requestOptions;
-      
+
       if (!url) {
         return resolve({ success: false, error: 'URL is required' });
       }
-      
+
       const parsedUrl = new URL(url);
       const isHttps = parsedUrl.protocol === 'https:';
       const client = isHttps ? https : http;
@@ -656,7 +661,7 @@ ipcMain.handle('send-request', async (event, requestOptions) => {
         // Handle different body types
         if (typeof bodyToSend === 'string') {
           requestBody = bodyToSend;
-          
+
           // Auto-detect and set Content-Type if not already set
           if (!options.headers['Content-Type']) {
             if (bodyToSend.trim().startsWith('{') || bodyToSend.trim().startsWith('[')) {
@@ -689,21 +694,21 @@ ipcMain.handle('send-request', async (event, requestOptions) => {
           } else if (sslOptions.certFile) {
             console.warn('Certificate file not found:', sslOptions.certFile);
           }
-          
+
           if (sslOptions.keyFile && fs.existsSync(sslOptions.keyFile)) {
             options.key = fs.readFileSync(sslOptions.keyFile, 'utf-8');
             console.log('SSL key loaded:', sslOptions.keyFile);
           } else if (sslOptions.keyFile) {
             console.warn('Key file not found:', sslOptions.keyFile);
           }
-          
+
           if (sslOptions.caFile && fs.existsSync(sslOptions.caFile)) {
             options.ca = fs.readFileSync(sslOptions.caFile, 'utf-8');
             console.log('CA certificate loaded:', sslOptions.caFile);
           } else if (sslOptions.caFile) {
             console.warn('CA file not found:', sslOptions.caFile);
           }
-          
+
           // Disable SSL verification for self-signed certificates (use with caution)
           if (sslOptions.rejectUnauthorized === false) {
             options.rejectUnauthorized = false;
@@ -736,19 +741,19 @@ ipcMain.handle('send-request', async (event, requestOptions) => {
               responseHeaders.push([key, value]);
             }
           }
-          
+
           console.log('Response received:', {
             status: res.statusCode,
             statusMessage: res.statusMessage,
             bodyLength: responseBody.length,
             contentType: res.headers['content-type'],
           });
-          
+
           // Log first 500 chars of body for debugging
           if (responseBody) {
             console.log('Response body preview:', responseBody.substring(0, 500));
           }
-          
+
           // Return response regardless of status code (success or error)
           resolve({
             success: true,
@@ -794,15 +799,15 @@ ipcMain.handle('ping-server', async (event, serverUrl) => {
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
         url = 'http://' + url;
       }
-      
+
       const parsedUrl = new URL(url);
       const isHttps = parsedUrl.protocol === 'https:';
       const client = isHttps ? https : http;
-      
+
       // Construct ping path - use provided path or default to /health
       let pingPath = parsedUrl.pathname && parsedUrl.pathname !== '/' ? parsedUrl.pathname : '/health';
       if (parsedUrl.search) pingPath += parsedUrl.search;
-      
+
       const options = {
         hostname: parsedUrl.hostname,
         port: parsedUrl.port || (isHttps ? 443 : 80),
@@ -810,7 +815,7 @@ ipcMain.handle('ping-server', async (event, serverUrl) => {
         method: 'GET',
         timeout: 5000,
       };
-      
+
       const startTime = Date.now();
       const req = client.request(options, (res) => {
         const responseTime = Date.now() - startTime;
@@ -822,16 +827,16 @@ ipcMain.handle('ping-server', async (event, serverUrl) => {
           message: `Server responded in ${responseTime}ms`,
         });
       });
-      
+
       req.on('error', (error) => {
         resolve({ success: false, error: error.message });
       });
-      
+
       req.on('timeout', () => {
         req.destroy();
         resolve({ success: false, error: 'Connection timeout (5s)' });
       });
-      
+
       req.end();
     } catch (error) {
       resolve({ success: false, error: error.message });
@@ -1068,9 +1073,35 @@ ipcMain.handle('list-serial-ports', async () => {
       });
     }
   });
-});
+});// Helper to download a file from URL to path
+const downloadFile = async (url, targetPath) => {
+  const axios = require('axios');
+  const response = await axios({
+    method: 'GET',
+    url: url,
+    responseType: 'stream',
+    timeout: 15000,
+  });
 
-// Download firmware binary file
+  if (response.status !== 200) {
+    throw new Error(`HTTP Error ${response.status}`);
+  }
+
+  const contentType = response.headers['content-type'] || '';
+  if (contentType.toLowerCase().includes('text/html')) {
+    throw new Error('Server returned HTML fallback instead of a binary file.');
+  }
+
+  const writer = fs.createWriteStream(targetPath);
+  response.data.pipe(writer);
+
+  return new Promise((resolve, reject) => {
+    writer.on('finish', resolve);
+    writer.on('error', reject);
+  });
+};
+
+// Download firmware binary file and companion dependencies (bootloader, partitions)
 ipcMain.handle('download-firmware', async (event, downloadUrl) => {
   try {
     const tempDir = path.join(dataPath, 'firmware');
@@ -1078,40 +1109,56 @@ ipcMain.handle('download-firmware', async (event, downloadUrl) => {
       fs.mkdirSync(tempDir, { recursive: true });
     }
     const binaryPath = path.join(tempDir, 'firmware.bin');
-    const axios = require('axios');
-    const response = await axios({
-      method: 'GET',
-      url: downloadUrl,
-      responseType: 'stream',
-      timeout: 30000,
-    });
 
-    // Check status code
-    if (response.status && response.status !== 200) {
-      throw new Error(`HTTP Error ${response.status}: Failed to download binary.`);
-    }
-
-    // Check Content-Type to prevent downloading React fallback HTML pages
-    const contentType = response.headers['content-type'] || '';
-    if (contentType.toLowerCase().includes('text/html')) {
-      throw new Error('Server returned HTML instead of a binary firmware file (Check if resource exists).');
-    }
-
-    const writer = fs.createWriteStream(binaryPath);
-    response.data.pipe(writer);
-
-    await new Promise((resolve, reject) => {
-      writer.on('finish', resolve);
-      writer.on('error', reject);
-    });
+    console.log(`Downloading main firmware from: ${downloadUrl}`);
+    await downloadFile(downloadUrl, binaryPath);
 
     const stats = fs.statSync(binaryPath);
     if (stats.size === 0) {
-      throw new Error('Downloaded file is empty (0 bytes).');
+      throw new Error('Downloaded main firmware file is empty (0 bytes).');
     }
 
-    return { 
-      success: true, 
+    // Construct companion URLs: e.g. firmware.bootloader.bin, firmware.partitions.bin
+    const ext = path.extname(downloadUrl);
+    let bootloaderUrl, partitionsUrl;
+    if (ext.toLowerCase() === '.bin') {
+      const urlWithoutExt = downloadUrl.slice(0, -ext.length);
+      bootloaderUrl = urlWithoutExt + '.bootloader.bin';
+      partitionsUrl = urlWithoutExt + '.partitions.bin';
+    } else {
+      bootloaderUrl = downloadUrl + '.bootloader.bin';
+      partitionsUrl = downloadUrl + '.partitions.bin';
+    }
+
+    const bootloaderPath = path.join(tempDir, 'firmware.bootloader.bin');
+    const partitionsPath = path.join(tempDir, 'firmware.partitions.bin');
+
+    // Download bootloader companion if it exists
+    try {
+      console.log(`Attempting to download bootloader companion: ${bootloaderUrl}`);
+      await downloadFile(bootloaderUrl, bootloaderPath);
+      console.log('✓ Bootloader companion downloaded.');
+    } catch (e) {
+      console.log(`Companion bootloader not found or failed (ignoring): ${e.message}`);
+      if (fs.existsSync(bootloaderPath)) {
+        try { fs.unlinkSync(bootloaderPath); } catch { }
+      }
+    }
+
+    // Download partitions companion if it exists
+    try {
+      console.log(`Attempting to download partitions companion: ${partitionsUrl}`);
+      await downloadFile(partitionsUrl, partitionsPath);
+      console.log('✓ Partitions companion downloaded.');
+    } catch (e) {
+      console.log(`Companion partitions not found or failed (ignoring): ${e.message}`);
+      if (fs.existsSync(partitionsPath)) {
+        try { fs.unlinkSync(partitionsPath); } catch { }
+      }
+    }
+
+    return {
+      success: true,
       path: binaryPath,
       size: stats.size,
       filename: path.basename(binaryPath)
@@ -1128,7 +1175,7 @@ function findEsptool() {
   // 1. Try to find it in the Arduino15 directory dynamically
   const localAppData = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
   const arduinoEsp32Dir = path.join(localAppData, 'Arduino15', 'packages', 'esp32', 'tools', 'esptool_py');
-  
+
   if (fs.existsSync(arduinoEsp32Dir)) {
     const versions = fs.readdirSync(arduinoEsp32Dir);
     if (versions.length > 0) {
@@ -1158,37 +1205,49 @@ function findEsptool() {
   return 'esptool';
 }
 
-// Flash binary using esptool
+// Flash firmware using arduino-cli upload
 ipcMain.handle('flash-firmware', async (event, options) => {
   return new Promise((resolve) => {
-    const { port, binaryPath, uploadSpeed, chip, offset } = options;
-    const esptool = findEsptool();
-    const baud = uploadSpeed || '921600';
-    const targetChip = chip || 'esp32';
-    const flashAddress = offset || '0x10000';
+    const { port, binaryPath } = options;
 
-    const args = [
-      '--chip', targetChip,
-      '--port', port,
-      '--baud', baud,
-      '--before', 'default_reset',
-      '--after', 'hard_reset',
-      'write_flash',
-      '-z',
-      '--flash_mode', 'dio',
-      '--flash_freq', '80m',
-      '--flash_size', 'detect',
-      flashAddress,
-      binaryPath,
-    ];
-
-    console.log(`Executing flashing: "${esptool}" ${args.join(' ')}`);
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('flash-log', `[Client] Flashing using esptool: ${esptool}\r\n`);
-      mainWindow.webContents.send('flash-log', `Command: esptool --chip ${targetChip} --port ${port} --baud ${baud} write_flash ${flashAddress} ${path.basename(binaryPath)}\r\n\r\n`);
+    // Load arduino-cli configuration
+    const arduinoConfigPath = path.join(dataPath, 'arduino-config.json');
+    let arduinoCli = 'arduino-cli';
+    let fqbn = 'esp32:esp32:esp32';
+    if (fs.existsSync(arduinoConfigPath)) {
+      try {
+        const config = JSON.parse(fs.readFileSync(arduinoConfigPath, 'utf-8'));
+        if (config.cliPath) arduinoCli = config.cliPath;
+        if (config.fqbn) fqbn = config.fqbn;
+      } catch (e) {
+        console.error('Error loading Arduino config:', e);
+      }
     }
 
-    const child = spawn(esptool, args, { shell: true });
+    const args = [
+      'upload',
+      '-p', port,
+      '--fqbn', fqbn,
+      '--input-file', binaryPath
+    ];
+
+    console.log(`Executing flashing via Arduino CLI: "${arduinoCli}" ${args.join(' ')}`);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('flash-log', `[Client] Flashing using arduino-cli: ${arduinoCli}\r\n`);
+      mainWindow.webContents.send('flash-log', `Command: arduino-cli upload -p ${port} --fqbn ${fqbn} --input-file ${path.basename(binaryPath)}\r\n\r\n`);
+    }
+
+    if (activeFlashProcess) {
+      try {
+        activeFlashProcess.kill();
+      } catch (e) {
+        console.error('Failed to kill active flash process:', e);
+      }
+      activeFlashProcess = null;
+    }
+
+    const child = spawn(arduinoCli, args, { shell: true });
+    activeFlashProcess = child;
 
     child.stdout.on('data', (data) => {
       const logStr = data.toString();
@@ -1205,6 +1264,7 @@ ipcMain.handle('flash-firmware', async (event, options) => {
     });
 
     child.on('error', (err) => {
+      activeFlashProcess = null;
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('flash-log', `CRITICAL ERROR: ${err.message}\r\n`);
       }
@@ -1212,6 +1272,7 @@ ipcMain.handle('flash-firmware', async (event, options) => {
     });
 
     child.on('close', (code) => {
+      activeFlashProcess = null;
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('flash-log', `\r\nFlashing process completed with exit code: ${code}\r\n`);
       }
@@ -1220,6 +1281,88 @@ ipcMain.handle('flash-firmware', async (event, options) => {
   });
 });
 
+// Erase flash using esptool
+ipcMain.handle('erase-flash', async (event, options) => {
+  return new Promise((resolve) => {
+    const { port, chip, uploadSpeed } = options;
+    const esptool = findEsptool();
+    const baud = uploadSpeed || '921600';
+    const targetChip = chip || 'esp32';
+
+    const args = [
+      '--chip', targetChip,
+      '--port', port,
+      '--baud', baud,
+      'erase_flash'
+    ];
+
+    console.log(`Executing erase: "${esptool}" ${args.join(' ')}`);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('flash-log', `[Client] Erasing flash using esptool: ${esptool}\r\n`);
+      mainWindow.webContents.send('flash-log', `Command: esptool --chip ${targetChip} --port ${port} --baud ${baud} erase_flash\r\n\r\n`);
+    }
+
+    if (activeFlashProcess) {
+      try {
+        activeFlashProcess.kill();
+      } catch (e) {
+        console.error('Failed to kill active flash process:', e);
+      }
+      activeFlashProcess = null;
+    }
+
+    const child = spawn(esptool, args, { shell: true });
+    activeFlashProcess = child;
+
+    child.stdout.on('data', (data) => {
+      const logStr = data.toString();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('flash-log', logStr);
+      }
+    });
+
+    child.stderr.on('data', (data) => {
+      const logStr = data.toString();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('flash-log', `STDERR: ${logStr}`);
+      }
+    });
+
+    child.on('error', (err) => {
+      activeFlashProcess = null;
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('flash-log', `CRITICAL ERROR: ${err.message}\r\n`);
+      }
+      resolve({ success: false, error: err.message });
+    });
+
+    child.on('close', (code) => {
+      activeFlashProcess = null;
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('flash-log', `\r\nErase process completed with exit code: ${code}\r\n`);
+      }
+      resolve({ success: code === 0, code });
+    });
+  });
+});
+
+// Stop flash/erase operation
+ipcMain.handle('stop-flash', async () => {
+  if (activeFlashProcess) {
+    try {
+      console.log('Terminating active flashing process...');
+      activeFlashProcess.kill();
+      activeFlashProcess = null;
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('flash-log', `\r\n[Client] Operation stopped by user.\r\n`);
+      }
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  }
+  return { success: true, message: 'No active flashing process to stop' };
+});
 
 // Create application menu (old template - keeping for backward compatibility)
 const template = [

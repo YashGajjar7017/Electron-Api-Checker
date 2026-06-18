@@ -63,6 +63,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   listSerialPorts: ()           => ipcRenderer.invoke('list-serial-ports'),
   downloadFirmware: (url)       => ipcRenderer.invoke('download-firmware', url),
   flashFirmware: (options)      => ipcRenderer.invoke('flash-firmware', options),
+  eraseFlash: (options)         => ipcRenderer.invoke('erase-flash', options),
+  stopFlash: ()                 => ipcRenderer.invoke('stop-flash'),
   onFlashLog: (callback) => {
     ipcRenderer.on('flash-log', (_, data) => callback(data));
     return () => ipcRenderer.removeAllListeners('flash-log');

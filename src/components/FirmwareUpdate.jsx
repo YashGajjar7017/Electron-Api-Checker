@@ -138,6 +138,47 @@ function FirmwareUpdate() {
     }
   };
 
+  // Erase flash on ESP device
+  const handleErase = async () => {
+    setFlashing(true);
+    setFlashLogs([`[Client] Initializing erase procedure on port ${selectedPort}...\r\n`]);
+    setStatus({ type: 'info', message: `Erasing flash on ${selectedChip.toUpperCase()}...` });
+
+    try {
+      if (window.electronAPI?.eraseFlash) {
+        const result = await window.electronAPI.eraseFlash({
+          port: selectedPort,
+          chip: selectedChip,
+          uploadSpeed,
+        });
+
+        if (result.success) {
+          setStatus({ type: 'success', message: '✓ Flash erased successfully!' });
+        } else {
+          setStatus({ type: 'error', message: `✗ Erasing failed: ${result.error || 'Check console logs'}` });
+        }
+      } else {
+        setStatus({ type: 'error', message: 'Erase API is not available' });
+      }
+    } catch (err) {
+      setStatus({ type: 'error', message: `✗ Erase error: ${err.message}` });
+    } finally {
+      setFlashing(false);
+    }
+  };
+
+  // Stop active operation
+  const handleStop = async () => {
+    try {
+      if (window.electronAPI?.stopFlash) {
+        await window.electronAPI.stopFlash();
+        setStatus({ type: 'info', message: 'Operation stopped by user' });
+      }
+    } catch (err) {
+      setStatus({ type: 'error', message: `✗ Error stopping operation: ${err.message}` });
+    }
+  };
+
   return (
     <div className="firmware-update-page page-transition">
       <div className="firmware-header">
@@ -260,14 +301,36 @@ function FirmwareUpdate() {
             </select>
           </div>
 
-          <button
-            className="btn btn-primary flash-btn gradient-btn"
-            onClick={handleFlash}
-            disabled={!downloadedFile || flashing || downloading}
-          >
-            {flashing ? <FiRefreshCw className="spinning" /> : <FiZap />}
-            {flashing ? 'Flashing ESP...' : 'Flash Firmware'}
-          </button>
+          <div className="flash-action-group" style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+            <button
+              className="btn btn-primary flash-btn gradient-btn"
+              onClick={handleFlash}
+              disabled={!downloadedFile || flashing || downloading}
+              style={{ flex: 2, justifyContent: 'center' }}
+            >
+              {flashing ? <FiRefreshCw className="spinning" /> : <FiZap />}
+              {flashing ? 'Flashing ESP...' : 'Flash Firmware'}
+            </button>
+            <button
+              className="btn btn-secondary erase-btn"
+              onClick={handleErase}
+              disabled={flashing || downloading}
+              title="Erase Flash (esptool)"
+              style={{ flex: 1, justifyContent: 'center' }}
+            >
+              <FiTrash2 /> Erase
+            </button>
+            {flashing && (
+              <button
+                className="btn btn-danger stop-btn"
+                onClick={handleStop}
+                title="Stop current operation"
+                style={{ flex: 1, justifyContent: 'center', background: 'var(--error)' }}
+              >
+                Stop
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Logs Column */}

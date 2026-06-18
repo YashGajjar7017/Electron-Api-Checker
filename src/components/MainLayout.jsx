@@ -56,9 +56,15 @@ function MainLayout({ onThemeChange, currentTheme }) {
     activeEnvironment,
     setActiveEnvironment,
     updateEnvironment,
+    addEnvironment,
+    deleteEnvironment,
+    responseHistory,
+    setCurrentAPI,
   } = useStore();
 
   const [localBackendMessage, setLocalBackendMessage] = useState('');
+  const [newEnvName, setNewEnvName] = useState('');
+  const [newEnvUrl, setNewEnvUrl] = useState('');
 
   const handleMouseDown = (side) => {
     if (side === 'sidebar') {
@@ -171,6 +177,19 @@ function MainLayout({ onThemeChange, currentTheme }) {
     setResponseHeight(300);
   };
 
+  const handleAddEnvironment = () => {
+    if (!newEnvName.trim() || !newEnvUrl.trim()) return;
+    const newEnv = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: newEnvName.trim(),
+      baseUrl: newEnvUrl.trim(),
+      values: {}
+    };
+    addEnvironment(newEnv);
+    setNewEnvName('');
+    setNewEnvUrl('');
+  };
+
   const renderEnvironmentsSidebar = () => {
     return (
       <div className="sidebar-details-inner">
@@ -194,16 +213,66 @@ function MainLayout({ onThemeChange, currentTheme }) {
               <div className="env-item-url">{env.baseUrl}</div>
               {activeEnvironment === env.id && (
                 <div className="env-edit-box" onClick={(e) => e.stopPropagation()}>
-                  <label>Base URL:</label>
-                  <input
-                    type="text"
-                    value={env.baseUrl}
-                    onChange={(e) => updateEnvironment(env.id, { baseUrl: e.target.value })}
-                  />
+                  <div className="env-edit-row" style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
+                    <label>Name:</label>
+                    <input
+                      type="text"
+                      value={env.name}
+                      onChange={(e) => updateEnvironment(env.id, { name: e.target.value })}
+                    />
+                  </div>
+                  <div className="env-edit-row" style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
+                    <label>Base URL:</label>
+                    <input
+                      type="text"
+                      value={env.baseUrl}
+                      onChange={(e) => updateEnvironment(env.id, { baseUrl: e.target.value })}
+                    />
+                  </div>
+                  <button
+                    className="env-delete-btn"
+                    onClick={() => {
+                      if (confirm(`Are you sure you want to delete environment "${env.name}"?`)) {
+                        deleteEnvironment(env.id);
+                      }
+                    }}
+                  >
+                    Delete Environment
+                  </button>
                 </div>
               )}
             </div>
           ))}
+        </div>
+
+        <div className="add-environment-box" style={{ marginTop: '20px' }}>
+          <h4>Create Environment</h4>
+          <div className="form-group" style={{ marginBottom: '10px' }}>
+            <input
+              type="text"
+              placeholder="Environment Name"
+              value={newEnvName}
+              onChange={(e) => setNewEnvName(e.target.value)}
+              style={{ width: '100%', padding: '8px', fontSize: '12px' }}
+            />
+          </div>
+          <div className="form-group" style={{ marginBottom: '12px' }}>
+            <input
+              type="text"
+              placeholder="Base URL (e.g. http://localhost)"
+              value={newEnvUrl}
+              onChange={(e) => setNewEnvUrl(e.target.value)}
+              style={{ width: '100%', padding: '8px', fontSize: '12px' }}
+            />
+          </div>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={handleAddEnvironment}
+            disabled={!newEnvName.trim() || !newEnvUrl.trim()}
+            style={{ width: '100%', justifyContent: 'center' }}
+          >
+            Add Environment
+          </button>
         </div>
       </div>
     );
@@ -228,6 +297,117 @@ function MainLayout({ onThemeChange, currentTheme }) {
           <button className="settings-nav-item" onClick={() => setShowSystemMonitor(true)}>
             <FiTerminal size={16} /> System Monitor
           </button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderHistorySidebar = () => {
+    return (
+      <div className="sidebar-details-inner">
+        <div className="sidebar-detail-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h3 style={{ margin: 0 }}>History</h3>
+          {responseHistory.length > 0 && (
+            <button
+              className="btn btn-icon-only"
+              onClick={clearResponseHistory}
+              title="Clear History"
+              style={{ padding: '4px', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            >
+              <FiTrash2 size={16} style={{ color: 'var(--text-muted)' }} />
+            </button>
+          )}
+        </div>
+        <div className="history-list animate-fadeIn" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {responseHistory.length === 0 ? (
+            <div className="empty-state" style={{ color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center', padding: '30px 10px', border: '1px dashed var(--border)', borderRadius: '8px' }}>
+              No request history yet. Send a request to see it here!
+            </div>
+          ) : (
+            responseHistory.map((item) => {
+              const statusColor = item.status >= 200 && item.status < 300 ? 'var(--success)' : 'var(--error)';
+              const methodClass = `method-${item.method?.toLowerCase()}`;
+              return (
+                <div
+                  key={item.id}
+                  className="history-item"
+                  onClick={() => {
+                    setCurrentAPI({
+                      id: item.id || Math.random().toString(36).substr(2, 9),
+                      name: item.apiName || `${item.method} Request`,
+                      method: item.method,
+                      endpoint: item.endpoint,
+                      headers: item.headers || {},
+                      params: item.params || {},
+                      body: item.body || '',
+                      bodyType: item.bodyType || 'none',
+                      auth: item.auth || { type: 'none', token: '' },
+                    });
+                  }}
+                  style={{
+                    padding: '12px',
+                    borderRadius: '8px',
+                    background: 'rgba(30, 41, 59, 0.3)',
+                    border: '1px solid var(--border)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span className={`method-badge ${methodClass}`} style={{ fontSize: '10px', fontWeight: 'bold' }}>
+                      {item.method}
+                    </span>
+                    <span style={{ fontSize: '11px', color: statusColor, fontWeight: '600' }}>
+                      {item.status || 'ERROR'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {item.endpoint}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9px', color: 'var(--text-muted)' }}>
+                    <span>{item.responseTime ? `${item.responseTime}ms` : ''}</span>
+                    <span>{item.timestamp ? new Date(item.timestamp).toLocaleTimeString() : ''}</span>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderAutomationSidebar = () => {
+    return (
+      <div className="sidebar-details-inner">
+        <div className="sidebar-detail-header" style={{ marginBottom: '16px' }}>
+          <h3 style={{ margin: 0 }}>Automation</h3>
+        </div>
+        
+        <div className="automation-actions animate-fadeIn" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <button 
+            className="btn btn-secondary gradient-hover" 
+            onClick={handleRunPythonScript}
+            disabled={isRunningScript}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', width: '100%' }}
+          >
+            <FiTerminal /> {isRunningScript ? 'Running...' : 'Run Script.py'}
+          </button>
+          
+          <div className="automation-workflows-section">
+            <h4 style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '15px 0 8px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Automation Workflows
+            </h4>
+            <div className="empty-workflows" style={{ padding: '24px 16px', textAlign: 'center', background: 'rgba(30, 41, 59, 0.2)', borderRadius: '8px', border: '1px dashed var(--border)' }}>
+              <FiDatabase size={24} style={{ color: 'var(--text-muted)', marginBottom: '8px' }} />
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
+                No active automation tasks configured. Create workflow triggers inside script actions.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -265,6 +445,22 @@ function MainLayout({ onThemeChange, currentTheme }) {
               <span className="switcher-text">Environments</span>
             </button>
             <button 
+              className={`switcher-btn ${selectedSidebar === 'history' ? 'active' : ''}`} 
+              onClick={() => setSelectedSidebar('history')}
+              title="History"
+            >
+              <FiRefreshCcw size={20} />
+              <span className="switcher-text">History</span>
+            </button>
+            <button 
+              className={`switcher-btn ${selectedSidebar === 'automation' ? 'active' : ''}`} 
+              onClick={() => setSelectedSidebar('automation')}
+              title="Automation"
+            >
+              <FiTerminal size={20} />
+              <span className="switcher-text">Automation</span>
+            </button>
+            <button 
               className={`switcher-btn ${selectedSidebar === 'firmware' ? 'active' : ''}`} 
               onClick={() => setSelectedSidebar('firmware')}
               title="Firmware Update"
@@ -288,6 +484,8 @@ function MainLayout({ onThemeChange, currentTheme }) {
             <div className="sidebar-panel" style={{ width: `${sidebarWidth}px` }}>
               {selectedSidebar === 'collections' && <Sidebar />}
               {selectedSidebar === 'environments' && renderEnvironmentsSidebar()}
+              {selectedSidebar === 'history' && renderHistorySidebar()}
+              {selectedSidebar === 'automation' && renderAutomationSidebar()}
               {selectedSidebar === 'settings' && renderSettingsSidebar()}
               
               <div
