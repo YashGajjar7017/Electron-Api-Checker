@@ -37,7 +37,7 @@
     "endpoint": "/api/login",
     "headers": {},
     "params": {},
-    "body": "{ \r\n\"username\": \"RMS-D8EC\", \r\n\"password\": \"Admin@123\" \r\n}",
+    "body": "{ \r\n\"username\": \"RMS-92CC\", \r\n\"password\": \"Admin@123\" \r\n}",
     "auth": {
       "type": "none",
       "token": "",

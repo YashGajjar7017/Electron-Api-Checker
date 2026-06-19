@@ -554,6 +554,10 @@ function RequestBuilder() {
 
     const otpValue = otpData && otpData.current ? otpData.current : (otpData && otpData.expiry && Date.now() < otpData.expiry ? otpData.cached : null);
 
+    // Resolve active environment's Base URL
+    const environment = environments.find((env) => env.id === activeEnvironment) || environments[0] || {};
+    const base = environment.baseUrl || serverUrl;
+
     if (bodyType === 'form-data' || bodyType === 'x-www-form-urlencoded') {
       const bodyParamsData = new URLSearchParams();
       Object.entries(bodyParams).forEach(([key, value]) => {
@@ -561,7 +565,7 @@ function RequestBuilder() {
           bodyParamsData.append(
             key,
             applyTemplateVariables(String(value), {
-              baseUrl: serverUrl,
+              baseUrl: base,
               token: authTokenState || sessionToken || '',
               timestamp: String(Date.now()),
               uuid: undefined,
@@ -577,7 +581,7 @@ function RequestBuilder() {
     // JSON body injection
     if (bodyType === 'json') {
       const substituted = applyTemplateVariables(body, {
-        baseUrl: serverUrl,
+        baseUrl: base,
         token: authTokenState || sessionToken || '',
         timestamp: String(Date.now()),
         uuid: undefined,
@@ -600,7 +604,7 @@ function RequestBuilder() {
     }
 
     const substitutedRaw = applyTemplateVariables(body, {
-      baseUrl: serverUrl,
+      baseUrl: base,
       token: authTokenState || sessionToken || '',
       timestamp: String(Date.now()),
       uuid: undefined,

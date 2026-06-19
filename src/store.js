@@ -6,7 +6,7 @@ const persistData = async (key, data) => {
   if (window.electronAPI) {
     try {
       console.log(`Persisting ${key}:`, data.length, 'items');
-      const result = key === 'apis' 
+      const result = key === 'apis'
         ? await window.electronAPI.saveAPIs(data)
         : await window.electronAPI.saveCollections(data);
       if (result?.success !== true) {
@@ -70,7 +70,7 @@ const useStore = create(
 
     // Collections state
     collections: [],
-addCollection: (collection) => {
+    addCollection: (collection) => {
       set((state) => {
         const newCollections = [...state.collections, collection];
         persistData('collections', newCollections);

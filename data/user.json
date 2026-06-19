@@ -43,7 +43,7 @@
       "endpoint": "/api/login",
       "headers": {},
       "params": {},
-      "body": "{ \r\n\"username\": \"RMS-D8EC\", \r\n\"password\": \"Admin@123\" \r\n}",
+      "body": "{ \r\n\"username\": \"RMS-92CC\", \r\n\"password\": \"Admin@123\" \r\n}",
       "auth": {
         "type": "none",
         "token": "",
@@ -1632,9 +1632,30 @@
   "sessionToken": "",
   "sessionTokenExpiry": null,
   "otpData": {
-    "current": null,
-    "cached": null,
-    "expiry": null,
+    "current": "366059",
+    "cached": "366059",
+    "expiry": 1781845524993,
     "attempts": 0
-  }
+  },
+  "environments": [
+    {
+      "id": "dev",
+      "name": "Development",
+      "baseUrl": "http://localhost:5000",
+      "values": {}
+    },
+    {
+      "id": "staging",
+      "name": "Staging",
+      "baseUrl": "https://staging.api.local",
+      "values": {}
+    },
+    {
+      "id": "prod",
+      "name": "Production",
+      "baseUrl": "https://api.production.com",
+      "values": {}
+    }
+  ],
+  "activeEnvironment": "prod"
 }

@@ -214,6 +214,129 @@
   color: #f87171;
 }
 
+/* Source Selection Tabs */
+.source-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  background: rgba(15, 23, 42, 0.3);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.source-tab-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-light);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all var(--transition-fast);
+}
+
+.source-tab-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.source-tab-btn.active {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+
+.source-tab-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Local Sketch Path picker styles */
+.sketch-compile-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sketch-path-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sketch-path-inputs input {
+  width: 100%;
+}
+
+.sketch-pickers-row {
+  display: flex;
+  gap: 8px;
+}
+
+.sketch-pickers-row button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.compile-btn {
+  width: 100%;
+  padding: 10px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* Form Helper Rows */
+.form-group-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+/* Troubleshooting Tip banner */
+.troubleshooting-tip {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  margin: 16px 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.tip-icon {
+  color: #f59e0b;
+  flex-shrink: 0;
+  margin-top: 2px;
+  font-size: 16px;
+}
+
+.tip-content {
+  color: var(--text-light);
+}
+
+.tip-content strong {
+  color: #f59e0b;
+}
+
 @media (max-width: 1024px) {
   .firmware-grid {
     grid-template-columns: 1fr;

@@ -1,16 +1,41 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiDownload, FiCpu, FiRefreshCw, FiZap, FiTrash2, FiPlay, FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
+import { 
+  FiDownload, 
+  FiCpu, 
+  FiRefreshCw, 
+  FiZap, 
+  FiTrash2, 
+  FiPlay, 
+  FiAlertCircle, 
+  FiCheckCircle, 
+  FiFolder, 
+  FiFile, 
+  FiLayers,
+  FiCode
+} from 'react-icons/fi';
 import '../styles/FirmwareUpdate.css';
 
 function FirmwareUpdate() {
+  const [sourceMode, setSourceMode] = useState('download'); // 'download' | 'sketch'
+  const [flashTool, setFlashTool] = useState('esptool'); // 'esptool' | 'arduino-cli'
+  const [flashMode, setFlashMode] = useState('single'); // 'single' | 'multiple'
+  
   const [firmwareUrl, setFirmwareUrl] = useState('http://localhost:3000/firmware.bin');
   const [downloading, setDownloading] = useState(false);
   const [downloadedFile, setDownloadedFile] = useState(null);
+
+  // Sketch compilation states
+  const [sketchPath, setSketchPath] = useState('');
+  const [fqbn, setFqbn] = useState('esp32:esp32:esp32');
+  const [compiling, setCompiling] = useState(false);
+
+  // Serial & flash settings
   const [ports, setPorts] = useState([]);
   const [selectedPort, setSelectedPort] = useState('COM3');
   const [selectedChip, setSelectedChip] = useState('esp32');
   const [flashOffset, setFlashOffset] = useState('0x10000');
   const [uploadSpeed, setUploadSpeed] = useState('921600');
+  
   const [flashing, setFlashing] = useState(false);
   const [flashLogs, setFlashLogs] = useState([]);
   const [status, setStatus] = useState({ type: '', message: '' });
@@ -92,35 +117,99 @@ function FirmwareUpdate() {
     }
   };
 
-  // Flash firmware to device
-  const handleFlash = async () => {
-    if (!downloadedFile) {
-      setStatus({ type: 'error', message: 'Please download the firmware binary first' });
+  // Compile sketch
+  const handleSelectSketch = async (type) => {
+    try {
+      if (type === 'file' && window.electronAPI?.selectSketchFile) {
+        const result = await window.electronAPI.selectSketchFile();
+        if (result?.success) {
+          setSketchPath(result.path);
+        }
+      } else if (type === 'dir' && window.electronAPI?.selectDirectory) {
+        const result = await window.electronAPI.selectDirectory();
+        if (result?.success) {
+          setSketchPath(result.path);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to select sketch:', e);
+    }
+  };
+
+  const handleCompile = async () => {
+    if (!sketchPath.trim()) {
+      setStatus({ type: 'error', message: 'Please select a sketch (.ino) file or directory first.' });
+      return;
+    }
+    if (!fqbn.trim()) {
+      setStatus({ type: 'error', message: 'Please specify the Target Board FQBN.' });
       return;
     }
 
-    if (!selectedChip.trim()) {
+    setCompiling(true);
+    setFlashLogs([`[Client] Initializing sketch compilation sequence...\r\n`]);
+    setStatus({ type: 'info', message: 'Compiling sketch...' });
+    setDownloadedFile(null);
+
+    try {
+      if (window.electronAPI?.compileSketch) {
+        const result = await window.electronAPI.compileSketch({
+          sketchPath: sketchPath.trim(),
+          fqbn: fqbn.trim()
+        });
+
+        if (result.success) {
+          setDownloadedFile({
+            success: true,
+            path: result.binaryPath,
+            filename: result.binaryPath.split(/[\\/]/).pop(),
+            size: 0
+          });
+          setStatus({ type: 'success', message: '✓ Sketch compiled successfully!' });
+        } else {
+          setStatus({ type: 'error', message: `✗ Compilation failed: ${result.error || 'Check logs'}` });
+        }
+      } else {
+        setStatus({ type: 'error', message: 'Compilation API is not available' });
+      }
+    } catch (err) {
+      setStatus({ type: 'error', message: `✗ Error during compile: ${err.message}` });
+    } finally {
+      setCompiling(false);
+    }
+  };
+
+  // Flash firmware to device
+  const handleFlash = async () => {
+    if (!downloadedFile) {
+      setStatus({ type: 'error', message: 'Please download or compile the firmware binary first' });
+      return;
+    }
+
+    if (flashTool === 'esptool' && !selectedChip.trim()) {
       setStatus({ type: 'error', message: 'Please specify a Target Chip' });
       return;
     }
 
-    if (!flashOffset.trim()) {
+    if (flashTool === 'esptool' && !flashOffset.trim()) {
       setStatus({ type: 'error', message: 'Please specify a Flash Offset Address' });
       return;
     }
 
     setFlashing(true);
-    setFlashLogs([`[Client] Initializing upload procedure on port ${selectedPort}...\r\n`]);
-    setStatus({ type: 'info', message: `Flashing firmware to ${selectedChip.toUpperCase()}...` });
+    setFlashLogs([`[Client] Initializing upload procedure on port ${selectedPort} using ${flashTool}...\r\n`]);
+    setStatus({ type: 'info', message: `Flashing firmware to device...` });
 
     try {
       if (window.electronAPI?.flashFirmware) {
         const result = await window.electronAPI.flashFirmware({
+          tool: flashTool,
           port: selectedPort,
           binaryPath: downloadedFile.path,
           uploadSpeed,
           chip: selectedChip,
           offset: flashOffset,
+          flashMode
         });
 
         if (result.success) {
@@ -184,7 +273,7 @@ function FirmwareUpdate() {
       <div className="firmware-header">
         <div className="header-title-section">
           <h2>Firmware Update</h2>
-          <p>Download precompiled binaries from web servers and flash them directly to your ESP devices.</p>
+          <p>Flash precompiled binaries directly or compile local Arduino sketches to program your boards.</p>
         </div>
       </div>
 
@@ -192,46 +281,159 @@ function FirmwareUpdate() {
         {/* Settings Column */}
         <div className="firmware-card settings-card glass-lg">
           <h3>Configuration</h3>
-          
-          <div className="form-group">
-            <label>Firmware Binary URL</label>
-            <div className="input-with-button">
-              <input
-                type="text"
-                placeholder="http://localhost:3000/firmware.bin"
-                value={firmwareUrl}
-                onChange={(e) => setFirmwareUrl(e.target.value)}
-                disabled={downloading || flashing}
-              />
-              <button
-                className="btn btn-secondary gradient-hover"
-                onClick={handleDownload}
-                disabled={downloading || flashing}
+
+          {/* Flash Tool & Mode Dropdowns */}
+          <div className="form-group-row">
+            <div className="form-group flex-1">
+              <label>Flashing Tool</label>
+              <select
+                value={flashTool}
+                onChange={(e) => {
+                  setFlashTool(e.target.value);
+                  if (e.target.value === 'arduino-cli') {
+                    setSourceMode('sketch');
+                  }
+                }}
+                disabled={flashing || compiling}
               >
-                {downloading ? <FiRefreshCw className="spinning" /> : <FiDownload />}
-                {downloading ? 'Downloading...' : 'Download'}
-              </button>
+                <option value="esptool">ESPTool (Raw flashing)</option>
+                <option value="arduino-cli">Arduino CLI (Upload sketch)</option>
+              </select>
+            </div>
+
+            <div className="form-group flex-1">
+              <label>Flashing Layout</label>
+              <select
+                value={flashMode}
+                onChange={(e) => setFlashMode(e.target.value)}
+                disabled={flashing || compiling}
+              >
+                <option value="single">Single App Bin Only</option>
+                <option value="multiple">Multiple Bin Layout (Bootloader/Partitions)</option>
+              </select>
             </div>
           </div>
+
+          <hr className="divider" />
+
+          {/* Source Toggle Tabs */}
+          <div className="source-tabs">
+            <button
+              className={`source-tab-btn ${sourceMode === 'download' ? 'active' : ''}`}
+              onClick={() => setSourceMode('download')}
+              disabled={flashing || compiling || flashTool === 'arduino-cli'}
+              title={flashTool === 'arduino-cli' ? 'Must use Sketch mode with Arduino CLI' : ''}
+            >
+              <FiDownload size={14} /> Download URL
+            </button>
+            <button
+              className={`source-tab-btn ${sourceMode === 'sketch' ? 'active' : ''}`}
+              onClick={() => setSourceMode('sketch')}
+              disabled={flashing || compiling}
+            >
+              <FiCode size={14} /> Local Sketch (.ino)
+            </button>
+          </div>
+
+          {/* Download URL Section */}
+          {sourceMode === 'download' && (
+            <div className="form-group animate-fadeIn">
+              <label>Firmware Binary URL</label>
+              <div className="input-with-button">
+                <input
+                  type="text"
+                  placeholder="http://localhost:3000/firmware.bin"
+                  value={firmwareUrl}
+                  onChange={(e) => setFirmwareUrl(e.target.value)}
+                  disabled={downloading || flashing}
+                />
+                <button
+                  className="btn btn-secondary gradient-hover"
+                  onClick={handleDownload}
+                  disabled={downloading || flashing}
+                >
+                  {downloading ? <FiRefreshCw className="spinning" /> : <FiDownload />}
+                  {downloading ? 'Downloading...' : 'Download'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Local Sketch Selection & Compile Section */}
+          {sourceMode === 'sketch' && (
+            <div className="sketch-compile-section animate-fadeIn">
+              <div className="form-group">
+                <label>Board FQBN *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. esp32:esp32:esp32 or arduino:avr:uno"
+                  value={fqbn}
+                  onChange={(e) => setFqbn(e.target.value)}
+                  disabled={compiling || flashing}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Sketch Path (.ino or directory)</label>
+                <div className="sketch-path-inputs">
+                  <input
+                    type="text"
+                    placeholder="Select sketch file or directory..."
+                    value={sketchPath}
+                    onChange={(e) => setSketchPath(e.target.value)}
+                    disabled={compiling || flashing}
+                  />
+                  <div className="sketch-pickers-row">
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => handleSelectSketch('file')}
+                      disabled={compiling || flashing}
+                      title="Select .ino file"
+                    >
+                      <FiFile /> File
+                    </button>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => handleSelectSketch('dir')}
+                      disabled={compiling || flashing}
+                      title="Select project directory"
+                    >
+                      <FiFolder /> Folder
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                className="btn btn-secondary compile-btn"
+                onClick={handleCompile}
+                disabled={compiling || flashing || !sketchPath.trim()}
+              >
+                {compiling ? <FiRefreshCw className="spinning" /> : <FiLayers />}
+                {compiling ? 'Compiling sketch...' : 'Compile Sketch'}
+              </button>
+            </div>
+          )}
 
           {downloadedFile && (
             <div className="download-info-pill animate-scaleIn">
               <FiCheckCircle size={16} />
               <span>
-                Ready: <strong>{downloadedFile.filename}</strong> ({Math.round(downloadedFile.size / 1024)} KB)
+                Ready: <strong>{downloadedFile.filename}</strong> {downloadedFile.size > 0 && `(${Math.round(downloadedFile.size / 1024)} KB)`}
               </span>
             </div>
           )}
 
           <hr className="divider" />
 
+          {/* Serial Port Section */}
           <div className="form-group">
             <label>Serial Connection Port</label>
             <div className="input-with-button">
               <select
                 value={selectedPort}
                 onChange={(e) => setSelectedPort(e.target.value)}
-                disabled={flashing}
+                disabled={flashing || compiling}
               >
                 {ports.map((port) => (
                   <option key={port} value={port}>
@@ -243,7 +445,7 @@ function FirmwareUpdate() {
               <button
                 className="btn btn-icon-only"
                 onClick={fetchPorts}
-                disabled={refreshingPorts || flashing}
+                disabled={refreshingPorts || flashing || compiling}
                 title="Refresh serial ports"
               >
                 <FiRefreshCw className={refreshingPorts ? 'spinning' : ''} />
@@ -251,48 +453,53 @@ function FirmwareUpdate() {
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Target Chip Type</label>
-            <select
-              value={selectedChip}
-              onChange={(e) => {
-                setSelectedChip(e.target.value);
-                // Auto-adjust default offset address based on selected chip type
-                if (e.target.value === 'esp8266') {
-                  setFlashOffset('0x0');
-                } else if (e.target.value === 'esp32s3' || e.target.value === 'esp32c3') {
-                  setFlashOffset('0x0');
-                } else {
-                  setFlashOffset('0x10000');
-                }
-              }}
-              disabled={flashing}
-            >
-              <option value="esp32">ESP32 (Dev Module)</option>
-              <option value="esp32s3">ESP32-S3</option>
-              <option value="esp32c3">ESP32-C3</option>
-              <option value="esp32s2">ESP32-S2</option>
-              <option value="esp8266">ESP8266</option>
-            </select>
-          </div>
+          {/* Target Chip Type - Only for esptool */}
+          {flashTool === 'esptool' && (
+            <div className="form-group animate-fadeIn">
+              <label>Target Chip Type</label>
+              <select
+                value={selectedChip}
+                onChange={(e) => {
+                  setSelectedChip(e.target.value);
+                  if (e.target.value === 'esp8266') {
+                    setFlashOffset('0x0');
+                  } else if (e.target.value === 'esp32s3' || e.target.value === 'esp32c3') {
+                    setFlashOffset('0x0');
+                  } else {
+                    setFlashOffset('0x10000');
+                  }
+                }}
+                disabled={flashing || compiling}
+              >
+                <option value="esp32">ESP32 (Dev Module)</option>
+                <option value="esp32s3">ESP32-S3</option>
+                <option value="esp32c3">ESP32-C3</option>
+                <option value="esp32s2">ESP32-S2</option>
+                <option value="esp8266">ESP8266</option>
+              </select>
+            </div>
+          )}
 
-          <div className="form-group">
-            <label>Flash Offset Address</label>
-            <input
-              type="text"
-              placeholder="0x10000"
-              value={flashOffset}
-              onChange={(e) => setFlashOffset(e.target.value)}
-              disabled={flashing}
-            />
-          </div>
+          {/* Flash Offset - Only for esptool/single or specific layout configurations */}
+          {flashTool === 'esptool' && flashMode === 'single' && (
+            <div className="form-group animate-fadeIn">
+              <label>Flash Offset Address</label>
+              <input
+                type="text"
+                placeholder="0x10000"
+                value={flashOffset}
+                onChange={(e) => setFlashOffset(e.target.value)}
+                disabled={flashing || compiling}
+              />
+            </div>
+          )}
 
           <div className="form-group">
             <label>Flashing Baud Rate</label>
             <select
               value={uploadSpeed}
               onChange={(e) => setUploadSpeed(e.target.value)}
-              disabled={flashing}
+              disabled={flashing || compiling}
             >
               <option value="921600">921600 (High Speed)</option>
               <option value="460800">460800</option>
@@ -301,25 +508,38 @@ function FirmwareUpdate() {
             </select>
           </div>
 
+          {/* Troubleshooting Warning */}
+          <div className="troubleshooting-tip glass-sm">
+            <FiAlertCircle className="tip-icon" />
+            <div className="tip-content">
+              <strong>Connection Timeout?</strong> Hold down the <strong>BOOT / FLASH</strong> button on your ESP32 board while the logs show connecting, then release it once flashing starts.
+            </div>
+          </div>
+
           <div className="flash-action-group" style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
             <button
               className="btn btn-primary flash-btn gradient-btn"
               onClick={handleFlash}
-              disabled={!downloadedFile || flashing || downloading}
+              disabled={!downloadedFile || flashing || downloading || compiling}
               style={{ flex: 2, justifyContent: 'center' }}
             >
               {flashing ? <FiRefreshCw className="spinning" /> : <FiZap />}
-              {flashing ? 'Flashing ESP...' : 'Flash Firmware'}
+              {flashing ? 'Flashing...' : 'Flash Firmware'}
             </button>
-            <button
-              className="btn btn-secondary erase-btn"
-              onClick={handleErase}
-              disabled={flashing || downloading}
-              title="Erase Flash (esptool)"
-              style={{ flex: 1, justifyContent: 'center' }}
-            >
-              <FiTrash2 /> Erase
-            </button>
+            
+            {/* Erase button - Only available for ESP Tool */}
+            {flashTool === 'esptool' && (
+              <button
+                className="btn btn-secondary erase-btn"
+                onClick={handleErase}
+                disabled={flashing || downloading || compiling}
+                title="Erase Flash (esptool)"
+                style={{ flex: 1, justifyContent: 'center' }}
+              >
+                <FiTrash2 /> Erase
+              </button>
+            )}
+            
             {flashing && (
               <button
                 className="btn btn-danger stop-btn"
@@ -336,11 +556,11 @@ function FirmwareUpdate() {
         {/* Logs Column */}
         <div className="firmware-card logs-card glass-lg">
           <div className="logs-header">
-            <h3>Console Output Log</h3>
+            <h3>Console Operations Log</h3>
             <button
               className="btn btn-text btn-sm"
               onClick={() => setFlashLogs([])}
-              disabled={flashing}
+              disabled={flashing || compiling}
             >
               <FiTrash2 /> Clear Logs
             </button>
@@ -348,7 +568,7 @@ function FirmwareUpdate() {
 
           <div className="terminal-console">
             {flashLogs.length === 0 ? (
-              <span className="terminal-placeholder">Awaiting flashing commands...</span>
+              <span className="terminal-placeholder">Awaiting flash/compile commands...</span>
             ) : (
               flashLogs.map((log, index) => (
                 <span key={index} className="terminal-line">

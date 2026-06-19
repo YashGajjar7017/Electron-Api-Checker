@@ -13,7 +13,20 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
   const [pingStatus, setPingStatus] = useState(null);
   const [token, setToken] = useState(null);
   
-  const { user, logoutUser, serverUrl, setServerUrl, clearResponseHistory, shuffleAPIs, toggleComparisonMode, comparisonMode } = useStore(
+  const { 
+    user, 
+    logoutUser, 
+    serverUrl, 
+    setServerUrl, 
+    clearResponseHistory, 
+    shuffleAPIs, 
+    toggleComparisonMode, 
+    comparisonMode,
+    environments,
+    activeEnvironment,
+    setActiveEnvironment,
+    updateEnvironment
+  } = useStore(
     (state) => ({
       user: state.user,
       logoutUser: state.logoutUser,
@@ -23,8 +36,15 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
       shuffleAPIs: state.shuffleAPIs,
       toggleComparisonMode: state.toggleComparisonMode,
       comparisonMode: state.comparisonMode,
+      environments: state.environments,
+      activeEnvironment: state.activeEnvironment,
+      setActiveEnvironment: state.setActiveEnvironment,
+      updateEnvironment: state.updateEnvironment,
     })
   );
+
+  const activeEnvObj = environments?.find((env) => env.id === activeEnvironment) || environments?.[0];
+  const currentBaseUrl = activeEnvObj ? activeEnvObj.baseUrl : serverUrl;
   
   // GitHub JWT token handler
   useEffect(() => {
@@ -48,15 +68,17 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
 
   const handleServerUrlChange = (e) => {
     const newUrl = e.target.value;
-    setServerUrl(newUrl);
-    setPingStatus(null);
-    if (window.electronAPI && window.electronAPI.saveCollections) {
-      // Could save server config here
+    if (activeEnvObj) {
+      updateEnvironment(activeEnvObj.id, { baseUrl: newUrl });
+    } else {
+      setServerUrl(newUrl);
     }
+    setPingStatus(null);
   };
 
   const handlePing = async () => {
-    if (!serverUrl.trim()) {
+    const urlToPing = currentBaseUrl;
+    if (!urlToPing.trim()) {
       alert('Please enter a server URL');
       return;
     }
@@ -73,7 +95,7 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
     setPingStatus(null);
 
     try {
-      const result = await window.electronAPI.pingServer(serverUrl);
+      const result = await window.electronAPI.pingServer(urlToPing);
       if (result.success) {
         setPingStatus({
           type: 'success',
@@ -146,10 +168,24 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
 
       <div className="header-center">
         <div className="server-url-input">
-          <label>Base URL:</label>
+          <label htmlFor="env-select">Env:</label>
+          <select
+            id="env-select"
+            className="env-select"
+            value={activeEnvironment}
+            onChange={(e) => setActiveEnvironment(e.target.value)}
+          >
+            {environments.map((env) => (
+              <option key={env.id} value={env.id}>
+                {env.name}
+              </option>
+            ))}
+          </select>
+          <label htmlFor="base-url-input">Base URL:</label>
           <input
+            id="base-url-input"
             type="text"
-            value={serverUrl}
+            value={currentBaseUrl}
             onChange={handleServerUrlChange}
             placeholder="http://localhost:3000"
             className="url-input"

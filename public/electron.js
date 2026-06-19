@@ -1205,10 +1205,103 @@ function findEsptool() {
   return 'esptool';
 }
 
-// Flash firmware using arduino-cli upload
+// Flash firmware using esptool or arduino-cli upload
 ipcMain.handle('flash-firmware', async (event, options) => {
   return new Promise((resolve) => {
-    const { port, binaryPath } = options;
+    const { tool, port, binaryPath, uploadSpeed, chip, offset, flashMode } = options;
+
+    if (tool === 'esptool') {
+      const esptool = findEsptool();
+      const baud = uploadSpeed || '921600';
+      const targetChip = chip || 'esp32';
+      const appOffset = offset || '0x10000';
+
+      const args = [
+        '--chip', targetChip,
+        '--port', port,
+        '--baud', baud,
+        'write_flash'
+      ];
+
+      if (flashMode === 'multiple') {
+        const tempDir = path.dirname(binaryPath);
+        const bootloaderPath = path.join(tempDir, 'firmware.bootloader.bin');
+        const partitionsPath = path.join(tempDir, 'firmware.partitions.bin');
+
+        const bootloaderOffset = (targetChip === 'esp32s3' || targetChip === 'esp32c3') ? '0x0' : '0x1000';
+        const partitionsOffset = '0x8000';
+
+        if (fs.existsSync(bootloaderPath) && fs.existsSync(partitionsPath)) {
+          args.push(
+            bootloaderOffset, bootloaderPath,
+            partitionsOffset, partitionsPath,
+            appOffset, binaryPath
+          );
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('flash-log', `[Client] Flashing multiple binaries:\r\n`);
+            mainWindow.webContents.send('flash-log', `  - Bootloader: ${path.basename(bootloaderPath)} at ${bootloaderOffset}\r\n`);
+            mainWindow.webContents.send('flash-log', `  - Partitions: ${path.basename(partitionsPath)} at ${partitionsOffset}\r\n`);
+            mainWindow.webContents.send('flash-log', `  - App: ${path.basename(binaryPath)} at ${appOffset}\r\n\r\n`);
+          }
+        } else {
+          args.push(appOffset, binaryPath);
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('flash-log', `[Client] Companion files (bootloader/partitions) not found in directory. Falling back to app binary only.\r\n`);
+          }
+        }
+      } else {
+        args.push(appOffset, binaryPath);
+      }
+
+      console.log(`Executing flashing via esptool: "${esptool}" ${args.join(' ')}`);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('flash-log', `[Client] Flashing using esptool: ${esptool}\r\n`);
+        mainWindow.webContents.send('flash-log', `Command: esptool ${args.join(' ')}\r\n\r\n`);
+      }
+
+      if (activeFlashProcess) {
+        try {
+          activeFlashProcess.kill();
+        } catch (e) {
+          console.error('Failed to kill active flash process:', e);
+        }
+        activeFlashProcess = null;
+      }
+
+      const child = spawn(esptool, args, { shell: true });
+      activeFlashProcess = child;
+
+      child.stdout.on('data', (data) => {
+        const logStr = data.toString();
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('flash-log', logStr);
+        }
+      });
+
+      child.stderr.on('data', (data) => {
+        const logStr = data.toString();
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('flash-log', logStr);
+        }
+      });
+
+      child.on('error', (err) => {
+        activeFlashProcess = null;
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('flash-log', `CRITICAL ERROR: ${err.message}\r\n`);
+        }
+        resolve({ success: false, error: err.message });
+      });
+
+      child.on('close', (code) => {
+        activeFlashProcess = null;
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('flash-log', `\r\nFlashing process completed with exit code: ${code}\r\n`);
+        }
+        resolve({ success: code === 0, code });
+      });
+      return;
+    }
 
     // Load arduino-cli configuration
     const arduinoConfigPath = path.join(dataPath, 'arduino-config.json');
@@ -1279,6 +1372,276 @@ ipcMain.handle('flash-firmware', async (event, options) => {
       resolve({ success: code === 0, code });
     });
   });
+});
+
+// Compile sketch using arduino-cli
+ipcMain.handle('compile-sketch', async (event, options) => {
+  return new Promise((resolve) => {
+    const { sketchPath, fqbn } = options;
+
+    const arduinoConfigPath = path.join(dataPath, 'arduino-config.json');
+    let arduinoCli = 'arduino-cli';
+    if (fs.existsSync(arduinoConfigPath)) {
+      try {
+        const config = JSON.parse(fs.readFileSync(arduinoConfigPath, 'utf-8'));
+        if (config.cliPath) arduinoCli = config.cliPath;
+      } catch (e) {
+        console.error('Error loading Arduino CLI path:', e);
+      }
+    }
+
+    const outputDir = path.join(dataPath, 'firmware', 'build');
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+
+    const args = [
+      'compile',
+      '--fqbn', fqbn,
+      '--output-dir', outputDir,
+      sketchPath
+    ];
+
+    console.log(`Executing compilation via Arduino CLI: "${arduinoCli}" ${args.join(' ')}`);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('flash-log', `[Client] Compiling sketch using arduino-cli: ${arduinoCli}\r\n`);
+      mainWindow.webContents.send('flash-log', `Command: arduino-cli compile --fqbn ${fqbn} --output-dir "${outputDir}" "${sketchPath}"\r\n\r\n`);
+    }
+
+    if (activeFlashProcess) {
+      try {
+        activeFlashProcess.kill();
+      } catch (e) {
+        console.error('Failed to kill active process:', e);
+      }
+      activeFlashProcess = null;
+    }
+
+    const child = spawn(arduinoCli, args, { shell: true });
+    activeFlashProcess = child;
+
+    child.stdout.on('data', (data) => {
+      const logStr = data.toString();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('flash-log', logStr);
+      }
+    });
+
+    child.stderr.on('data', (data) => {
+      const logStr = data.toString();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('flash-log', `STDERR: ${logStr}`);
+      }
+    });
+
+    child.on('error', (err) => {
+      activeFlashProcess = null;
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('flash-log', `CRITICAL ERROR: ${err.message}\r\n`);
+      }
+      resolve({ success: false, error: err.message });
+    });
+
+    child.on('close', (code) => {
+      activeFlashProcess = null;
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('flash-log', `\r\nCompilation process completed with exit code: ${code}\r\n`);
+      }
+
+      if (code === 0) {
+        try {
+          const files = fs.readdirSync(outputDir);
+          const binFile = files.find(f => f.endsWith('.bin'));
+          if (binFile) {
+            resolve({ success: true, binaryPath: path.join(outputDir, binFile) });
+          } else {
+            resolve({ success: false, error: 'Compilation succeeded but no binary file was found in output directory.' });
+          }
+        } catch (e) {
+          resolve({ success: false, error: `Failed to locate compiled binary: ${e.message}` });
+        }
+      } else {
+        resolve({ success: false, error: `Compilation failed with exit code: ${code}` });
+      }
+    });
+  });
+});
+
+// Select directory dialog
+ipcMain.handle('select-directory', async () => {
+  try {
+    const { dialog } = require('electron');
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openDirectory'],
+    });
+    if (!result.canceled && result.filePaths.length > 0) {
+      return { success: true, path: result.filePaths[0] };
+    }
+    return { success: false, error: 'Directory selection canceled' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Select sketch file dialog
+ipcMain.handle('select-sketch-file', async () => {
+  try {
+    const { dialog } = require('electron');
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile'],
+      filters: [
+        { name: 'Arduino Sketches', extensions: ['ino'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+    if (!result.canceled && result.filePaths.length > 0) {
+      return { success: true, path: result.filePaths[0] };
+    }
+    return { success: false, error: 'File selection canceled' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Certificate Provisioning flow
+ipcMain.handle('provision-certificates', async (event, options) => {
+  const sendLog = (msg) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('provision-log', msg + '\r\n');
+    }
+  };
+
+  try {
+    const { imei, bearerToken, downloadUrls, postUrls, ackUrl, payloadType } = options;
+    const axios = require('axios');
+
+    if (!imei) {
+      return { success: false, error: 'IMEI number is required' };
+    }
+
+    const cleanUrl = (url) => {
+      if (!url) return '';
+      return url.replace(/\{IMEI\}/gi, imei);
+    };
+
+    const dlUrls = downloadUrls.map(cleanUrl);
+    const upUrls = postUrls.map(cleanUrl);
+    const aUrl = cleanUrl(ackUrl);
+
+    sendLog(`[Client] Initializing certificate provisioning for IMEI: ${imei}...`);
+
+    // Step 1-3: Download certificates
+    const certContents = [];
+    for (let i = 0; i < 3; i++) {
+      const url = dlUrls[i];
+      if (!url) {
+        sendLog(`[Client] Step ${i + 1}/7: Skipping (No download URL specified for Certificate ${i + 1})`);
+        certContents.push(null);
+        continue;
+      }
+
+      sendLog(`[Client] Step ${i + 1}/7: Downloading Certificate ${i + 1} from: ${url}`);
+      try {
+        const response = await axios.get(url, { timeout: 15000 });
+        if (response.status === 200) {
+          const data = typeof response.data === 'object' ? JSON.stringify(response.data, null, 2) : response.data;
+          certContents.push(data);
+          sendLog(`✓ Certificate ${i + 1} downloaded successfully! Size: ${data.length} characters.`);
+        } else {
+          throw new Error(`HTTP Status ${response.status}`);
+        }
+      } catch (e) {
+        sendLog(`✗ Failed to download Certificate ${i + 1}: ${e.message}`);
+        return { success: false, error: `Failed to download Certificate ${i + 1}: ${e.message}` };
+      }
+    }
+
+    // Step 4-6: Upload certificates to device
+    for (let i = 0; i < 3; i++) {
+      const cert = certContents[i];
+      const url = upUrls[i];
+      if (!cert) {
+        sendLog(`[Client] Step ${i + 4}/7: Skipping upload (No downloaded content for Certificate ${i + 1})`);
+        continue;
+      }
+      if (!url) {
+        sendLog(`[Client] Step ${i + 4}/7: Skipping upload (No POST URL specified for Certificate ${i + 1})`);
+        continue;
+      }
+
+      sendLog(`[Client] Step ${i + 4}/7: Uploading Certificate ${i + 1} to: ${url}`);
+      
+      let headers = {};
+      if (bearerToken) {
+        headers['Authorization'] = `Bearer ${bearerToken}`;
+      }
+
+      let dataToSend = cert;
+      if (payloadType === 'json') {
+        headers['Content-Type'] = 'application/json';
+        dataToSend = JSON.stringify({ certificate: cert, imei });
+      } else if (payloadType === 'form-data') {
+        const FormData = require('form-data');
+        const form = new FormData();
+        form.append('certificate', cert);
+        form.append('imei', imei);
+        headers = { ...headers, ...form.getHeaders() };
+        dataToSend = form;
+      } else {
+        headers['Content-Type'] = 'text/plain';
+      }
+
+      try {
+        const response = await axios.post(url, dataToSend, { headers, timeout: 15000 });
+        if (response.status >= 200 && response.status < 300) {
+          sendLog(`✓ Certificate ${i + 1} uploaded successfully! Response status: ${response.status}`);
+        } else {
+          throw new Error(`HTTP Status ${response.status}`);
+        }
+      } catch (e) {
+        sendLog(`✗ Failed to upload Certificate ${i + 1}: ${e.message}`);
+        return { success: false, error: `Failed to upload Certificate ${i + 1}: ${e.message}` };
+      }
+    }
+
+    // Step 7/7: Acknowledgement
+    if (aUrl) {
+      sendLog(`[Client] Step 7/7: Sending acknowledgement to: ${aUrl}`);
+      try {
+        let headers = {};
+        if (bearerToken) {
+          headers['Authorization'] = `Bearer ${bearerToken}`;
+        }
+        const response = await axios.post(aUrl, { imei, status: 'success' }, { headers, timeout: 15000 });
+        if (response.status >= 200 && response.status < 300) {
+          sendLog(`✓ Acknowledgement sent successfully! Response status: ${response.status}`);
+        } else {
+          throw new Error(`HTTP Status ${response.status}`);
+        }
+      } catch (e) {
+        sendLog(`[Client] POST acknowledgement failed: ${e.message}. Trying GET fallback...`);
+        try {
+          let headers = {};
+          if (bearerToken) {
+            headers['Authorization'] = `Bearer ${bearerToken}`;
+          }
+          const response = await axios.get(aUrl, { headers, timeout: 10000 });
+          sendLog(`✓ Acknowledgement GET fallback successful! Response status: ${response.status}`);
+        } catch (getErr) {
+          sendLog(`✗ Acknowledgement failed: ${getErr.message}`);
+          return { success: false, error: `Acknowledgement failed: ${getErr.message}` };
+        }
+      }
+    } else {
+      sendLog(`[Client] Step 7/7: Skipping acknowledgement (No URL specified)`);
+    }
+
+    sendLog(`[Client] Certificate provisioning flow completed successfully!`);
+    return { success: true };
+  } catch (error) {
+    sendLog(`[Client] CRITICAL ERROR: ${error.message}`);
+    return { success: false, error: error.message };
+  }
 });
 
 // Erase flash using esptool

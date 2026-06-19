@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import useStore from '../store';
-import { FiGithub, FiLogOut, FiRefreshCw } from 'react-icons/fi';
+import { FiGithub, FiLogOut, FiRefreshCw, FiCopy, FiCheck, FiAlertTriangle, FiX } from 'react-icons/fi';
 import '../styles/GitHubAuth.css';
 import { Token } from 'monaco-editor';
 
@@ -242,6 +242,14 @@ function GitHubAuth() {
   const [error, setError] = useState('');
   const [detail, setDetail] = useState('');
   const [githubResponse, setGitHubResponse] = useState(null);
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyUri = () => {
+    navigator.clipboard.writeText(buildRedirectURL());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   // ── 1. Handle inbound redirect (code + state in URL) ──────────────────────────
   useEffect(() => {
@@ -324,14 +332,16 @@ function GitHubAuth() {
 
   // ── 2. Initiate OAuth flow ───────────────────────────────────────────────────
   const handleGitHubLogin = useCallback(async () => {
+    if (!GITHUB_CLIENT_ID) {
+      setShowConfigModal(true);
+      return;
+    }
+
     setIsLoading(true);
     setError('');
     setDetail('');
 
     try {
-      if (!GITHUB_CLIENT_ID) {
-        throw new Error('GitHub OAuth client ID is not configured. Please set REACT_APP_GITHUB_CLIENT_ID in .env.');
-      }
 
       const state = Math.random().toString(36).slice(2, 17);
       localStorage.setItem('github_oauth_state', state);
@@ -432,33 +442,82 @@ function GitHubAuth() {
 
   // ── Not logged-in state ──────────────────────────────────────────────────────
   if (!user || user.provider !== 'github') {
-    const isConfigured = !!GITHUB_CLIENT_ID && GITHUB_CLIENT_ID.trim().length > 0;
-    
     return (
       <div className="github-auth-container">
-        {!isConfigured && (
-          <div className="auth-error" style={{ 
-            marginBottom: '0.75rem',
-            backgroundColor: 'rgba(248, 113, 113, 0.2)',
-            borderColor: 'rgba(248, 113, 113, 0.4)',
-            zIndex: 1001,
-            position: 'relative'
-          }}>
-            <strong>⚠️ GitHub OAuth Not Configured</strong>
-            <div style={{ fontSize: '0.7rem', marginTop: '0.3rem' }}>
-              Set REACT_APP_GITHUB_CLIENT_ID in .env file to enable GitHub sign-in
-            </div>
-          </div>
-        )}
         <button
           className="github-login-btn"
           onClick={handleGitHubLogin}
-          disabled={isLoading || !isConfigured}
-          title={isConfigured ? 'Sign in with GitHub' : 'GitHub OAuth not configured (REACT_APP_GITHUB_CLIENT_ID missing)'}
+          disabled={isLoading}
+          title="Sign in with GitHub"
         >
           <FiGithub size={16} />
           {isLoading ? 'Signing in...' : 'Sign in with GitHub'}
         </button>
+
+        {showConfigModal && (
+          <div className="github-config-modal-overlay" onClick={() => setShowConfigModal(false)}>
+            <div className="github-config-popup" onClick={(e) => e.stopPropagation()}>
+              <button 
+                className="github-config-close-btn-top" 
+                onClick={() => setShowConfigModal(false)}
+                title="Dismiss"
+              >
+                <FiX size={16} />
+              </button>
+              <div className="github-config-popup-header">
+                <FiAlertTriangle className="warning-icon" size={20} />
+                <h4>GitHub OAuth Required</h4>
+              </div>
+              <p className="github-config-popup-desc">
+                Your application needs a GitHub OAuth Client ID to authenticate. Follow these simple steps to configure it:
+              </p>
+              
+              <div className="github-config-steps-container">
+                <div className="github-config-step">
+                  <span className="step-number">1</span>
+                  <span className="step-text">
+                    Go to <strong>GitHub Developer Settings</strong> and create a new <strong>OAuth Application</strong>.
+                  </span>
+                </div>
+                <div className="github-config-step">
+                  <span className="step-number">2</span>
+                  <span className="step-text">
+                    Set the <strong>Homepage URL</strong> to your dev server and the <strong>Authorization callback URL</strong> to:
+                    <div className="redirect-uri-container">
+                      <code>{buildRedirectURL()}</code>
+                      <button className="copy-uri-btn" onClick={handleCopyUri}>
+                        {copied ? <FiCheck size={14} /> : <FiCopy size={14} />}
+                        <span>{copied ? 'Copied!' : 'Copy'}</span>
+                      </button>
+                    </div>
+                  </span>
+                </div>
+                <div className="github-config-step">
+                  <span className="step-number">3</span>
+                  <span className="step-text">
+                    Generate a client secret and add them to your <code>.env</code> file in the project root:
+                    <pre className="env-code-block">
+                      {`REACT_APP_GITHUB_CLIENT_ID=your_client_id_here\nREACT_APP_GITHUB_CLIENT_SECRET=your_client_secret_here`}
+                    </pre>
+                  </span>
+                </div>
+                <div className="github-config-step">
+                  <span className="step-number">4</span>
+                  <span className="step-text">
+                    Restart your development server to apply the changes.
+                  </span>
+                </div>
+              </div>
+
+              <div className="github-config-popup-actions">
+                <button className="github-config-close-btn" onClick={() => setShowConfigModal(false)}>
+                  Got it, thanks!
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {githubResponse && (
           <div className="github-response">
             <strong>GitHub auth response:</strong>

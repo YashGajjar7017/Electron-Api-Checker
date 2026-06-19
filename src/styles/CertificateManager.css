@@ -1,0 +1,259 @@
+/* Certificate Provisioning Page Styles */
+
+.certificate-manager-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 24px;
+  overflow-y: auto;
+  gap: 20px;
+  color: var(--text);
+  background-color: var(--background);
+}
+
+.certificate-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cert-grid {
+  display: grid;
+  grid-template-columns: 480px 1fr;
+  gap: 24px;
+  flex: 1;
+  min-height: 600px;
+}
+
+.cert-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  transition: transform var(--transition-normal), border-color var(--transition-normal);
+}
+
+.cert-card:hover {
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.cert-card h3 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-light);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+
+.cert-card h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-light);
+}
+
+.section-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: var(--accent);
+}
+
+.form-group-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.flex-grow {
+  flex: 1;
+}
+
+.input-with-icon {
+  position: relative;
+  width: 100%;
+}
+
+.input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  pointer-events: none;
+}
+
+.start-provision-btn {
+  width: 100%;
+  padding: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 8px;
+}
+
+/* Steps Pipeline Styling */
+.progress-card {
+  padding-bottom: 16px;
+}
+
+.steps-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.step-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.25);
+  border: 1px solid var(--border);
+  transition: all var(--transition-fast);
+}
+
+.step-icon-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  margin-right: 12px;
+}
+
+.step-bullet {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #475569;
+}
+
+.step-text-col {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.step-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-light);
+}
+
+.step-desc {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.step-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+/* Step Status Styles */
+.step-idle {
+  opacity: 0.65;
+}
+
+.step-idle .step-badge {
+  background: rgba(71, 85, 105, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(71, 85, 105, 0.3);
+}
+
+.step-running {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.15);
+}
+
+.step-running .step-icon-col {
+  color: #60a5fa;
+}
+
+.step-running .step-badge {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.step-success {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.step-success .step-icon-col {
+  color: #34d399;
+}
+
+.step-success .step-badge {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.step-failed {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.step-failed .step-icon-col {
+  color: #f87171;
+}
+
+.step-failed .step-badge {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.step-skipped {
+  background: rgba(100, 116, 139, 0.06);
+  border-color: rgba(100, 116, 139, 0.25);
+  opacity: 0.75;
+}
+
+.step-skipped .step-icon-col {
+  color: #94a3b8;
+}
+
+.step-skipped .step-badge {
+  background: rgba(100, 116, 139, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.25);
+}
+
+.cert-panel-right {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (max-width: 1024px) {
+  .cert-grid {
+    grid-template-columns: 1fr;
+  }
+}

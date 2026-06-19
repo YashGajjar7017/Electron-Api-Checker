@@ -69,6 +69,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('flash-log', (_, data) => callback(data));
     return () => ipcRenderer.removeAllListeners('flash-log');
   },
+  compileSketch: (options)      => ipcRenderer.invoke('compile-sketch', options),
+  selectDirectory: ()           => ipcRenderer.invoke('select-directory'),
+  selectSketchFile: ()          => ipcRenderer.invoke('select-sketch-file'),
+
+  // ── Certificate Provisioning ─────────────────────────────────────────────
+  provisionCertificates: (options) => ipcRenderer.invoke('provision-certificates', options),
+  onProvisionLog: (callback) => {
+    ipcRenderer.on('provision-log', (_, data) => callback(data));
+    return () => ipcRenderer.removeAllListeners('provision-log');
+  },
 
   // ── Event listeners ────────────────────────────────────────────────────────
   onWindowResized: (callback) => {

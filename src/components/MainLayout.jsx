@@ -9,6 +9,7 @@ import ArduinoCliConfig from './ArduinoCliConfig';
 import SettingsPanel from './SettingsPanel';
 import SystemMonitor from './SystemMonitor';
 import FirmwareUpdate from './FirmwareUpdate';
+import CertificateManager from './CertificateManager';
 import useStore from '../store';
 import { 
   FiFolder, 
@@ -23,7 +24,8 @@ import {
   FiPower, 
   FiDatabase,
   FiCode,
-  FiInfo
+  FiInfo,
+  FiShield
 } from 'react-icons/fi';
 import '../styles/MainLayout.css';
 
@@ -232,7 +234,7 @@ function MainLayout({ onThemeChange, currentTheme }) {
                   <button
                     className="env-delete-btn"
                     onClick={() => {
-                      if (confirm(`Are you sure you want to delete environment "${env.name}"?`)) {
+                      if (window.confirm(`Are you sure you want to delete environment "${env.name}"?`)) {
                         deleteEnvironment(env.id);
                       }
                     }}
@@ -468,6 +470,14 @@ function MainLayout({ onThemeChange, currentTheme }) {
               <FiCpu size={20} />
               <span className="switcher-text">Firmware</span>
             </button>
+            <button 
+              className={`switcher-btn ${selectedSidebar === 'certificate' ? 'active' : ''}`} 
+              onClick={() => setSelectedSidebar('certificate')}
+              title="Certificate Provisioning"
+            >
+              <FiShield size={20} />
+              <span className="switcher-text">Certificate</span>
+            </button>
             <div className="switcher-spacer"></div>
             <button 
               className={`switcher-btn ${selectedSidebar === 'settings' ? 'active' : ''}`} 
@@ -480,7 +490,7 @@ function MainLayout({ onThemeChange, currentTheme }) {
           </div>
 
           {/* Column 2: Sidebar Details Panel */}
-          {selectedSidebar && selectedSidebar !== 'firmware' && (
+          {selectedSidebar && selectedSidebar !== 'firmware' && selectedSidebar !== 'certificate' && (
             <div className="sidebar-panel" style={{ width: `${sidebarWidth}px` }}>
               {selectedSidebar === 'collections' && <Sidebar />}
               {selectedSidebar === 'environments' && renderEnvironmentsSidebar()}
@@ -500,6 +510,10 @@ function MainLayout({ onThemeChange, currentTheme }) {
             {selectedSidebar === 'firmware' ? (
               <div className="workspace-panel full-height">
                 <FirmwareUpdate />
+              </div>
+            ) : selectedSidebar === 'certificate' ? (
+              <div className="workspace-panel full-height">
+                <CertificateManager />
               </div>
             ) : (
               <>
