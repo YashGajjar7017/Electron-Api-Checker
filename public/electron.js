@@ -1212,93 +1212,111 @@ ipcMain.handle('flash-firmware', async (event, options) => {
 
     if (tool === 'esptool') {
       const esptool = findEsptool();
-      const baud = uploadSpeed || '921600';
+      const initialBaud = uploadSpeed || '115200';
       const targetChip = chip || 'esp32';
       const appOffset = offset || '0x10000';
 
-      const args = [
-        '--chip', targetChip,
-        '--port', port,
-        '--baud', baud,
-        'write_flash'
-      ];
+      const runEsptool = (baudRate) => {
+        return new Promise((resolveRun) => {
+          const args = [
+            '--chip', targetChip,
+            '--port', port,
+            '--baud', baudRate,
+            'write_flash'
+          ];
 
-      if (flashMode === 'multiple') {
-        const tempDir = path.dirname(binaryPath);
-        const bootloaderPath = path.join(tempDir, 'firmware.bootloader.bin');
-        const partitionsPath = path.join(tempDir, 'firmware.partitions.bin');
+          if (flashMode === 'multiple') {
+            const tempDir = path.dirname(binaryPath);
+            const bootloaderPath = path.join(tempDir, 'firmware.bootloader.bin');
+            const partitionsPath = path.join(tempDir, 'firmware.partitions.bin');
 
-        const bootloaderOffset = (targetChip === 'esp32s3' || targetChip === 'esp32c3') ? '0x0' : '0x1000';
-        const partitionsOffset = '0x8000';
+            const bootloaderOffset = (targetChip === 'esp32s3' || targetChip === 'esp32c3') ? '0x0' : '0x1000';
+            const partitionsOffset = '0x8000';
 
-        if (fs.existsSync(bootloaderPath) && fs.existsSync(partitionsPath)) {
-          args.push(
-            bootloaderOffset, bootloaderPath,
-            partitionsOffset, partitionsPath,
-            appOffset, binaryPath
-          );
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('flash-log', `[Client] Flashing multiple binaries:\r\n`);
-            mainWindow.webContents.send('flash-log', `  - Bootloader: ${path.basename(bootloaderPath)} at ${bootloaderOffset}\r\n`);
-            mainWindow.webContents.send('flash-log', `  - Partitions: ${path.basename(partitionsPath)} at ${partitionsOffset}\r\n`);
-            mainWindow.webContents.send('flash-log', `  - App: ${path.basename(binaryPath)} at ${appOffset}\r\n\r\n`);
+            if (fs.existsSync(bootloaderPath) && fs.existsSync(partitionsPath)) {
+              args.push(
+                bootloaderOffset, bootloaderPath,
+                partitionsOffset, partitionsPath,
+                appOffset, binaryPath
+              );
+              if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send('flash-log', `[Client] Flashing multiple binaries:\r\n`);
+                mainWindow.webContents.send('flash-log', `  - Bootloader: ${path.basename(bootloaderPath)} at ${bootloaderOffset}\r\n`);
+                mainWindow.webContents.send('flash-log', `  - Partitions: ${path.basename(partitionsPath)} at ${partitionsOffset}\r\n`);
+                mainWindow.webContents.send('flash-log', `  - App: ${path.basename(binaryPath)} at ${appOffset}\r\n\r\n`);
+              }
+            } else {
+              args.push(appOffset, binaryPath);
+              if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send('flash-log', `[Client] Companion files (bootloader/partitions) not found in directory. Falling back to app binary only.\r\n`);
+              }
+            }
+          } else {
+            args.push(appOffset, binaryPath);
           }
+
+          console.log(`Executing flashing via esptool: "${esptool}" ${args.join(' ')}`);
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('flash-log', `[Client] Flashing using esptool (Baud: ${baudRate}): ${esptool}\r\n`);
+            mainWindow.webContents.send('flash-log', `Command: esptool ${args.join(' ')}\r\n\r\n`);
+          }
+
+          if (activeFlashProcess) {
+            try {
+              activeFlashProcess.kill();
+            } catch (e) {
+              console.error('Failed to kill active flash process:', e);
+            }
+            activeFlashProcess = null;
+          }
+
+          const child = spawn(esptool, args, { shell: true });
+          activeFlashProcess = child;
+
+          child.stdout.on('data', (data) => {
+            const logStr = data.toString();
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('flash-log', logStr);
+            }
+          });
+
+          child.stderr.on('data', (data) => {
+            const logStr = data.toString();
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('flash-log', logStr);
+            }
+          });
+
+          child.on('error', (err) => {
+            activeFlashProcess = null;
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('flash-log', `CRITICAL ERROR: ${err.message}\r\n`);
+            }
+            resolveRun({ success: false, error: err.message });
+          });
+
+          child.on('close', (code) => {
+            activeFlashProcess = null;
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('flash-log', `\r\nFlashing process completed with exit code: ${code}\r\n`);
+            }
+            resolveRun({ success: code === 0, code });
+          });
+        });
+      };
+
+      runEsptool(initialBaud).then((result) => {
+        if (!result.success && initialBaud !== '115200') {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('flash-log', `\r\n[Client] ⚠️ Flashing failed at ${initialBaud} baud rate.\r\n`);
+            mainWindow.webContents.send('flash-log', `[Client] Automatically retrying with standard 115200 baud rate...\r\n\r\n`);
+          }
+          runEsptool('115200').then((retryResult) => {
+            resolve(retryResult);
+          });
         } else {
-          args.push(appOffset, binaryPath);
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('flash-log', `[Client] Companion files (bootloader/partitions) not found in directory. Falling back to app binary only.\r\n`);
-          }
+          resolve(result);
         }
-      } else {
-        args.push(appOffset, binaryPath);
-      }
-
-      console.log(`Executing flashing via esptool: "${esptool}" ${args.join(' ')}`);
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('flash-log', `[Client] Flashing using esptool: ${esptool}\r\n`);
-        mainWindow.webContents.send('flash-log', `Command: esptool ${args.join(' ')}\r\n\r\n`);
-      }
-
-      if (activeFlashProcess) {
-        try {
-          activeFlashProcess.kill();
-        } catch (e) {
-          console.error('Failed to kill active flash process:', e);
-        }
-        activeFlashProcess = null;
-      }
-
-      const child = spawn(esptool, args, { shell: true });
-      activeFlashProcess = child;
-
-      child.stdout.on('data', (data) => {
-        const logStr = data.toString();
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('flash-log', logStr);
-        }
-      });
-
-      child.stderr.on('data', (data) => {
-        const logStr = data.toString();
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('flash-log', logStr);
-        }
-      });
-
-      child.on('error', (err) => {
-        activeFlashProcess = null;
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('flash-log', `CRITICAL ERROR: ${err.message}\r\n`);
-        }
-        resolve({ success: false, error: err.message });
-      });
-
-      child.on('close', (code) => {
-        activeFlashProcess = null;
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('flash-log', `\r\nFlashing process completed with exit code: ${code}\r\n`);
-        }
-        resolve({ success: code === 0, code });
       });
       return;
     }
@@ -1503,6 +1521,34 @@ ipcMain.handle('select-sketch-file', async () => {
   }
 });
 
+// Select binary (.bin) file dialog
+ipcMain.handle('select-bin-file', async () => {
+  try {
+    const { dialog } = require('electron');
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile'],
+      filters: [
+        { name: 'Binary Files', extensions: ['bin'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+    if (!result.canceled && result.filePaths.length > 0) {
+      const filePath = result.filePaths[0];
+      const stats = fs.statSync(filePath);
+      return {
+        success: true,
+        path: filePath,
+        filename: path.basename(filePath),
+        size: stats.size
+      };
+    }
+    return { success: false, error: 'File selection canceled' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+
 // Certificate Provisioning flow
 ipcMain.handle('provision-certificates', async (event, options) => {
   const sendLog = (msg) => {
@@ -1512,7 +1558,7 @@ ipcMain.handle('provision-certificates', async (event, options) => {
   };
 
   try {
-    const { imei, bearerToken, downloadUrls, postUrls, ackUrl, payloadType } = options;
+    const { imei, password, bearerToken, downloadUrls, postUrls, ackUrl, payloadType } = options;
     const axios = require('axios');
 
     if (!imei) {
@@ -1521,7 +1567,11 @@ ipcMain.handle('provision-certificates', async (event, options) => {
 
     const cleanUrl = (url) => {
       if (!url) return '';
-      return url.replace(/\{IMEI\}/gi, imei);
+      // Support both {IMEI} and misspelled {IEMI} placeholders
+      let u = url.replace(/\{(IMEI|IEMI)\}/gi, imei);
+      // Support {PASSWORD} placeholder
+      u = u.replace(/\{PASSWORD\}/gi, password || '');
+      return u;
     };
 
     const dlUrls = downloadUrls.map(cleanUrl);
@@ -1529,6 +1579,20 @@ ipcMain.handle('provision-certificates', async (event, options) => {
     const aUrl = cleanUrl(ackUrl);
 
     sendLog(`[Client] Initializing certificate provisioning for IMEI: ${imei}...`);
+
+    // Helper to format/redact headers for logging
+    const formatRedactedHeaders = (headers) => {
+      const copy = { ...headers };
+      if (copy['Authorization']) {
+        const val = copy['Authorization'];
+        if (typeof val === 'string' && val.length > 15) {
+          copy['Authorization'] = `${val.substring(0, 11)}...${val.substring(val.length - 4)}`;
+        } else {
+          copy['Authorization'] = '***';
+        }
+      }
+      return JSON.stringify(copy);
+    };
 
     // Step 1-3: Download certificates
     const certContents = [];
@@ -1541,8 +1605,23 @@ ipcMain.handle('provision-certificates', async (event, options) => {
       }
 
       sendLog(`[Client] Step ${i + 1}/7: Downloading Certificate ${i + 1} from: ${url}`);
+      
+      let headers = {};
+      if (bearerToken) {
+        headers['Authorization'] = `Bearer ${bearerToken}`;
+      }
+      sendLog(`   -> GET Request Headers: ${formatRedactedHeaders(headers)}`);
+
       try {
-        const response = await axios.get(url, { timeout: 15000 });
+        const startTime = Date.now();
+        const response = await axios.get(url, { headers, timeout: 15000 });
+        const duration = Date.now() - startTime;
+
+        sendLog(`   <- GET Response received in ${duration}ms. Status: ${response.status} ${response.statusText || ''}`);
+        if (response.headers) {
+          sendLog(`   <- GET Response Headers: Content-Type: ${response.headers['content-type'] || 'unknown'}, Content-Length: ${response.headers['content-length'] || 'unknown'}`);
+        }
+
         if (response.status === 200) {
           const data = typeof response.data === 'object' ? JSON.stringify(response.data, null, 2) : response.data;
           certContents.push(data);
@@ -1551,6 +1630,13 @@ ipcMain.handle('provision-certificates', async (event, options) => {
           throw new Error(`HTTP Status ${response.status}`);
         }
       } catch (e) {
+        sendLog(`   <- GET Request failed: ${e.message}`);
+        if (e.response) {
+          sendLog(`   <- GET Response Status Code: ${e.response.status}`);
+          sendLog(`   <- GET Response Headers: ${JSON.stringify(e.response.headers || {})}`);
+          const errData = typeof e.response.data === 'object' ? JSON.stringify(e.response.data) : e.response.data;
+          sendLog(`   <- GET Response Body Preview: ${errData ? errData.toString().substring(0, 300) : '(Empty)'}`);
+        }
         sendLog(`✗ Failed to download Certificate ${i + 1}: ${e.message}`);
         return { success: false, error: `Failed to download Certificate ${i + 1}: ${e.message}` };
       }
@@ -1580,6 +1666,7 @@ ipcMain.handle('provision-certificates', async (event, options) => {
       if (payloadType === 'json') {
         headers['Content-Type'] = 'application/json';
         dataToSend = JSON.stringify({ certificate: cert, imei });
+        sendLog(`   -> POST Request Payload: JSON Object { certificate: "...", imei: "${imei}" }`);
       } else if (payloadType === 'form-data') {
         const FormData = require('form-data');
         const form = new FormData();
@@ -1587,18 +1674,37 @@ ipcMain.handle('provision-certificates', async (event, options) => {
         form.append('imei', imei);
         headers = { ...headers, ...form.getHeaders() };
         dataToSend = form;
+        sendLog(`   -> POST Request Payload: Multipart Form Data`);
       } else {
         headers['Content-Type'] = 'text/plain';
+        sendLog(`   -> POST Request Payload: Raw text (Size: ${cert.length} characters)`);
       }
 
+      sendLog(`   -> POST Request Headers: ${formatRedactedHeaders(headers)}`);
+
       try {
+        const startTime = Date.now();
         const response = await axios.post(url, dataToSend, { headers, timeout: 15000 });
+        const duration = Date.now() - startTime;
+
+        sendLog(`   <- POST Response received in ${duration}ms. Status: ${response.status} ${response.statusText || ''}`);
+        if (response.headers) {
+          sendLog(`   <- POST Response Headers: Content-Type: ${response.headers['content-type'] || 'unknown'}`);
+        }
+
         if (response.status >= 200 && response.status < 300) {
           sendLog(`✓ Certificate ${i + 1} uploaded successfully! Response status: ${response.status}`);
         } else {
           throw new Error(`HTTP Status ${response.status}`);
         }
       } catch (e) {
+        sendLog(`   <- POST Request failed: ${e.message}`);
+        if (e.response) {
+          sendLog(`   <- POST Response Status Code: ${e.response.status}`);
+          sendLog(`   <- POST Response Headers: ${JSON.stringify(e.response.headers || {})}`);
+          const errData = typeof e.response.data === 'object' ? JSON.stringify(e.response.data) : e.response.data;
+          sendLog(`   <- POST Response Body Preview: ${errData ? errData.toString().substring(0, 300) : '(Empty)'}`);
+        }
         sendLog(`✗ Failed to upload Certificate ${i + 1}: ${e.message}`);
         return { success: false, error: `Failed to upload Certificate ${i + 1}: ${e.message}` };
       }
@@ -1607,12 +1713,22 @@ ipcMain.handle('provision-certificates', async (event, options) => {
     // Step 7/7: Acknowledgement
     if (aUrl) {
       sendLog(`[Client] Step 7/7: Sending acknowledgement to: ${aUrl}`);
+      
+      let headers = {};
+      if (bearerToken) {
+        headers['Authorization'] = `Bearer ${bearerToken}`;
+      }
+
       try {
-        let headers = {};
-        if (bearerToken) {
-          headers['Authorization'] = `Bearer ${bearerToken}`;
-        }
+        sendLog(`   -> POST Request Payload: JSON Object { imei: "${imei}", status: "success" }`);
+        sendLog(`   -> POST Request Headers: ${formatRedactedHeaders(headers)}`);
+
+        const startTime = Date.now();
         const response = await axios.post(aUrl, { imei, status: 'success' }, { headers, timeout: 15000 });
+        const duration = Date.now() - startTime;
+
+        sendLog(`   <- POST Response received in ${duration}ms. Status: ${response.status} ${response.statusText || ''}`);
+
         if (response.status >= 200 && response.status < 300) {
           sendLog(`✓ Acknowledgement sent successfully! Response status: ${response.status}`);
         } else {
@@ -1620,14 +1736,34 @@ ipcMain.handle('provision-certificates', async (event, options) => {
         }
       } catch (e) {
         sendLog(`[Client] POST acknowledgement failed: ${e.message}. Trying GET fallback...`);
+        if (e.response) {
+          sendLog(`   <- POST Response Status Code: ${e.response.status}`);
+          const errData = typeof e.response.data === 'object' ? JSON.stringify(e.response.data) : e.response.data;
+          sendLog(`   <- POST Response Body Preview: ${errData ? errData.toString().substring(0, 300) : '(Empty)'}`);
+        }
+
         try {
-          let headers = {};
-          if (bearerToken) {
-            headers['Authorization'] = `Bearer ${bearerToken}`;
-          }
+          sendLog(`   -> GET Fallback Request to acknowledgement endpoint`);
+          sendLog(`   -> GET Request Headers: ${formatRedactedHeaders(headers)}`);
+
+          const startTime = Date.now();
           const response = await axios.get(aUrl, { headers, timeout: 10000 });
-          sendLog(`✓ Acknowledgement GET fallback successful! Response status: ${response.status}`);
+          const duration = Date.now() - startTime;
+
+          sendLog(`   <- GET Response received in ${duration}ms. Status: ${response.status} ${response.statusText || ''}`);
+
+          if (response.status >= 200 && response.status < 300) {
+            sendLog(`✓ Acknowledgement GET fallback successful! Response status: ${response.status}`);
+          } else {
+            throw new Error(`HTTP Status ${response.status}`);
+          }
         } catch (getErr) {
+          sendLog(`   <- GET Fallback Request failed: ${getErr.message}`);
+          if (getErr.response) {
+            sendLog(`   <- GET Response Status Code: ${getErr.response.status}`);
+            const errData = typeof getErr.response.data === 'object' ? JSON.stringify(getErr.response.data) : getErr.response.data;
+            sendLog(`   <- GET Response Body Preview: ${errData ? errData.toString().substring(0, 300) : '(Empty)'}`);
+          }
           sendLog(`✗ Acknowledgement failed: ${getErr.message}`);
           return { success: false, error: `Acknowledgement failed: ${getErr.message}` };
         }

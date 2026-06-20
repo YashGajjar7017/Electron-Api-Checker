@@ -481,37 +481,33 @@ function RequestBuilder() {
     } else {
       console.log('🔑 Token priority check - Manual:', !!authTokenState?.trim(), 'Session:', !!(sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry), 'API:', !!(useStore.getState().getAPIResponseToken()));
       
-      if (!requestHeaders['Authorization']) {
-        if (authType === 'bearer' && authTokenState && authTokenState.trim().length > 0 && (!manualTokenExpiry || Date.now() < manualTokenExpiry)) {
-          requestHeaders['Authorization'] = `Bearer ${authTokenState}`;
-          console.log('🔑 Using MANUAL bearer token');
-        } else if (authType === 'basic' && authTokenState && authTokenState.trim().length > 0 && (!manualTokenExpiry || Date.now() < manualTokenExpiry)) {
-          requestHeaders['Authorization'] = `Basic ${authTokenState}`;
-          console.log('🔑 Using MANUAL basic auth');
-        }
+      if (authType === 'bearer' && authTokenState && authTokenState.trim().length > 0 && (!manualTokenExpiry || Date.now() < manualTokenExpiry)) {
+        requestHeaders['Authorization'] = `Bearer ${authTokenState}`;
+        console.log('🔑 Using MANUAL bearer token (overwriting any headers)');
+      } else if (authType === 'basic' && authTokenState && authTokenState.trim().length > 0 && (!manualTokenExpiry || Date.now() < manualTokenExpiry)) {
+        requestHeaders['Authorization'] = `Basic ${authTokenState}`;
+        console.log('🔑 Using MANUAL basic auth (overwriting any headers)');
       }
 
-      const isLoginRequest = ['POST'].includes(method.toUpperCase()) && 
-        (endpoint.toLowerCase().includes('login') || endpoint.toLowerCase().includes('/api/v1/auth'));
+      const authKeywords = ['login', 'auth', 'signin', 'authenticate', 'otp'];
+      const isLoginRequest = authKeywords.some(keyword => endpoint.toLowerCase().includes(keyword));
 
-      if (!isLoginRequest) {
-        if (!requestHeaders['Authorization']) {
-          const hasValidSessionToken = sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry;
-          if (hasValidSessionToken) {
-            requestHeaders['Authorization'] = `Bearer ${sessionToken}`;
-            console.log('🔑 Using SESSION token');
-          }
-        }
-
-        if (!requestHeaders['Authorization']) {
+      if (!isLoginRequest && authType === 'none' && !requestHeaders['Authorization']) {
+        const hasValidSessionToken = sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry;
+        if (hasValidSessionToken) {
+          requestHeaders['Authorization'] = `Bearer ${sessionToken}`;
+          console.log('🔑 Using SESSION token');
+        } else {
           const apiToken = useStore.getState().getAPIResponseToken();
           if (apiToken) {
             requestHeaders['Authorization'] = `Bearer ${apiToken}`;
             console.log('🔑 Using API response token');
           }
         }
-      } else {
-        console.log('🔑 Skipping token injection for login endpoint');
+      } else if (isLoginRequest) {
+        console.log('🔑 Skipping automatic token injection for login endpoint');
+      } else if (authType !== 'none') {
+        console.log('🔑 Skipping automatic token injection since manual auth type is active:', authType);
       }
       
       if (!requestHeaders['Authorization']) {

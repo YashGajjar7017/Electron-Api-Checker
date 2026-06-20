@@ -72,6 +72,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   compileSketch: (options)      => ipcRenderer.invoke('compile-sketch', options),
   selectDirectory: ()           => ipcRenderer.invoke('select-directory'),
   selectSketchFile: ()          => ipcRenderer.invoke('select-sketch-file'),
+  selectBinFile: ()             => ipcRenderer.invoke('select-bin-file'),
 
   // ── Certificate Provisioning ─────────────────────────────────────────────
   provisionCertificates: (options) => ipcRenderer.invoke('provision-certificates', options),

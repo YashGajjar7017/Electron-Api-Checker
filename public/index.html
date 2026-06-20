@@ -9,6 +9,33 @@
       content="API Checker - Modern API Testing and Management Desktop Application"
     />
     <title>API Checker</title>
+    <script>
+      (function() {
+        var isResizeObserverError = function(msg) {
+          return msg && (
+            msg === 'ResizeObserver loop completed with undelivered notifications' ||
+            msg === 'ResizeObserver loop limit exceeded' ||
+            msg.indexOf('ResizeObserver') >= 0
+          );
+        };
+        
+        window.addEventListener('error', function(e) {
+          var msg = e.message || (e.error && e.error.message);
+          if (isResizeObserverError(msg)) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+          }
+        }, true);
+        
+        window.addEventListener('unhandledrejection', function(e) {
+          var msg = e.reason && (e.reason.message || e.reason);
+          if (typeof msg === 'string' && isResizeObserverError(msg)) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+          }
+        }, true);
+      })();
+    </script>
     <style>
       html, body, #root {
         width: 100%;

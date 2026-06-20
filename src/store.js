@@ -120,7 +120,12 @@ const useStore = create(
           a.id === id ? { ...a, ...api } : a
         );
         persistData('apis', newApis);
-        return { apis: newApis };
+        
+        const nextState = { apis: newApis };
+        if (state.currentAPI && state.currentAPI.id === id) {
+          nextState.currentAPI = { ...state.currentAPI, ...api };
+        }
+        return nextState;
       }),
     deleteAPI: (id) =>
       set((state) => {

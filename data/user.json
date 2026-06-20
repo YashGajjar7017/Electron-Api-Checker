@@ -1,8 +1,8 @@
 {
   "user": {
-    "id": "irz2nj3ee",
+    "id": "gbybkhci7",
     "email": "tihey75421@3dkai.com",
-    "createdAt": "2026-06-18T10:24:39.947Z"
+    "createdAt": "2026-06-19T07:23:41.395Z"
   },
   "apis": [
     {
@@ -43,7 +43,7 @@
       "endpoint": "/api/login",
       "headers": {},
       "params": {},
-      "body": "{ \r\n\"username\": \"RMS-92CC\", \r\n\"password\": \"Admin@123\" \r\n}",
+      "body": "{ \r\n\"username\": \"RMS-A570\", \r\n\"password\": \"Admin@123\" \r\n}",
       "auth": {
         "type": "none",
         "token": "",
@@ -77,11 +77,26 @@
       "body": "",
       "auth": {
         "type": "bearer",
-        "token": "1541"
+        "token": "1541",
+        "certFile": "",
+        "keyFile": "",
+        "caFile": ""
       },
       "serverUrl": "http://192.168.4.1",
       "fullUrl": "http://192.168.4.1/api/auth/status",
-      "collectionId": "9mfnk7qmr"
+      "collectionId": "9mfnk7qmr",
+      "bodyType": "none",
+      "bodyParams": {},
+      "skipOtp": false,
+      "automation": {
+        "enabled": false,
+        "variable": "{{id}}",
+        "start": 1,
+        "end": 10,
+        "step": 1,
+        "padding": 0,
+        "delay": 500
+      }
     },
     {
       "id": "d768gn8kt",
@@ -93,11 +108,26 @@
       "body": "",
       "auth": {
         "type": "bearer",
-        "token": "14913"
+        "token": "29919",
+        "certFile": "",
+        "keyFile": "",
+        "caFile": ""
       },
       "serverUrl": "http://192.168.4.1",
       "fullUrl": "http://192.168.4.1/api/device/broker/connect",
-      "collectionId": "9mfnk7qmr"
+      "collectionId": "9mfnk7qmr",
+      "bodyType": "none",
+      "bodyParams": {},
+      "skipOtp": false,
+      "automation": {
+        "enabled": false,
+        "variable": "{{id}}",
+        "start": 1,
+        "end": 10,
+        "step": 1,
+        "padding": 0,
+        "delay": 500
+      }
     },
     {
       "id": "xcs88orqf",
@@ -109,11 +139,26 @@
       "body": "",
       "auth": {
         "type": "bearer",
-        "token": "96219"
+        "token": "96219",
+        "certFile": "",
+        "keyFile": "",
+        "caFile": ""
       },
       "serverUrl": "http://192.168.4.1",
       "fullUrl": "http://192.168.4.1/api/device/broker/status",
-      "collectionId": "9mfnk7qmr"
+      "collectionId": "9mfnk7qmr",
+      "bodyType": "none",
+      "bodyParams": {},
+      "skipOtp": false,
+      "automation": {
+        "enabled": false,
+        "variable": "{{id}}",
+        "start": 1,
+        "end": 10,
+        "step": 1,
+        "padding": 0,
+        "delay": 500
+      }
     },
     {
       "id": "jmoyleqsr",
@@ -127,11 +172,26 @@
       "body": "{\r\n    \"status\": \"success\",\r\n    \"vdinterval\": 5,\r\n    \"table\": 1,\r\n    \"parameters\": [\r\n        {\r\n            \"tagName\": \"MS-10-2-3--VD\",\r\n            \"requestID\": 1,\r\n            \"dataType\": 13,\r\n            \"reg\": 461,\r\n            \"mf\": 1.00,\r\n            \"vd\": 3,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"MS-10-2-3--TIMESTAMP\",\r\n            \"requestID\": 2,\r\n            \"dataType\": 13,\r\n            \"reg\": 462,\r\n            \"mf\": 1.00,\r\n            \"vd\": 3,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"MS-10-2-3--MAXINDEX\",\r\n            \"requestID\": 3,\r\n            \"dataType\": 13,\r\n            \"reg\": 463,\r\n            \"mf\": 1.00,\r\n            \"vd\": 3,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        },\r\n        {\r\n            \"tagName\": \"MS-10-2-3--INDEX\",\r\n            \"requestID\": 4,\r\n            \"dataType\": 13,\r\n            \"reg\": 464,\r\n            \"mf\": 1.00,\r\n            \"vd\": 3,\r\n            \"Alarm\": \"false\",\r\n            \"High\": 0,\r\n            \"Low\": 0\r\n        }\r\n    ]\r\n}",
       "auth": {
         "type": "bearer",
-        "token": "67950"
+        "token": "67950",
+        "certFile": "",
+        "keyFile": "",
+        "caFile": ""
       },
       "serverUrl": "http://192.168.4.1",
       "fullUrl": "http://192.168.4.1/api/config/parameters?table=1",
-      "collectionId": "9mfnk7qmr"
+      "collectionId": "9mfnk7qmr",
+      "bodyType": "none",
+      "bodyParams": {},
+      "skipOtp": false,
+      "automation": {
+        "enabled": false,
+        "variable": "{{id}}",
+        "start": 1,
+        "end": 10,
+        "step": 1,
+        "padding": 0,
+        "delay": 500
+      }
     },
     {
       "id": "r2e92y44i",
@@ -1632,16 +1692,16 @@
   "sessionToken": "",
   "sessionTokenExpiry": null,
   "otpData": {
-    "current": "366059",
-    "cached": "366059",
-    "expiry": 1781845524993,
+    "current": "27520",
+    "cached": "27520",
+    "expiry": 1781935980262,
     "attempts": 0
   },
   "environments": [
     {
       "id": "dev",
       "name": "Development",
-      "baseUrl": "http://localhost:5000",
+      "baseUrl": "http://192.168.4.1",
       "values": {}
     },
     {
@@ -1653,9 +1713,9 @@
     {
       "id": "prod",
       "name": "Production",
-      "baseUrl": "https://api.production.com",
+      "baseUrl": "https://192.168.4.1",
       "values": {}
     }
   ],
-  "activeEnvironment": "prod"
+  "activeEnvironment": "dev"
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import useStore from '../store';
-import { FiCopy, FiRefreshCcw, FiSearch, FiCheckCircle, FiAlertTriangle, FiPlayCircle, FiDownload, FiChevronDown, FiEye, FiSliders } from 'react-icons/fi';
+import { FiCopy, FiSearch, FiAlertTriangle, FiPlayCircle, FiDownload, FiEye } from 'react-icons/fi';
 import DebugPanel from './DebugPanel';
 import '../styles/ResponsePanel.css';
 
@@ -13,12 +13,21 @@ const getStatusClass = (status) => {
   return 'running';
 };
 
-const parseCookies = (headers = {}) => {
-  const raw = headers['set-cookie'] || headers['Set-Cookie'] || '';
-  if (!raw) return [];
-  return String(raw)
-    .split(/,\s*(?=[^;]+=)/)
-    .map((cookie) => cookie.trim());
+const parseCookies = (headers = []) => {
+  if (!headers || !Array.isArray(headers)) return [];
+  // Find all set-cookie entries (since there can be multiple)
+  const cookieEntries = headers.filter(([key]) => key.toLowerCase() === 'set-cookie');
+  if (cookieEntries.length === 0) return [];
+  
+  const cookies = [];
+  cookieEntries.forEach(([, value]) => {
+    if (value) {
+      String(value)
+        .split(/,\s*(?=[^;]+=)/)
+        .forEach((cookie) => cookies.push(cookie.trim()));
+    }
+  });
+  return cookies;
 };
 
 const safeString = (data) => {
@@ -32,7 +41,6 @@ function ResponsePanel() {
     serverUrl: state.serverUrl,
   }));
 
-  const [activeTab, setActiveTab] = useState('response');
   const [selectedId, setSelectedId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -111,38 +119,7 @@ function ResponsePanel() {
     }
   }, [responseText]);
 
-  const getPreviewContent = () => {
-    if (!responseText) return 'No preview available';
-    if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
-      return parsedJson;
-    }
-    return responseText;
-  };
 
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(responseText || '');
-  };
-
-  const handleExport = async () => {
-    if (!selectedResponse) return;
-    setIsExporting(true);
-    try {
-      const payload = JSON.stringify(selectedResponse, null, 2);
-      const blob = new Blob([payload], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `response-${selectedResponse.id || 'export'}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.warn('Export failed', error);
-    } finally {
-      setIsExporting(false);
-    }
-  };
 
   const handleRerun = async (response) => {
     if (!response || !response.endpoint) return;
@@ -197,7 +174,6 @@ function ResponsePanel() {
     setDebugOpen(true);
   };
 
-  const responseCountLabel = filteredResponses.length === 1 ? 'result' : 'results';
 
   return (
     <div className="response-panel-new glass-lg">
@@ -304,122 +280,98 @@ function ResponsePanel() {
             </div>
           </div>
 
-          <div className="detail-tabs">
-            {/* {['response', 'headers', 'cookies', 'errors', 'timing', 'batch', 'raw', 'preview'].map((tab) => (
-              <button
-                key={tab}
-                className={tab === activeTab ? 'active' : ''}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))} */}
-          </div>
-
           <div className="detail-viewer">
-            {activeTab === 'response' && (
-              <div className="response-panel-body">
-                <Editor
-                  height="100%"
-                  language="json"
-                  value={parsedJson}
-                  options={{ readOnly: true, minimap: { enabled: false }, wordWrap: 'on' }}
-                />
-              </div>
-            )}
+            {selectedResponse ? (
+              <div className="detail-viewer-split">
+                {/* Left pane: Response Body */}
+                <div className="detail-body-container">
+                  <div className="panel-sub-header">
+                    <h5>Response Body</h5>
+                  </div>
+                  <div className="response-panel-body">
+                    <Editor
+                      height="100%"
+                      language={selectedResponse.dataFormat || 'json'}
+                      value={parsedJson}
+                      options={{ readOnly: true, minimap: { enabled: false }, wordWrap: 'on', theme: 'vs-dark' }}
+                    />
+                  </div>
+                </div>
 
-            {activeTab === 'headers' && (
-              <div className="response-fields-grid">
-                {selectedResponse?.headers ? (
-                  Object.entries(selectedResponse.headers).map(([key, value]) => (
-                    <div key={key} className="field-row">
-                      <strong>{key}</strong>
-                      <span>{String(value)}</span>
+                {/* Right pane: Response Metadata & Headers */}
+                <div className="detail-info-container">
+                  <div className="panel-sub-header">
+                    <h5>Response Details</h5>
+                  </div>
+                  
+                  <div className="info-summary-grid">
+                    <div className={`info-summary-card status-${getStatusClass(selectedResponse.status)}`}>
+                      <span className="card-label">Status</span>
+                      <strong className="card-value">
+                        {selectedResponse.status || (selectedResponse.error ? 'Error' : '0')}
+                        {selectedResponse.statusText ? ` ${selectedResponse.statusText}` : ''}
+                      </strong>
                     </div>
-                  ))
-                ) : (
-                  <p>No headers available</p>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'cookies' && (
-              <div className="response-fields-grid">
-                {parseCookies(selectedResponse?.headers).length > 0 ? (
-                  parseCookies(selectedResponse.headers).map((cookie, index) => (
-                    <div key={index} className="field-row">
-                      <span>{cookie}</span>
+                    <div className="info-summary-card">
+                      <span className="card-label">Time</span>
+                      <strong className="card-value">
+                        {selectedResponse.responseTime ? `${selectedResponse.responseTime} ms` : '—'}
+                      </strong>
                     </div>
-                  ))
-                ) : (
-                  <p>No cookies detected</p>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'errors' && (
-              <div className="response-panel-body">
-                <pre>{selectedResponse?.error || 'No error logs for this response.'}</pre>
-              </div>
-            )}
-
-            {activeTab === 'timing' && (
-              <div className="response-fields-grid">
-                <div className="field-row">
-                  <strong>Status</strong>
-                  <span>{selectedResponse?.status || 'N/A'}</span>
-                </div>
-                <div className="field-row">
-                  <strong>Duration</strong>
-                  <span>{selectedResponse?.responseTime ? `${selectedResponse.responseTime} ms` : 'N/A'}</span>
-                </div>
-                <div className="field-row">
-                  <strong>Payload size</strong>
-                  <span>{selectedResponse?.payloadSize ? `${selectedResponse.payloadSize} bytes` : 'N/A'}</span>
-                </div>
-                <div className="field-row">
-                  <strong>Response size</strong>
-                  <span>{selectedResponse?.responseSize ? `${Math.round(selectedResponse.responseSize / 1024)} KB` : 'N/A'}</span>
-                </div>
-                <div className="field-row">
-                  <strong>Timestamp</strong>
-                  <span>{selectedResponse?.timestamp ? new Date(selectedResponse.timestamp).toLocaleString() : 'N/A'}</span>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'batch' && (
-              <div className="batch-results-grid">
-                {responses.slice(0, 10).map((item) => (
-                  <div key={item.id} className={`batch-card ${getStatusClass(item.status)}`}>
-                    <div className="batch-card-title">
-                      <span>{item.apiName || item.endpoint || item.url}</span>
-                      <span>{item.status || (item.error ? 'Error' : 'Pending')}</span>
-                    </div>
-                    <div className="batch-card-meta">
-                      <span>{item.method || 'GET'}</span>
-                      <span>{item.responseTime ? `${item.responseTime} ms` : '—'}</span>
-                      <span>{item.responseSize ? `${Math.round(item.responseSize / 1024)} KB` : '—'}</span>
+                    <div className="info-summary-card">
+                      <span className="card-label">Size</span>
+                      <strong className="card-value">
+                        {selectedResponse.responseSize ? `${(selectedResponse.responseSize / 1024).toFixed(2)} KB` : '—'}
+                      </strong>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
 
-            {activeTab === 'raw' && (
-              <div className="response-panel-body">
-                <Editor
-                  height="100%"
-                  language="text"
-                  value={responseText}
-                  options={{ readOnly: true, minimap: { enabled: false }, wordWrap: 'on' }}
-                />
-              </div>
-            )}
+                  {selectedResponse.error && (
+                    <div className="detail-error-box">
+                      <FiAlertTriangle className="error-icon" style={{ color: '#ef4444' }} />
+                      <div className="error-text">
+                        <h6>Error Message</h6>
+                        <p>{selectedResponse.error}</p>
+                      </div>
+                    </div>
+                  )}
 
-            {activeTab === 'preview' && (
-              <div className="preview-pane">
-                <pre>{getPreviewContent()}</pre>
+                  <div className="detail-headers-section">
+                    <h6>Headers</h6>
+                    <div className="headers-table-container">
+                      {selectedResponse.headers && Array.isArray(selectedResponse.headers) && selectedResponse.headers.length > 0 ? (
+                        <table className="headers-table">
+                          <tbody>
+                            {selectedResponse.headers.map(([key, value], idx) => (
+                              <tr key={idx}>
+                                <td className="header-key">{key}</td>
+                                <td className="header-value">{String(value)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <p className="no-headers-text">No headers returned</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {parseCookies(selectedResponse.headers).length > 0 && (
+                    <div className="detail-cookies-section">
+                      <h6>Cookies</h6>
+                      <div className="cookies-list">
+                        {parseCookies(selectedResponse.headers).map((cookie, idx) => (
+                          <div key={idx} className="cookie-item">{cookie}</div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="empty-state">
+                <p>No response selected</p>
+                <small>Send a request to see the response payload here.</small>
               </div>
             )}
           </div>

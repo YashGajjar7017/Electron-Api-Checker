@@ -19,25 +19,26 @@ import '../styles/CertificateManager.css';
 
 function CertificateManager() {
   const [imei, setImei] = useState('');
+  const [password, setPassword] = useState('3376b22');
   const [bearerToken, setBearerToken] = useState('');
   const [payloadType, setPayloadType] = useState('json');
 
   // Download URLs (with placeholders)
   const [downloadUrls, setDownloadUrls] = useState([
-    'https://api.example.com/certificates/ca?imei={IMEI}',
-    'https://api.example.com/certificates/client?imei={IMEI}',
-    'https://api.example.com/certificates/key?imei={IMEI}'
+    'https://api.iotscada-pmsg.com/api/SSLCert/certdownload?imei={IMEI}&user={IMEI}&pass={PASSWORD}&ctype=1&PROJCD=re',
+    'https://api.iotscada-pmsg.com/api/SSLCert/certdownload?imei={IMEI}&user={IMEI}&pass={PASSWORD}&ctype=2&PROJCD=re',
+    'https://api.iotscada-pmsg.com/api/SSLCert/certdownload?imei={IMEI}&user={IMEI}&pass={PASSWORD}&ctype=3&PROJCD=re'
   ]);
 
   // Upload POST URLs
   const [postUrls, setPostUrls] = useState([
-    'http://192.168.4.1/api/cert/ca',
-    'http://192.168.4.1/api/cert/client',
-    'http://192.168.4.1/api/cert/key'
+    'http://192.168.4.1/write.html?filename=rootCA.pem',
+    'http://192.168.4.1/write.html?filename=client.pem',
+    'http://192.168.4.1/write.html?filename=key.pem'
   ]);
 
   // Acknowledgement URL
-  const [ackUrl, setAckUrl] = useState('https://api.example.com/provision/ack?imei={IMEI}');
+  const [ackUrl, setAckUrl] = useState('http://localhost:4000/api/status');
 
   const [provisioning, setProvisioning] = useState(false);
   const [logs, setLogs] = useState([]);
@@ -134,6 +135,7 @@ function CertificateManager() {
       if (window.electronAPI?.provisionCertificates) {
         const result = await window.electronAPI.provisionCertificates({
           imei: imei.trim(),
+          password: password.trim(),
           bearerToken: bearerToken.trim(),
           downloadUrls,
           postUrls,
@@ -208,6 +210,23 @@ function CertificateManager() {
               />
             </div>
             <div className="form-group flex-1">
+              <label>Device Password / Key</label>
+              <div className="input-with-icon">
+                <FiKey className="input-icon" />
+                <input
+                  type="text"
+                  placeholder="e.g. 3376b22"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={provisioning}
+                  style={{ paddingLeft: '36px' }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="form-group-row">
+            <div className="form-group flex-1">
               <label>Payload Structure</label>
               <select
                 value={payloadType}
@@ -219,20 +238,19 @@ function CertificateManager() {
                 <option value="form-data">Multipart Form Data</option>
               </select>
             </div>
-          </div>
-
-          <div className="form-group">
-            <label>Bearer Token (Authorization Header)</label>
-            <div className="input-with-icon">
-              <FiLock className="input-icon" />
-              <input
-                type="password"
-                placeholder="Insert Bearer Provisioning Token..."
-                value={bearerToken}
-                onChange={(e) => setBearerToken(e.target.value)}
-                disabled={provisioning}
-                style={{ paddingLeft: '36px' }}
-              />
+            <div className="form-group flex-1">
+              <label>Bearer Token (Authorization Header)</label>
+              <div className="input-with-icon">
+                <FiLock className="input-icon" />
+                <input
+                  type="password"
+                  placeholder="Insert Bearer Provisioning Token..."
+                  value={bearerToken}
+                  onChange={(e) => setBearerToken(e.target.value)}
+                  disabled={provisioning}
+                  style={{ paddingLeft: '36px' }}
+                />
+              </div>
             </div>
           </div>
 
@@ -241,7 +259,7 @@ function CertificateManager() {
           {/* Download URLs Section */}
           <div className="section-title-wrapper">
             <FiDownload size={14} />
-            <h4>1. Download Certificate Sources (use `{'{IMEI}'}` variable)</h4>
+            <h4>1. Download Certificate Sources (use `{'{IMEI}'}` or `{'{password}'}` variables)</h4>
           </div>
           <div className="form-group">
             <label>RootCA Certificate Downlink</label>

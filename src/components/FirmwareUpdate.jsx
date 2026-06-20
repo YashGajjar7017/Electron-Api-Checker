@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   FiDownload, 
-  FiCpu, 
   FiRefreshCw, 
   FiZap, 
   FiTrash2, 
-  FiPlay, 
   FiAlertCircle, 
   FiCheckCircle, 
   FiFolder, 
@@ -16,7 +14,7 @@ import {
 import '../styles/FirmwareUpdate.css';
 
 function FirmwareUpdate() {
-  const [sourceMode, setSourceMode] = useState('download'); // 'download' | 'sketch'
+  const [sourceMode, setSourceMode] = useState('download'); // 'download' | 'sketch' | 'local'
   const [flashTool, setFlashTool] = useState('esptool'); // 'esptool' | 'arduino-cli'
   const [flashMode, setFlashMode] = useState('single'); // 'single' | 'multiple'
   
@@ -34,7 +32,7 @@ function FirmwareUpdate() {
   const [selectedPort, setSelectedPort] = useState('COM3');
   const [selectedChip, setSelectedChip] = useState('esp32');
   const [flashOffset, setFlashOffset] = useState('0x10000');
-  const [uploadSpeed, setUploadSpeed] = useState('921600');
+  const [uploadSpeed, setUploadSpeed] = useState('115200');
   
   const [flashing, setFlashing] = useState(false);
   const [flashLogs, setFlashLogs] = useState([]);
@@ -179,6 +177,39 @@ function FirmwareUpdate() {
     }
   };
 
+  // Switch source tab and reset ready states
+  const handleSourceModeChange = (mode) => {
+    setSourceMode(mode);
+    setDownloadedFile(null);
+    setStatus({ type: '', message: '' });
+  };
+
+  // Direct local binary selection
+  const handleSelectLocalBin = async () => {
+    try {
+      if (window.electronAPI?.selectBinFile) {
+        const result = await window.electronAPI.selectBinFile();
+        if (result?.success) {
+          setDownloadedFile({
+            success: true,
+            path: result.path,
+            filename: result.filename,
+            size: result.size
+          });
+          setStatus({
+            type: 'success',
+            message: `✓ Selected local binary successfully! Size: ${Math.round(result.size / 1024)} KB`,
+          });
+        }
+      } else {
+        setStatus({ type: 'error', message: 'Binary file picker is not available' });
+      }
+    } catch (e) {
+      console.error('Failed to select local binary:', e);
+      setStatus({ type: 'error', message: `✗ Selection error: ${e.message}` });
+    }
+  };
+
   // Flash firmware to device
   const handleFlash = async () => {
     if (!downloadedFile) {
@@ -320,15 +351,23 @@ function FirmwareUpdate() {
           <div className="source-tabs">
             <button
               className={`source-tab-btn ${sourceMode === 'download' ? 'active' : ''}`}
-              onClick={() => setSourceMode('download')}
+              onClick={() => handleSourceModeChange('download')}
               disabled={flashing || compiling || flashTool === 'arduino-cli'}
               title={flashTool === 'arduino-cli' ? 'Must use Sketch mode with Arduino CLI' : ''}
             >
               <FiDownload size={14} /> Download URL
             </button>
             <button
+              className={`source-tab-btn ${sourceMode === 'local' ? 'active' : ''}`}
+              onClick={() => handleSourceModeChange('local')}
+              disabled={flashing || compiling || flashTool === 'arduino-cli'}
+              title={flashTool === 'arduino-cli' ? 'Must use Sketch mode with Arduino CLI' : ''}
+            >
+              <FiFile size={14} /> Local Binary (.bin)
+            </button>
+            <button
               className={`source-tab-btn ${sourceMode === 'sketch' ? 'active' : ''}`}
-              onClick={() => setSourceMode('sketch')}
+              onClick={() => handleSourceModeChange('sketch')}
               disabled={flashing || compiling}
             >
               <FiCode size={14} /> Local Sketch (.ino)
@@ -354,6 +393,29 @@ function FirmwareUpdate() {
                 >
                   {downloading ? <FiRefreshCw className="spinning" /> : <FiDownload />}
                   {downloading ? 'Downloading...' : 'Download'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Local Binary Picker Section */}
+          {sourceMode === 'local' && (
+            <div className="form-group animate-fadeIn">
+              <label>Local Firmware Binary (.bin)</label>
+              <div className="input-with-button">
+                <input
+                  type="text"
+                  placeholder="Select local firmware.bin file..."
+                  value={downloadedFile && sourceMode === 'local' ? downloadedFile.path : ''}
+                  readOnly
+                  disabled={flashing}
+                />
+                <button
+                  className="btn btn-secondary gradient-hover"
+                  onClick={handleSelectLocalBin}
+                  disabled={flashing}
+                >
+                  <FiFolder /> Browse
                 </button>
               </div>
             </div>
