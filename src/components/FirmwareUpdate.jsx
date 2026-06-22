@@ -13,10 +13,94 @@ import {
 } from 'react-icons/fi';
 import '../styles/FirmwareUpdate.css';
 
-function FirmwareUpdate() {
+function FirmwareUpdate({ defaultFlashMode }) {
   const [sourceMode, setSourceMode] = useState('download'); // 'download' | 'sketch' | 'local'
   const [flashTool, setFlashTool] = useState('esptool'); // 'esptool' | 'arduino-cli'
-  const [flashMode, setFlashMode] = useState('single'); // 'single' | 'multiple'
+  const [flashMode, setFlashMode] = useState(defaultFlashMode || 'single'); // 'single' | 'multiple'
+
+  // Sync flashMode with defaultFlashMode prop when it changes
+  useEffect(() => {
+    if (defaultFlashMode) {
+      setFlashMode(defaultFlashMode);
+    }
+  }, [defaultFlashMode]);
+
+  // Multiple files selector states
+  const [bootloaderFile, setBootloaderFile] = useState(null);
+  const [partitionsFile, setPartitionsFile] = useState(null);
+  const [appFile, setAppFile] = useState(null);
+
+  const [bootloaderOffset, setBootloaderOffset] = useState('0x1000');
+  const [partitionsOffset, setPartitionsOffset] = useState('0x8000');
+  const [appOffset, setAppOffset] = useState('0x10000');
+
+  // File pickers for multiple flashing layout
+  const handleSelectBootloader = async () => {
+    try {
+      if (window.electronAPI?.selectBinFile) {
+        const result = await window.electronAPI.selectBinFile();
+        if (result?.success) {
+          setBootloaderFile({
+            path: result.path,
+            filename: result.filename,
+            size: result.size
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Failed to select bootloader binary:', e);
+    }
+  };
+
+  const handleSelectPartitions = async () => {
+    try {
+      if (window.electronAPI?.selectBinFile) {
+        const result = await window.electronAPI.selectBinFile();
+        if (result?.success) {
+          setPartitionsFile({
+            path: result.path,
+            filename: result.filename,
+            size: result.size
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Failed to select partitions binary:', e);
+    }
+  };
+
+  const handleSelectApp = async () => {
+    try {
+      if (window.electronAPI?.selectBinFile) {
+        const result = await window.electronAPI.selectBinFile();
+        if (result?.success) {
+          setAppFile({
+            path: result.path,
+            filename: result.filename,
+            size: result.size
+          });
+          // Also set standard downloadedFile so the flash check succeeds
+          setDownloadedFile({
+            success: true,
+            path: result.path,
+            filename: result.filename,
+            size: result.size
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Failed to select app binary:', e);
+    }
+  };
+
+  // Automatically update bootloader offset based on the selected chip
+  useEffect(() => {
+    if (selectedChip === 'esp32s3' || selectedChip === 'esp32c3') {
+      setBootloaderOffset('0x0');
+    } else {
+      setBootloaderOffset('0x1000');
+    }
+  }, [selectedChip]);
   
   const [firmwareUrl, setFirmwareUrl] = useState('http://localhost:3000/firmware.bin');
   const [downloading, setDownloading] = useState(false);
@@ -240,7 +324,12 @@ function FirmwareUpdate() {
           uploadSpeed,
           chip: selectedChip,
           offset: flashOffset,
-          flashMode
+          flashMode,
+          files: flashMode === 'multiple' && sourceMode === 'local' ? [
+            { path: bootloaderFile?.path, offset: bootloaderOffset },
+            { path: partitionsFile?.path, offset: partitionsOffset },
+            { path: appFile?.path, offset: appOffset }
+          ].filter(f => f.path) : undefined
         });
 
         if (result.success) {
@@ -399,7 +488,7 @@ function FirmwareUpdate() {
           )}
 
           {/* Local Binary Picker Section */}
-          {sourceMode === 'local' && (
+          {sourceMode === 'local' && flashMode === 'single' && (
             <div className="form-group animate-fadeIn">
               <label>Local Firmware Binary (.bin)</label>
               <div className="input-with-button">
@@ -417,6 +506,95 @@ function FirmwareUpdate() {
                 >
                   <FiFolder /> Browse
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Multiple Local Binaries Picker Section */}
+          {sourceMode === 'local' && flashMode === 'multiple' && (
+            <div className="multiple-bin-selectors animate-fadeIn">
+              <div className="bin-selector-row">
+                <div className="form-group flex-3" style={{ marginBottom: 0 }}>
+                  <label>Bootloader Binary (.bin)</label>
+                  <div className="input-with-button">
+                    <input
+                      type="text"
+                      placeholder="Select bootloader.bin..."
+                      value={bootloaderFile ? bootloaderFile.path : ''}
+                      readOnly
+                      disabled={flashing}
+                    />
+                    <button className="btn btn-secondary btn-sm" onClick={handleSelectBootloader} disabled={flashing}>
+                      <FiFolder /> Browse
+                    </button>
+                  </div>
+                </div>
+                <div className="form-group flex-1" style={{ marginBottom: 0 }}>
+                  <label>Address Offset</label>
+                  <input
+                    type="text"
+                    placeholder="0x1000"
+                    value={bootloaderOffset}
+                    onChange={(e) => setBootloaderOffset(e.target.value)}
+                    disabled={flashing}
+                  />
+                </div>
+              </div>
+
+              <div className="bin-selector-row">
+                <div className="form-group flex-3" style={{ marginBottom: 0 }}>
+                  <label>Partitions Binary (.bin)</label>
+                  <div className="input-with-button">
+                    <input
+                      type="text"
+                      placeholder="Select partitions.bin..."
+                      value={partitionsFile ? partitionsFile.path : ''}
+                      readOnly
+                      disabled={flashing}
+                    />
+                    <button className="btn btn-secondary btn-sm" onClick={handleSelectPartitions} disabled={flashing}>
+                      <FiFolder /> Browse
+                    </button>
+                  </div>
+                </div>
+                <div className="form-group flex-1" style={{ marginBottom: 0 }}>
+                  <label>Address Offset</label>
+                  <input
+                    type="text"
+                    placeholder="0x8000"
+                    value={partitionsOffset}
+                    onChange={(e) => setPartitionsOffset(e.target.value)}
+                    disabled={flashing}
+                  />
+                </div>
+              </div>
+
+              <div className="bin-selector-row">
+                <div className="form-group flex-3" style={{ marginBottom: 0 }}>
+                  <label>App/Firmware Binary (.bin) *</label>
+                  <div className="input-with-button">
+                    <input
+                      type="text"
+                      placeholder="Select firmware.bin..."
+                      value={appFile ? appFile.path : ''}
+                      readOnly
+                      disabled={flashing}
+                    />
+                    <button className="btn btn-secondary btn-sm" onClick={handleSelectApp} disabled={flashing}>
+                      <FiFolder /> Browse
+                    </button>
+                  </div>
+                </div>
+                <div className="form-group flex-1" style={{ marginBottom: 0 }}>
+                  <label>Address Offset</label>
+                  <input
+                    type="text"
+                    placeholder="0x10000"
+                    value={appOffset}
+                    onChange={(e) => setAppOffset(e.target.value)}
+                    disabled={flashing}
+                  />
+                </div>
               </div>
             </div>
           )}

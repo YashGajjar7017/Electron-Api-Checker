@@ -342,3 +342,21 @@
     grid-template-columns: 1fr;
   }
 }
+
+.multiple-bin-selectors {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.bin-selector-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.flex-3 {
+  flex: 3;
+}
+

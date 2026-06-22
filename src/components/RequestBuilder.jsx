@@ -23,6 +23,7 @@ function RequestBuilder() {
     setCurrentAPI,
     serverUrl,
     addResponse,
+    updateResponse,
     apis,
     sessionToken,
     sessionTokenExpiry,
@@ -770,7 +771,6 @@ function RequestBuilder() {
     } catch (e) {
       console.warn('Failed to cache OTP', e);
     }
-
     setShowOtpModal(false);
     showActionMessage('OTP accepted. Retrying pending request...');
     if (pendingSendRef.current) {
@@ -782,6 +782,26 @@ function RequestBuilder() {
   const executeRequest = async (overrideAuthToken) => {
     setIsSending(true);
     handleUpdateAPI();
+
+    const responseId = Math.random().toString(36).substr(2, 9);
+    
+    // Add a temporary fetching response to history so the response panel can display "Fetching..." instantly
+    addResponse({
+      id: responseId,
+      apiName,
+      method,
+      endpoint,
+      requestUrl: buildURL(),
+      status: 'PENDING',
+      statusText: 'FETCHING',
+      responseTime: null,
+      responseSize: null,
+      headers: [],
+      body: 'Fetching response from server...',
+      rawBody: 'Fetching response from server...',
+      dataFormat: 'text',
+      isPending: true
+    });
 
     try {
       const url = buildURL();
@@ -812,7 +832,7 @@ function RequestBuilder() {
         throw new Error(result.error || 'Request failed');
       }
 
-let responseData;
+      let responseData;
       try {
         responseData = JSON.parse(result.body);
       } catch {
@@ -839,7 +859,7 @@ let responseData;
       }
 
       // Detect response format from content-type header
-      const contentType = result.headers['content-type'] || result.headers['Content-Type'] || '';
+      const contentType = (result.headers && (result.headers['content-type'] || result.headers['Content-Type'])) || '';
       let dataFormat = 'text';
       if (contentType.includes('application/json')) {
         dataFormat = 'json';
@@ -849,12 +869,8 @@ let responseData;
         dataFormat = 'xml';
       }
 
-      addResponse({
-        id: Math.random().toString(36).substr(2, 9),
-        apiName,
-        method,
-        endpoint,
-        requestUrl: url, // Include full built URL for reference
+      // Update the temporary fetching response with the actual response details
+      updateResponse(responseId, {
         status: result.status,
         statusText: result.statusText,
         responseTime: Math.round(responseTime),
@@ -863,15 +879,16 @@ let responseData;
         body: typeof responseData === 'string' ? responseData : JSON.stringify(responseData, null, 2),
         rawBody: result.body,
         dataFormat,
+        isPending: false
       });
     } catch (error) {
-      addResponse({
-        id: Math.random().toString(36).substr(2, 9),
-        apiName,
-        method,
-        endpoint,
+      // Update the temporary fetching response with error details
+      updateResponse(responseId, {
         error: error.message,
         status: 0,
+        body: `Error: ${error.message}`,
+        rawBody: `Error: ${error.message}`,
+        isPending: false
       });
     }
 

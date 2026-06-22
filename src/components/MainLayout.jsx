@@ -471,6 +471,14 @@ function MainLayout({ onThemeChange, currentTheme }) {
               <span className="switcher-text">Firmware</span>
             </button>
             <button 
+              className={`switcher-btn ${selectedSidebar === 'boot' ? 'active' : ''}`} 
+              onClick={() => setSelectedSidebar('boot')}
+              title="Boot / Flash Manager"
+            >
+              <FiLayers size={20} />
+              <span className="switcher-text">Boot</span>
+            </button>
+            <button 
               className={`switcher-btn ${selectedSidebar === 'certificate' ? 'active' : ''}`} 
               onClick={() => setSelectedSidebar('certificate')}
               title="Certificate Provisioning"
@@ -490,7 +498,7 @@ function MainLayout({ onThemeChange, currentTheme }) {
           </div>
 
           {/* Column 2: Sidebar Details Panel */}
-          {selectedSidebar && selectedSidebar !== 'firmware' && selectedSidebar !== 'certificate' && (
+          {selectedSidebar && selectedSidebar !== 'firmware' && selectedSidebar !== 'boot' && selectedSidebar !== 'certificate' && (
             <div className="sidebar-panel" style={{ width: `${sidebarWidth}px` }}>
               {selectedSidebar === 'collections' && <Sidebar />}
               {selectedSidebar === 'environments' && renderEnvironmentsSidebar()}
@@ -507,9 +515,9 @@ function MainLayout({ onThemeChange, currentTheme }) {
 
           {/* Column 3: Workspace / Content split */}
           <div className="main-content-split">
-            {selectedSidebar === 'firmware' ? (
+            {selectedSidebar === 'firmware' || selectedSidebar === 'boot' ? (
               <div className="workspace-panel full-height">
-                <FirmwareUpdate />
+                <FirmwareUpdate defaultFlashMode={selectedSidebar === 'boot' ? 'multiple' : 'single'} />
               </div>
             ) : selectedSidebar === 'certificate' ? (
               <div className="workspace-panel full-height">

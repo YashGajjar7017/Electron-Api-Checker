@@ -1226,29 +1226,44 @@ ipcMain.handle('flash-firmware', async (event, options) => {
           ];
 
           if (flashMode === 'multiple') {
-            const tempDir = path.dirname(binaryPath);
-            const bootloaderPath = path.join(tempDir, 'firmware.bootloader.bin');
-            const partitionsPath = path.join(tempDir, 'firmware.partitions.bin');
-
-            const bootloaderOffset = (targetChip === 'esp32s3' || targetChip === 'esp32c3') ? '0x0' : '0x1000';
-            const partitionsOffset = '0x8000';
-
-            if (fs.existsSync(bootloaderPath) && fs.existsSync(partitionsPath)) {
-              args.push(
-                bootloaderOffset, bootloaderPath,
-                partitionsOffset, partitionsPath,
-                appOffset, binaryPath
-              );
+            if (options.files && options.files.length > 0) {
+              options.files.forEach(f => {
+                if (f.path && fs.existsSync(f.path)) {
+                  args.push(f.offset || '0x0', f.path);
+                }
+              });
               if (mainWindow && !mainWindow.isDestroyed()) {
-                mainWindow.webContents.send('flash-log', `[Client] Flashing multiple binaries:\r\n`);
-                mainWindow.webContents.send('flash-log', `  - Bootloader: ${path.basename(bootloaderPath)} at ${bootloaderOffset}\r\n`);
-                mainWindow.webContents.send('flash-log', `  - Partitions: ${path.basename(partitionsPath)} at ${partitionsOffset}\r\n`);
-                mainWindow.webContents.send('flash-log', `  - App: ${path.basename(binaryPath)} at ${appOffset}\r\n\r\n`);
+                mainWindow.webContents.send('flash-log', `[Client] Flashing custom multiple binaries:\r\n`);
+                options.files.forEach(f => {
+                  mainWindow.webContents.send('flash-log', `  - File: ${path.basename(f.path)} at ${f.offset}\r\n`);
+                });
+                mainWindow.webContents.send('flash-log', `\r\n`);
               }
             } else {
-              args.push(appOffset, binaryPath);
-              if (mainWindow && !mainWindow.isDestroyed()) {
-                mainWindow.webContents.send('flash-log', `[Client] Companion files (bootloader/partitions) not found in directory. Falling back to app binary only.\r\n`);
+              const tempDir = path.dirname(binaryPath);
+              const bootloaderPath = path.join(tempDir, 'firmware.bootloader.bin');
+              const partitionsPath = path.join(tempDir, 'firmware.partitions.bin');
+
+              const bootloaderOffset = (targetChip === 'esp32s3' || targetChip === 'esp32c3') ? '0x0' : '0x1000';
+              const partitionsOffset = '0x8000';
+
+              if (fs.existsSync(bootloaderPath) && fs.existsSync(partitionsPath)) {
+                args.push(
+                  bootloaderOffset, bootloaderPath,
+                  partitionsOffset, partitionsPath,
+                  appOffset, binaryPath
+                );
+                if (mainWindow && !mainWindow.isDestroyed()) {
+                  mainWindow.webContents.send('flash-log', `[Client] Flashing multiple binaries:\r\n`);
+                  mainWindow.webContents.send('flash-log', `  - Bootloader: ${path.basename(bootloaderPath)} at ${bootloaderOffset}\r\n`);
+                  mainWindow.webContents.send('flash-log', `  - Partitions: ${path.basename(partitionsPath)} at ${partitionsOffset}\r\n`);
+                  mainWindow.webContents.send('flash-log', `  - App: ${path.basename(binaryPath)} at ${appOffset}\r\n\r\n`);
+                }
+              } else {
+                args.push(appOffset, binaryPath);
+                if (mainWindow && !mainWindow.isDestroyed()) {
+                  mainWindow.webContents.send('flash-log', `[Client] Companion files (bootloader/partitions) not found in directory. Falling back to app binary only.\r\n`);
+                }
               }
             }
           } else {
@@ -1614,7 +1629,8 @@ ipcMain.handle('provision-certificates', async (event, options) => {
 
       try {
         const startTime = Date.now();
-        const response = await axios.get(url, { headers, timeout: 15000 });
+        // Force responseType: 'text' to ensure axios returns the exact raw string body of the certificate
+        const response = await axios.get(url, { headers, timeout: 15000, responseType: 'text' });
         const duration = Date.now() - startTime;
 
         sendLog(`   <- GET Response received in ${duration}ms. Status: ${response.status} ${response.statusText || ''}`);
@@ -1623,9 +1639,40 @@ ipcMain.handle('provision-certificates', async (event, options) => {
         }
 
         if (response.status === 200) {
-          const data = typeof response.data === 'object' ? JSON.stringify(response.data, null, 2) : response.data;
-          certContents.push(data);
-          sendLog(`✓ Certificate ${i + 1} downloaded successfully! Size: ${data.length} characters.`);
+          const data = response.data;
+          
+          // Parse the filename from the corresponding target POST URL if possible
+          let filename = `cert_${i + 1}.pem`;
+          const uploadUrl = upUrls[i];
+          if (uploadUrl) {
+            try {
+              const parsedUpUrl = new URL(uploadUrl);
+              const fnParam = parsedUpUrl.searchParams.get('filename');
+              if (fnParam) {
+                filename = fnParam;
+              }
+            } catch (e) {
+              const match = uploadUrl.match(/[?&]filename=([^&]+)/);
+              if (match) {
+                filename = match[1];
+              }
+            }
+          }
+
+          // Ensure dataPath exists
+          if (!fs.existsSync(dataPath)) {
+            fs.mkdirSync(dataPath, { recursive: true });
+          }
+
+          // Save duplicate file of the certificate to local disk as-is, without adding anything to it
+          const filePath = path.join(dataPath, filename);
+          fs.writeFileSync(filePath, data, 'utf8');
+          sendLog(`✓ Saved duplicate certificate file locally to: ${filePath}`);
+
+          // Read the certificate file back and push to contents
+          const fileContent = fs.readFileSync(filePath, 'utf8');
+          certContents.push(fileContent);
+          sendLog(`✓ Certificate ${i + 1} loaded from local file. Size: ${fileContent.length} characters.`);
         } else {
           throw new Error(`HTTP Status ${response.status}`);
         }

@@ -172,6 +172,12 @@ const useStore = create(
         return { responseHistory: newHistory };
       }),
     clearResponseHistory: () => set({ responseHistory: [] }),
+    updateResponse: (id, updatedFields) =>
+      set((state) => ({
+        responseHistory: state.responseHistory.map((r) =>
+          r.id === id ? { ...r, ...updatedFields } : r
+        ),
+      })),
 
     // Comparison mode
     comparisonMode: false,

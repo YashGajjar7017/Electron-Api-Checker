@@ -58,10 +58,10 @@ function ResponsePanel() {
   );
 
   useEffect(() => {
-    if (!selectedId && responses.length) {
+    if (responses.length) {
       setSelectedId(responses[0].id);
     }
-  }, [responses, selectedId]);
+  }, [responses.length]);
 
   const selectedResponse = responses.find((item) => item.id === selectedId) || responses[0] || null;
 
