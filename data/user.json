@@ -43,7 +43,7 @@
       "endpoint": "/api/login",
       "headers": {},
       "params": {},
-      "body": "{ \r\n\"username\": \"RMS-A570\", \r\n\"password\": \"Admin@123\" \r\n}",
+      "body": "{ \r\n\"username\": \"SENST-D86C\", \r\n\"password\": \"Admin@123\" \r\n}",
       "auth": {
         "type": "none",
         "token": "",
@@ -54,7 +54,7 @@
       "serverUrl": "http://192.168.4.1",
       "fullUrl": "http://192.168.4.1/api/login",
       "collectionId": "9mfnk7qmr",
-      "bodyType": "none",
+      "bodyType": "json",
       "bodyParams": {},
       "skipOtp": false,
       "automation": {
@@ -1692,9 +1692,9 @@
   "sessionToken": "",
   "sessionTokenExpiry": null,
   "otpData": {
-    "current": "27520",
-    "cached": "27520",
-    "expiry": 1781935980262,
+    "current": "41433",
+    "cached": "41433",
+    "expiry": 1781961778319,
     "attempts": 0
   },
   "environments": [

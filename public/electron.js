@@ -1605,7 +1605,7 @@ ipcMain.handle('provision-certificates', async (event, options) => {
       }
 
       sendLog(`[Client] Step ${i + 1}/7: Downloading Certificate ${i + 1} from: ${url}`);
-      
+
       let headers = {};
       if (bearerToken) {
         headers['Authorization'] = `Bearer ${bearerToken}`;
@@ -1656,7 +1656,7 @@ ipcMain.handle('provision-certificates', async (event, options) => {
       }
 
       sendLog(`[Client] Step ${i + 4}/7: Uploading Certificate ${i + 1} to: ${url}`);
-      
+
       let headers = {};
       if (bearerToken) {
         headers['Authorization'] = `Bearer ${bearerToken}`;
@@ -1713,7 +1713,7 @@ ipcMain.handle('provision-certificates', async (event, options) => {
     // Step 7/7: Acknowledgement
     if (aUrl) {
       sendLog(`[Client] Step 7/7: Sending acknowledgement to: ${aUrl}`);
-      
+
       let headers = {};
       if (bearerToken) {
         headers['Authorization'] = `Bearer ${bearerToken}`;

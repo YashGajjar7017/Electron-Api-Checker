@@ -239,7 +239,7 @@ function CertificateManager() {
               </select>
             </div>
             <div className="form-group flex-1">
-              <label>Bearer Token (Authorization Header)</label>
+              <label>Bearer Token</label>
               <div className="input-with-icon">
                 <FiLock className="input-icon" />
                 <input

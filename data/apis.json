@@ -37,7 +37,7 @@
     "endpoint": "/api/login",
     "headers": {},
     "params": {},
-    "body": "{ \r\n\"username\": \"RMS-A570\", \r\n\"password\": \"Admin@123\" \r\n}",
+    "body": "{ \r\n\"username\": \"SENST-D86C\", \r\n\"password\": \"Admin@123\" \r\n}",
     "auth": {
       "type": "none",
       "token": "",
@@ -48,7 +48,7 @@
     "serverUrl": "http://192.168.4.1",
     "fullUrl": "http://192.168.4.1/api/login",
     "collectionId": "9mfnk7qmr",
-    "bodyType": "none",
+    "bodyType": "json",
     "bodyParams": {},
     "skipOtp": false,
     "automation": {
