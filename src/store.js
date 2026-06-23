@@ -539,7 +539,9 @@ const useStore = create(
       set((state) => {
         const updated = { ...state.settings, ...newSettings };
         if (window.electronAPI?.saveSettings) {
-          window.electronAPI.saveSettings(updated);
+          window.electronAPI.saveSettings(updated).catch(err => {
+            console.error('Failed to save settings to Electron:', err);
+          });
         }
         applyGlobalSettings(updated);
         return { settings: updated };
@@ -606,5 +608,16 @@ const useStore = create(
       set({ systemMetrics: { ...get().systemMetrics, ...metrics } }),
   }))
 );
+
+// Apply initial settings once store module is loaded
+setTimeout(() => {
+  try {
+    if (typeof window !== 'undefined') {
+      applyGlobalSettings(useStore.getState().settings);
+    }
+  } catch (e) {
+    console.error('Failed to apply initial settings:', e);
+  }
+}, 0);
 
 export default useStore;

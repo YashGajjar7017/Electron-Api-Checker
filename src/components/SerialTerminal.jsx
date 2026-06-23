@@ -61,7 +61,9 @@ function SerialTerminal() {
       if (unsubscribeOutput) unsubscribeOutput();
       if (unsubscribeClosed) unsubscribeClosed();
       if (window.electronAPI?.stopSerialMonitor) {
-        window.electronAPI.stopSerialMonitor();
+        window.electronAPI.stopSerialMonitor().catch((err) => {
+          console.warn('Failed to stop serial monitor on unmount:', err);
+        });
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

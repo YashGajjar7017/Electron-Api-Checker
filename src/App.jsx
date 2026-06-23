@@ -9,14 +9,16 @@ import { loadUserWithFallback, saveSessionState, restoreSessionState } from './u
 
 
 function App() {
-  const { isAuthenticated, loginUser } = useStore(
+  const { isAuthenticated, loginUser, settings, updateSettings } = useStore(
     (state) => ({
       isAuthenticated: state.isAuthenticated,
       loginUser: state.loginUser,
+      settings: state.settings,
+      updateSettings: state.updateSettings,
     })
   );
   const [initialized, setInitialized] = useState(false);
-  const [theme, setTheme] = useState('dark');
+  const theme = settings?.theme || 'dark';
 
   useEffect(() => {
     // Bridge electron native to in-app toast manager if available
@@ -186,18 +188,9 @@ function App() {
     loadPersistedData();
   }, [loginUser]);
 
-  useEffect(() => {
-    // Apply theme to document immediately
-    const root = document.documentElement;
-    root.classList.add('dark-theme'); // Default to dark theme
-    if (theme === 'dark') {
-      root.classList.add('dark-theme');
-      root.classList.remove('light-theme');
-    } else {
-      root.classList.add('light-theme');
-      root.classList.remove('dark-theme');
-    }
-  }, [theme]);
+  const handleThemeChange = (newTheme) => {
+    updateSettings({ theme: newTheme });
+  };
 
   if (!initialized) {
     return (
@@ -215,9 +208,9 @@ function App() {
     <div className={`app ${theme}-theme`}>
       <ToastManager />
       {isAuthenticated ? (
-        <MainLayout onThemeChange={setTheme} currentTheme={theme} />
+        <MainLayout onThemeChange={handleThemeChange} currentTheme={theme} />
       ) : (
-        <AuthScreen onThemeChange={setTheme} currentTheme={theme} />
+        <AuthScreen onThemeChange={handleThemeChange} currentTheme={theme} />
       )}
     </div>
   );

@@ -435,8 +435,8 @@ function RequestBuilder() {
     }
 
     // Handle params as URL query parameters
+    const queryParams = new URLSearchParams();
     if (params && Object.keys(params).length > 0) {
-      const queryParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
         if (value !== '' && value !== null && value !== undefined) {
           queryParams.append(
@@ -451,11 +451,27 @@ function RequestBuilder() {
           );
         }
       });
-      const queryString = queryParams.toString();
-      if (queryString) {
-        const hasExistingParams = url.includes('?');
-        url += (hasExistingParams ? '&' : '?') + queryString;
+    }
+
+    // Auto-inject token into query parameters if active and not already present
+    const authKeywords = ['login', 'auth', 'signin', 'authenticate', 'otp'];
+    const isLoginRequest = authKeywords.some(keyword => endpoint.toLowerCase().includes(keyword));
+    if (!isLoginRequest) {
+      const activeToken = authTokenState?.trim() || (sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry ? sessionToken : null) || useStore.getState().getAPIResponseToken();
+      if (activeToken) {
+        const hasTokenInParams = queryParams.has('token') || queryParams.has(encodeURIComponent('token'));
+        const hasTokenInEndpoint = /[?&]token=/i.test(resolvedEndpoint);
+        if (!hasTokenInParams && !hasTokenInEndpoint) {
+          queryParams.append('token', activeToken);
+          console.log('🔑 Auto-appended token to query parameters:', activeToken);
+        }
       }
+    }
+
+    const queryString = queryParams.toString();
+    if (queryString) {
+      const hasExistingParams = url.includes('?');
+      url += (hasExistingParams ? '&' : '?') + queryString;
     }
 
     console.log('📍 Built URL:', url);
