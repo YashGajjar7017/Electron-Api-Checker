@@ -32,9 +32,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveAPIs: (apis)     => ipcRenderer.invoke('save-apis', apis),
   loadAPIs: ()         => ipcRenderer.invoke('load-apis'),
 
-  // ── Store settings (future-proof) ─────────────────────────────────────────
-  saveSettings: (_settings) => Promise.resolve({ success: true }),
-  loadSettings: ()           => Promise.resolve(null),
+  // ── Store settings ─────────────────────────────────────────────────────────
+  saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
+  loadSettings: ()         => ipcRenderer.invoke('load-settings'),
 
   // ── Network requests ───────────────────────────────────────────────────────
   sendRequest:     (requestOptions) => ipcRenderer.invoke('send-request', requestOptions),
@@ -79,6 +79,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onProvisionLog: (callback) => {
     ipcRenderer.on('provision-log', (_, data) => callback(data));
     return () => ipcRenderer.removeAllListeners('provision-log');
+  },
+
+  // ── Serial Monitor ──────────────────────────────────────────────────────────
+  startSerialMonitor: (options) => ipcRenderer.invoke('start-serial-monitor', options),
+  stopSerialMonitor: () => ipcRenderer.invoke('stop-serial-monitor'),
+  sendSerialData: (data) => ipcRenderer.invoke('send-serial-data', data),
+  onSerialOutput: (callback) => {
+    ipcRenderer.on('serial-output', (_, data) => callback(data));
+    return () => ipcRenderer.removeAllListeners('serial-output');
+  },
+  onSerialClosed: (callback) => {
+    ipcRenderer.on('serial-closed', (_, code) => callback(code));
+    return () => ipcRenderer.removeAllListeners('serial-closed');
   },
 
   // ── Event listeners ────────────────────────────────────────────────────────

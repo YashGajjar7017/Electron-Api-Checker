@@ -18,9 +18,9 @@ import {
 import '../styles/CertificateManager.css';
 
 function CertificateManager() {
-  const [imei, setImei] = useState('');
+  const [imei, setImei] = useState('866738083623502');
   const [password, setPassword] = useState('3376b22');
-  const [bearerToken, setBearerToken] = useState('');
+  const [bearerToken, setBearerToken] = useState('02453');
   const [payloadType, setPayloadType] = useState('json');
 
   // Download URLs (with placeholders)
@@ -41,6 +41,10 @@ function CertificateManager() {
   const [ackUrl, setAckUrl] = useState('http://localhost:4000/api/status');
 
   const [provisioning, setProvisioning] = useState(false);
+  const [certSources, setCertSources] = useState(['url', 'url', 'url']); // 'url' | 'paste' for each cert
+  const [caCert, setCaCert] = useState('');
+  const [clientCert, setClientCert] = useState('');
+  const [privateKey, setPrivateKey] = useState('');
   const [logs, setLogs] = useState([]);
   const [status, setStatus] = useState({ type: '', message: '' });
 
@@ -66,6 +70,7 @@ function CertificateManager() {
 
         const logText = data.toString();
 
+        /*
         // Match step 1 (Download CA)
         if (logText.includes('Downloading Certificate 1')) updateStep(0, 'running');
         else if (logText.includes('Certificate 1 downloaded successfully')) updateStep(0, 'success');
@@ -107,6 +112,84 @@ function CertificateManager() {
         else if (logText.includes('Acknowledgement sent successfully') || logText.includes('Acknowledgement GET fallback successful')) updateStep(6, 'success');
         else if (logText.includes('Acknowledgement failed')) updateStep(6, 'failed');
         else if (logText.includes('Skipping acknowledgement')) updateStep(6, 'skipped');
+        */
+
+        // Match step 1 (Download CA)
+        if (logText.includes('Downloading Certificate 1') || logText.includes('Loading directly pasted Certificate 1')) {
+          updateStep(0, 'running');
+        } else if (logText.includes('Certificate 1 downloaded successfully') || logText.includes('Certificate 1 loaded from local file')) {
+          updateStep(0, 'success');
+        } else if (logText.includes('Failed to download Certificate 1') || logText.includes('Failed to load pasted Certificate 1')) {
+          updateStep(0, 'failed');
+        } else if (logText.includes('Skipping (No download URL specified for Certificate 1)')) {
+          updateStep(0, 'skipped');
+        }
+
+        // Match step 2 (Download Client Cert)
+        if (logText.includes('Downloading Certificate 2') || logText.includes('Loading directly pasted Certificate 2')) {
+          updateStep(1, 'running');
+        } else if (logText.includes('Certificate 2 downloaded successfully') || logText.includes('Certificate 2 loaded from local file')) {
+          updateStep(1, 'success');
+        } else if (logText.includes('Failed to download Certificate 2') || logText.includes('Failed to load pasted Certificate 2')) {
+          updateStep(1, 'failed');
+        } else if (logText.includes('Skipping (No download URL specified for Certificate 2)')) {
+          updateStep(1, 'skipped');
+        }
+
+        // Match step 3 (Download Key)
+        if (logText.includes('Downloading Certificate 3') || logText.includes('Loading directly pasted Certificate 3')) {
+          updateStep(2, 'running');
+        } else if (logText.includes('Certificate 3 downloaded successfully') || logText.includes('Certificate 3 loaded from local file')) {
+          updateStep(2, 'success');
+        } else if (logText.includes('Failed to download Certificate 3') || logText.includes('Failed to load pasted Certificate 3')) {
+          updateStep(2, 'failed');
+        } else if (logText.includes('Skipping (No download URL specified for Certificate 3)')) {
+          updateStep(2, 'skipped');
+        }
+
+        // Match step 4 (Upload CA)
+        if (logText.includes('Uploading Certificate 1')) {
+          updateStep(3, 'running');
+        } else if (logText.includes('Certificate 1 uploaded successfully')) {
+          updateStep(3, 'success');
+        } else if (logText.includes('Failed to upload Certificate 1')) {
+          updateStep(3, 'failed');
+        } else if (logText.includes('Skipping upload (No downloaded content for Certificate 1)') || logText.includes('Skipping upload (No POST URL specified for Certificate 1)')) {
+          updateStep(3, 'skipped');
+        }
+
+        // Match step 5 (Upload Client Cert)
+        if (logText.includes('Uploading Certificate 2')) {
+          updateStep(4, 'running');
+        } else if (logText.includes('Certificate 2 uploaded successfully')) {
+          updateStep(4, 'success');
+        } else if (logText.includes('Failed to upload Certificate 2')) {
+          updateStep(4, 'failed');
+        } else if (logText.includes('Skipping upload (No downloaded content for Certificate 2)') || logText.includes('Skipping upload (No POST URL specified for Certificate 2)')) {
+          updateStep(4, 'skipped');
+        }
+
+        // Match step 6 (Upload Key)
+        if (logText.includes('Uploading Certificate 3')) {
+          updateStep(5, 'running');
+        } else if (logText.includes('Certificate 3 uploaded successfully')) {
+          updateStep(5, 'success');
+        } else if (logText.includes('Failed to upload Certificate 3')) {
+          updateStep(5, 'failed');
+        } else if (logText.includes('Skipping upload (No downloaded content for Certificate 3)') || logText.includes('Skipping upload (No POST URL specified for Certificate 3)')) {
+          updateStep(5, 'skipped');
+        }
+
+        // Match step 7 (Acknowledgement)
+        if (logText.includes('Sending acknowledgement')) {
+          updateStep(6, 'running');
+        } else if (logText.includes('Acknowledgement sent successfully') || logText.includes('Acknowledgement GET fallback successful')) {
+          updateStep(6, 'success');
+        } else if (logText.includes('Acknowledgement failed')) {
+          updateStep(6, 'failed');
+        } else if (logText.includes('Skipping acknowledgement')) {
+          updateStep(6, 'skipped');
+        }
       });
     }
     return () => {
@@ -140,11 +223,14 @@ function CertificateManager() {
           downloadUrls,
           postUrls,
           ackUrl: ackUrl.trim(),
-          payloadType
+          payloadType,
+          certSources,
+          pastedCerts: [caCert, clientCert, privateKey]
         });
 
         if (result.success) {
           setStatus({ type: 'success', message: '✓ All certificates provisioned and device acknowledged!' });
+          setStepStatuses((prev) => prev.map(s => s === 'running' || s === 'idle' || s === 'skipped' ? 'success' : s));
         } else {
           setStatus({ type: 'error', message: `✗ Provisioning failed: ${result.error}` });
         }
@@ -156,6 +242,14 @@ function CertificateManager() {
     } finally {
       setProvisioning(false);
     }
+  };
+
+  const updateCertSource = (index, val) => {
+    setCertSources((prev) => {
+      const next = [...prev];
+      next[index] = val;
+      return next;
+    });
   };
 
   const updateDownloadUrl = (index, val) => {
@@ -259,34 +353,118 @@ function CertificateManager() {
           {/* Download URLs Section */}
           <div className="section-title-wrapper">
             <FiDownload size={14} />
-            <h4>1. Download Certificate Sources (use `{'{IMEI}'}` or `{'{password}'}` variables)</h4>
+            <h4>1. Certificate Source Configuration (use `{'{IMEI}'}` or `{'{password}'}` for URL variables)</h4>
           </div>
           <div className="form-group">
-            <label>RootCA Certificate Downlink</label>
-            <input
-              type="text"
-              value={downloadUrls[0]}
-              onChange={(e) => updateDownloadUrl(0, e.target.value)}
-              disabled={provisioning}
-            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label style={{ marginBottom: 0 }}>RootCA Certificate</label>
+              <div className="source-toggle">
+                <button
+                  type="button"
+                  className={`btn-toggle ${certSources[0] === 'url' ? 'active' : ''}`}
+                  onClick={() => updateCertSource(0, 'url')}
+                  disabled={provisioning}
+                >URL</button>
+                <button
+                  type="button"
+                  className={`btn-toggle ${certSources[0] === 'paste' ? 'active' : ''}`}
+                  onClick={() => updateCertSource(0, 'paste')}
+                  disabled={provisioning}
+                >Paste</button>
+              </div>
+            </div>
+            {certSources[0] === 'url' ? (
+              <input
+                type="text"
+                placeholder="RootCA Certificate Downlink URL..."
+                value={downloadUrls[0]}
+                onChange={(e) => updateDownloadUrl(0, e.target.value)}
+                disabled={provisioning}
+              />
+            ) : (
+              <textarea
+                placeholder="Paste RootCA Certificate content here..."
+                value={caCert}
+                onChange={(e) => setCaCert(e.target.value)}
+                disabled={provisioning}
+                rows={4}
+                className="cert-textarea"
+              />
+            )}
           </div>
           <div className="form-group">
-            <label>Client Certificate Downlink</label>
-            <input
-              type="text"
-              value={downloadUrls[1]}
-              onChange={(e) => updateDownloadUrl(1, e.target.value)}
-              disabled={provisioning}
-            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label style={{ marginBottom: 0 }}>Client Certificate</label>
+              <div className="source-toggle">
+                <button
+                  type="button"
+                  className={`btn-toggle ${certSources[1] === 'url' ? 'active' : ''}`}
+                  onClick={() => updateCertSource(1, 'url')}
+                  disabled={provisioning}
+                >URL</button>
+                <button
+                  type="button"
+                  className={`btn-toggle ${certSources[1] === 'paste' ? 'active' : ''}`}
+                  onClick={() => updateCertSource(1, 'paste')}
+                  disabled={provisioning}
+                >Paste</button>
+              </div>
+            </div>
+            {certSources[1] === 'url' ? (
+              <input
+                type="text"
+                placeholder="Client Certificate Downlink URL..."
+                value={downloadUrls[1]}
+                onChange={(e) => updateDownloadUrl(1, e.target.value)}
+                disabled={provisioning}
+              />
+            ) : (
+              <textarea
+                placeholder="Paste Client Certificate content here..."
+                value={clientCert}
+                onChange={(e) => setClientCert(e.target.value)}
+                disabled={provisioning}
+                rows={4}
+                className="cert-textarea"
+              />
+            )}
           </div>
           <div className="form-group">
-            <label>Private Key Downlink</label>
-            <input
-              type="text"
-              value={downloadUrls[2]}
-              onChange={(e) => updateDownloadUrl(2, e.target.value)}
-              disabled={provisioning}
-            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label style={{ marginBottom: 0 }}>Private Key</label>
+              <div className="source-toggle">
+                <button
+                  type="button"
+                  className={`btn-toggle ${certSources[2] === 'url' ? 'active' : ''}`}
+                  onClick={() => updateCertSource(2, 'url')}
+                  disabled={provisioning}
+                >URL</button>
+                <button
+                  type="button"
+                  className={`btn-toggle ${certSources[2] === 'paste' ? 'active' : ''}`}
+                  onClick={() => updateCertSource(2, 'paste')}
+                  disabled={provisioning}
+                >Paste</button>
+              </div>
+            </div>
+            {certSources[2] === 'url' ? (
+              <input
+                type="text"
+                placeholder="Private Key Downlink URL..."
+                value={downloadUrls[2]}
+                onChange={(e) => updateDownloadUrl(2, e.target.value)}
+                disabled={provisioning}
+              />
+            ) : (
+              <textarea
+                placeholder="Paste Private Key content here..."
+                value={privateKey}
+                onChange={(e) => setPrivateKey(e.target.value)}
+                disabled={provisioning}
+                rows={4}
+                className="cert-textarea"
+              />
+            )}
           </div>
 
           <hr className="divider" />

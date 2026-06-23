@@ -10,18 +10,19 @@ import SettingsPanel from './SettingsPanel';
 import SystemMonitor from './SystemMonitor';
 import FirmwareUpdate from './FirmwareUpdate';
 import CertificateManager from './CertificateManager';
+import SerialTerminal from './SerialTerminal';
 import useStore from '../store';
-import { 
-  FiFolder, 
-  FiGlobe, 
-  FiCpu, 
-  FiSettings, 
-  FiTerminal, 
-  FiRefreshCcw, 
-  FiTrash2, 
-  FiShuffle, 
-  FiLayers, 
-  FiPower, 
+import {
+  FiFolder,
+  FiGlobe,
+  FiCpu,
+  FiSettings,
+  FiTerminal,
+  FiRefreshCcw,
+  FiTrash2,
+  FiShuffle,
+  FiLayers,
+  FiPower,
   FiDatabase,
   FiCode,
   FiInfo,
@@ -388,17 +389,17 @@ function MainLayout({ onThemeChange, currentTheme }) {
         <div className="sidebar-detail-header" style={{ marginBottom: '16px' }}>
           <h3 style={{ margin: 0 }}>Automation</h3>
         </div>
-        
+
         <div className="automation-actions animate-fadeIn" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <button 
-            className="btn btn-secondary gradient-hover" 
+          <button
+            className="btn btn-secondary gradient-hover"
             onClick={handleRunPythonScript}
             disabled={isRunningScript}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', width: '100%' }}
           >
             <FiTerminal /> {isRunningScript ? 'Running...' : 'Run Script.py'}
           </button>
-          
+
           <div className="automation-workflows-section">
             <h4 style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '15px 0 8px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Automation Workflows
@@ -418,77 +419,77 @@ function MainLayout({ onThemeChange, currentTheme }) {
   return (
     <div className="main-layout">
       {/* Top Header */}
-      <Header 
-        onThemeChange={onThemeChange} 
-        currentTheme={currentTheme} 
-        onOpenSettings={() => setShowSettings(true)} 
-        onOpenSystemMonitor={() => setShowSystemMonitor(true)} 
+      <Header
+        onThemeChange={onThemeChange}
+        currentTheme={currentTheme}
+        onOpenSettings={() => setShowSettings(true)}
+        onOpenSystemMonitor={() => setShowSystemMonitor(true)}
       />
 
       <div className="layout-body-wrapper">
         <div className="layout-container" ref={containerRef}>
-          
+
           {/* Column 1: Leftmost Vertical Switcher Bar */}
           <div className="vertical-switcher">
-            <button 
-              className={`switcher-btn ${selectedSidebar === 'collections' ? 'active' : ''}`} 
+            <button
+              className={`switcher-btn ${selectedSidebar === 'collections' ? 'active' : ''}`}
               onClick={() => setSelectedSidebar('collections')}
               title="Collections"
             >
               <FiFolder size={20} />
               <span className="switcher-text">Collections</span>
             </button>
-            <button 
-              className={`switcher-btn ${selectedSidebar === 'environments' ? 'active' : ''}`} 
+            <button
+              className={`switcher-btn ${selectedSidebar === 'environments' ? 'active' : ''}`}
               onClick={() => setSelectedSidebar('environments')}
               title="Environments"
             >
               <FiGlobe size={20} />
               <span className="switcher-text">Environments</span>
             </button>
-            <button 
-              className={`switcher-btn ${selectedSidebar === 'history' ? 'active' : ''}`} 
+            <button
+              className={`switcher-btn ${selectedSidebar === 'history' ? 'active' : ''}`}
               onClick={() => setSelectedSidebar('history')}
               title="History"
             >
               <FiRefreshCcw size={20} />
               <span className="switcher-text">History</span>
             </button>
-            <button 
-              className={`switcher-btn ${selectedSidebar === 'automation' ? 'active' : ''}`} 
+            <button
+              className={`switcher-btn ${selectedSidebar === 'automation' ? 'active' : ''}`}
               onClick={() => setSelectedSidebar('automation')}
               title="Automation"
             >
               <FiTerminal size={20} />
               <span className="switcher-text">Automation</span>
             </button>
-            <button 
-              className={`switcher-btn ${selectedSidebar === 'firmware' ? 'active' : ''}`} 
+            <button
+              className={`switcher-btn ${selectedSidebar === 'firmware' ? 'active' : ''}`}
               onClick={() => setSelectedSidebar('firmware')}
               title="Firmware Update"
             >
               <FiCpu size={20} />
               <span className="switcher-text">Firmware</span>
             </button>
-            <button 
-              className={`switcher-btn ${selectedSidebar === 'boot' ? 'active' : ''}`} 
-              onClick={() => setSelectedSidebar('boot')}
-              title="Boot / Flash Manager"
-            >
-              <FiLayers size={20} />
-              <span className="switcher-text">Boot</span>
-            </button>
-            <button 
-              className={`switcher-btn ${selectedSidebar === 'certificate' ? 'active' : ''}`} 
+            <button
+              className={`switcher-btn ${selectedSidebar === 'certificate' ? 'active' : ''}`}
               onClick={() => setSelectedSidebar('certificate')}
               title="Certificate Provisioning"
             >
               <FiShield size={20} />
               <span className="switcher-text">Certificate</span>
             </button>
+            <button
+              className={`switcher-btn ${selectedSidebar === 'terminal' ? 'active' : ''}`}
+              onClick={() => setSelectedSidebar('terminal')}
+              title="Terminal"
+            >
+              <FiTerminal size={20} />
+              <span className="switcher-text">Terminal</span>
+            </button>
             <div className="switcher-spacer"></div>
-            <button 
-              className={`switcher-btn ${selectedSidebar === 'settings' ? 'active' : ''}`} 
+            <button
+              className={`switcher-btn ${selectedSidebar === 'settings' ? 'active' : ''}`}
               onClick={() => setSelectedSidebar('settings')}
               title="Settings"
             >
@@ -498,14 +499,14 @@ function MainLayout({ onThemeChange, currentTheme }) {
           </div>
 
           {/* Column 2: Sidebar Details Panel */}
-          {selectedSidebar && selectedSidebar !== 'firmware' && selectedSidebar !== 'boot' && selectedSidebar !== 'certificate' && (
+          {selectedSidebar && selectedSidebar !== 'firmware' && selectedSidebar !== 'boot' && selectedSidebar !== 'certificate' && selectedSidebar !== 'terminal' && (
             <div className="sidebar-panel" style={{ width: `${sidebarWidth}px` }}>
               {selectedSidebar === 'collections' && <Sidebar />}
               {selectedSidebar === 'environments' && renderEnvironmentsSidebar()}
               {selectedSidebar === 'history' && renderHistorySidebar()}
               {selectedSidebar === 'automation' && renderAutomationSidebar()}
               {selectedSidebar === 'settings' && renderSettingsSidebar()}
-              
+
               <div
                 className="resize-handle resize-handle-right"
                 onMouseDown={() => handleMouseDown('sidebar')}
@@ -522,6 +523,10 @@ function MainLayout({ onThemeChange, currentTheme }) {
             ) : selectedSidebar === 'certificate' ? (
               <div className="workspace-panel full-height">
                 <CertificateManager />
+              </div>
+            ) : selectedSidebar === 'terminal' ? (
+              <div className="workspace-panel full-height">
+                <SerialTerminal />
               </div>
             ) : (
               <>

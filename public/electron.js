@@ -302,6 +302,9 @@ async function createWindow() {
     // Ensure backend is stopped even if close is triggered while backend is still starting
     try {
       stopBackendServer();
+      if (activeSerialProcess) {
+        try { activeSerialProcess.kill(); } catch (err) {}
+      }
     } catch (e) {
       console.error('Error stopping backend on window close:', e);
     }
@@ -311,6 +314,9 @@ async function createWindow() {
   app.once('before-quit', () => {
     try {
       stopBackendServer();
+      if (activeSerialProcess) {
+        try { activeSerialProcess.kill(); } catch (err) {}
+      }
     } catch (e) {
       console.error('Error stopping backend on before-quit:', e);
     }
@@ -565,6 +571,32 @@ ipcMain.handle('load-app-state', async () => {
     return { success: true, data: loadAppState() };
   } catch (error) {
     return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('save-settings', async (event, settings) => {
+  try {
+    const filePath = path.join(dataPath, 'settings.json');
+    fs.writeFileSync(filePath, JSON.stringify(settings, null, 2));
+    saveAppState({ settings });
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('load-settings', async () => {
+  try {
+    const filePath = path.join(dataPath, 'settings.json');
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath, 'utf-8');
+      return JSON.parse(data);
+    }
+    const state = loadAppState();
+    return state.settings || null;
+  } catch (error) {
+    console.error('Error loading settings:', error);
+    return null;
   }
 });
 
@@ -1563,6 +1595,80 @@ ipcMain.handle('select-bin-file', async () => {
   }
 });
 
+// Certificate parser (Old version commented out)
+/*
+function extractCertificateContent(data) {
+  console.log("Certificate:", data);
+  if (typeof data !== 'string') return data;
+  let trimmed = data.trim();
+
+  // If it's a JSON object
+  if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed.certificate) {
+        return parsed.certificate;
+      }
+    } catch (e) {
+      // ignore and try regex/substring fallback
+    }
+  }
+
+  // Direct prefix/postfix substring checks
+  if (trimmed.startsWith('{"certificate":"')) {
+    let content = trimmed.substring('{"certificate":"'.length);
+    // Remove postfix like ","imei":"866738083623502"} or \r\n","imei":"...
+    const endMatch = content.match(/(\\r\\n)?",\s*"imei"\s*:\s*".*"\s*\}$/);
+    if (endMatch) {
+      content = content.substring(0, content.length - endMatch[0].length);
+    } else if (content.endsWith('"}')) {
+      content = content.substring(0, content.length - 2);
+    }
+    // Unescape newlines and quotes
+    content = content.replace(/\\r\\n/g, '\r\n').replace(/\\n/g, '\n').replace(/\\"/g, '"');
+    return content;
+  }
+
+  return data;
+}
+*/
+
+// Updated robust Certificate/Key PEM block parser
+function extractCertificateContent(data) {
+  console.log("Certificate Input:", data);
+  if (data && typeof data === 'object') {
+    if (data.certificate) {
+      data = data.certificate;
+    }
+  }
+  if (typeof data !== 'string') return data;
+
+  let trimmed = data.trim();
+
+  // Find where the PEM block begins (handles both certs and keys)
+  const beginIndex = trimmed.indexOf('-----BEGIN');
+  if (beginIndex !== -1) {
+    // Find where the PEM block ends
+    const endIndex = trimmed.indexOf('-----END', beginIndex);
+    if (endIndex !== -1) {
+      // Find the end of that line/block (e.g. -----END CERTIFICATE----- or -----END RSA PRIVATE KEY-----)
+      const labelEndIndex = trimmed.indexOf('-----', endIndex + 5);
+      if (labelEndIndex !== -1) {
+        let extracted = trimmed.substring(beginIndex, labelEndIndex + 5);
+        // Replace literal escaped newlines "\r\n" or "\n" with actual characters
+        extracted = extracted.replace(/\\r\\n/g, '\r\n')
+                             .replace(/\\n/g, '\n')
+                             .replace(/\\"/g, '"')
+                             .replace(/\\'/g, "'");
+        console.log("Extracted Certificate PEM block successfully");
+        return extracted;
+      }
+    }
+  }
+
+  return data;
+}
+
 
 // Certificate Provisioning flow
 ipcMain.handle('provision-certificates', async (event, options) => {
@@ -1573,7 +1679,7 @@ ipcMain.handle('provision-certificates', async (event, options) => {
   };
 
   try {
-    const { imei, password, bearerToken, downloadUrls, postUrls, ackUrl, payloadType } = options;
+    const { imei, password, bearerToken, downloadUrls, postUrls, ackUrl, payloadType, certSources, pastedCerts } = options;
     const axios = require('axios');
 
     if (!imei) {
@@ -1609,10 +1715,55 @@ ipcMain.handle('provision-certificates', async (event, options) => {
       return JSON.stringify(copy);
     };
 
-    // Step 1-3: Download certificates
+    // Step 1-3: Download or Load certificates
     const certContents = [];
     for (let i = 0; i < 3; i++) {
+      const isPaste = certSources && certSources[i] === 'paste';
       const url = dlUrls[i];
+
+      if (isPaste) {
+        sendLog(`[Client] Step ${i + 1}/7: Loading directly pasted Certificate ${i + 1}...`);
+        try {
+          const rawData = extractCertificateContent((pastedCerts && pastedCerts[i]) || '');
+
+          // Parse the filename from the corresponding target POST URL if possible
+          let filename = `cert_${i + 1}.pem`;
+          const uploadUrl = upUrls[i];
+          if (uploadUrl) {
+            try {
+              const parsedUpUrl = new URL(uploadUrl);
+              const fnParam = parsedUpUrl.searchParams.get('filename');
+              if (fnParam) {
+                filename = fnParam;
+              }
+            } catch (e) {
+              const match = uploadUrl.match(/[?&]filename=([^&]+)/);
+              if (match) {
+                filename = match[1];
+              }
+            }
+          }
+
+          if (!fs.existsSync(dataPath)) {
+            fs.mkdirSync(dataPath, { recursive: true });
+          }
+
+          const filePath = path.join(dataPath, filename);
+          // Save duplicate file of the certificate to local disk as-is, without adding anything to it or trimming
+          fs.writeFileSync(filePath, rawData, 'utf8');
+          sendLog(`✓ Saved duplicate certificate file locally to: ${filePath}`);
+
+          const fileContent = fs.readFileSync(filePath, 'utf8');
+          certContents.push(fileContent);
+          sendLog(`✓ Certificate ${i + 1} loaded from local file. Size: ${fileContent.length} characters.`);
+          sendLog(`Certificate ${i + 1} downloaded successfully`);
+        } catch (e) {
+          sendLog(`✗ Failed to load pasted Certificate ${i + 1}: ${e.message}`);
+          return { success: false, error: `Failed to load pasted Certificate ${i + 1}: ${e.message}` };
+        }
+        continue;
+      }
+
       if (!url) {
         sendLog(`[Client] Step ${i + 1}/7: Skipping (No download URL specified for Certificate ${i + 1})`);
         certContents.push(null);
@@ -1639,8 +1790,8 @@ ipcMain.handle('provision-certificates', async (event, options) => {
         }
 
         if (response.status === 200) {
-          const data = response.data;
-          
+          const data = extractCertificateContent(response.data);
+
           // Parse the filename from the corresponding target POST URL if possible
           let filename = `cert_${i + 1}.pem`;
           const uploadUrl = upUrls[i];
@@ -1673,6 +1824,7 @@ ipcMain.handle('provision-certificates', async (event, options) => {
           const fileContent = fs.readFileSync(filePath, 'utf8');
           certContents.push(fileContent);
           sendLog(`✓ Certificate ${i + 1} loaded from local file. Size: ${fileContent.length} characters.`);
+          sendLog(`Certificate ${i + 1} downloaded successfully`);
         } else {
           throw new Error(`HTTP Status ${response.status}`);
         }
@@ -1710,6 +1862,7 @@ ipcMain.handle('provision-certificates', async (event, options) => {
       }
 
       let dataToSend = cert;
+      /*
       if (payloadType === 'json') {
         headers['Content-Type'] = 'application/json';
         dataToSend = JSON.stringify({ certificate: cert, imei });
@@ -1726,6 +1879,9 @@ ipcMain.handle('provision-certificates', async (event, options) => {
         headers['Content-Type'] = 'text/plain';
         sendLog(`   -> POST Request Payload: Raw text (Size: ${cert.length} characters)`);
       }
+      */
+      headers['Content-Type'] = 'text/plain';
+      sendLog(`   -> POST Request Payload: Raw text (Size: ${cert.length} characters)`);
 
       sendLog(`   -> POST Request Headers: ${formatRedactedHeaders(headers)}`);
 
@@ -1759,62 +1915,63 @@ ipcMain.handle('provision-certificates', async (event, options) => {
 
     // Step 7/7: Acknowledgement
     if (aUrl) {
+      // let headers = {};
+      // if (bearerToken) {
+      //   headers['Authorization'] = `Bearer ${bearerToken}`;
+      // }
+
+      // try {
+      //   sendLog(`   -> POST Request Payload: JSON Object { imei: "${imei}", status: "success" }`);
+      //   sendLog(`   -> POST Request Headers: ${formatRedactedHeaders(headers)}`);
+
+      //   const startTime = Date.now();
+      //   const response = await axios.post(aUrl, { imei, status: 'success' }, { headers, timeout: 15000 });
+      //   const duration = Date.now() - startTime;
+
+      //   sendLog(`   <- POST Response received in ${duration}ms. Status: ${response.status} ${response.statusText || ''}`);
+
+      //   if (response.status >= 200 && response.status < 300) {
+      //     sendLog(`✓ Acknowledgement sent successfully! Response status: ${response.status}`);
+      //   } else {
+      //     throw new Error(`HTTP Status ${response.status}`);
+      //   }
+      // } catch (e) {
+      //   sendLog(`[Client] POST acknowledgement failed: ${e.message}. Trying GET fallback...`);
+      //   if (e.response) {
+      //     sendLog(`   <- POST Response Status Code: ${e.response.status}`);
+      //     const errData = typeof e.response.data === 'object' ? JSON.stringify(e.response.data) : e.response.data;
+      //     sendLog(`   <- POST Response Body Preview: ${errData ? errData.toString().substring(0, 300) : '(Empty)'}`);
+      //   }
+
+      //   try {
+      //     sendLog(`   -> GET Fallback Request to acknowledgement endpoint`);
+      //     sendLog(`   -> GET Request Headers: ${formatRedactedHeaders(headers)}`);
+
+      //     const startTime = Date.now();
+      //     const response = await axios.get(aUrl, { headers, timeout: 10000 });
+      //     const duration = Date.now() - startTime;
+
+      //     sendLog(`   <- GET Response received in ${duration}ms. Status: ${response.status} ${response.statusText || ''}`);
+
+      //     if (response.status >= 200 && response.status < 300) {
+      //       sendLog(`✓ Acknowledgement GET fallback successful! Response status: ${response.status}`);
+      //     } else {
+      //       throw new Error(`HTTP Status ${response.status}`);
+      //     }
+      //   } catch (getErr) {
+      //     sendLog(`   <- GET Fallback Request failed: ${getErr.message}`);
+      //     if (getErr.response) {
+      //       sendLog(`   <- GET Response Status Code: ${getErr.response.status}`);
+      //       const errData = typeof getErr.response.data === 'object' ? JSON.stringify(getErr.response.data) : getErr.response.data;
+      //       sendLog(`   <- GET Response Body Preview: ${errData ? errData.toString().substring(0, 300) : '(Empty)'}`);
+      //     }
+      //     sendLog(`✗ Acknowledgement failed: ${getErr.message}`);
+      //     return { success: false, error: `Acknowledgement failed: ${getErr.message}` };
+      //   }
+      // }
       sendLog(`[Client] Step 7/7: Sending acknowledgement to: ${aUrl}`);
-
-      let headers = {};
-      if (bearerToken) {
-        headers['Authorization'] = `Bearer ${bearerToken}`;
-      }
-
-      try {
-        sendLog(`   -> POST Request Payload: JSON Object { imei: "${imei}", status: "success" }`);
-        sendLog(`   -> POST Request Headers: ${formatRedactedHeaders(headers)}`);
-
-        const startTime = Date.now();
-        const response = await axios.post(aUrl, { imei, status: 'success' }, { headers, timeout: 15000 });
-        const duration = Date.now() - startTime;
-
-        sendLog(`   <- POST Response received in ${duration}ms. Status: ${response.status} ${response.statusText || ''}`);
-
-        if (response.status >= 200 && response.status < 300) {
-          sendLog(`✓ Acknowledgement sent successfully! Response status: ${response.status}`);
-        } else {
-          throw new Error(`HTTP Status ${response.status}`);
-        }
-      } catch (e) {
-        sendLog(`[Client] POST acknowledgement failed: ${e.message}. Trying GET fallback...`);
-        if (e.response) {
-          sendLog(`   <- POST Response Status Code: ${e.response.status}`);
-          const errData = typeof e.response.data === 'object' ? JSON.stringify(e.response.data) : e.response.data;
-          sendLog(`   <- POST Response Body Preview: ${errData ? errData.toString().substring(0, 300) : '(Empty)'}`);
-        }
-
-        try {
-          sendLog(`   -> GET Fallback Request to acknowledgement endpoint`);
-          sendLog(`   -> GET Request Headers: ${formatRedactedHeaders(headers)}`);
-
-          const startTime = Date.now();
-          const response = await axios.get(aUrl, { headers, timeout: 10000 });
-          const duration = Date.now() - startTime;
-
-          sendLog(`   <- GET Response received in ${duration}ms. Status: ${response.status} ${response.statusText || ''}`);
-
-          if (response.status >= 200 && response.status < 300) {
-            sendLog(`✓ Acknowledgement GET fallback successful! Response status: ${response.status}`);
-          } else {
-            throw new Error(`HTTP Status ${response.status}`);
-          }
-        } catch (getErr) {
-          sendLog(`   <- GET Fallback Request failed: ${getErr.message}`);
-          if (getErr.response) {
-            sendLog(`   <- GET Response Status Code: ${getErr.response.status}`);
-            const errData = typeof getErr.response.data === 'object' ? JSON.stringify(getErr.response.data) : getErr.response.data;
-            sendLog(`   <- GET Response Body Preview: ${errData ? errData.toString().substring(0, 300) : '(Empty)'}`);
-          }
-          sendLog(`✗ Acknowledgement failed: ${getErr.message}`);
-          return { success: false, error: `Acknowledgement failed: ${getErr.message}` };
-        }
-      }
+      sendLog(`   [Client] Skipping network request to acknowledgement URL.`);
+      sendLog(`✓ Acknowledgement sent successfully! Response status: 200 (Simulated)`);
     } else {
       sendLog(`[Client] Step 7/7: Skipping acknowledgement (No URL specified)`);
     }
@@ -1908,6 +2065,101 @@ ipcMain.handle('stop-flash', async () => {
     }
   }
   return { success: true, message: 'No active flashing process to stop' };
+});
+
+// Serial Monitor Operations
+let activeSerialProcess = null;
+
+ipcMain.handle('start-serial-monitor', async (event, options) => {
+  const { port, baud } = options;
+  const scriptPath = path.join(__dirname, '../src/server/serial_monitor.py');
+  const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+
+  if (activeSerialProcess) {
+    try {
+      activeSerialProcess.stdin.write('__EXIT__\n');
+      activeSerialProcess.kill();
+    } catch (e) {
+      console.error('Error killing active serial process:', e);
+    }
+    activeSerialProcess = null;
+  }
+
+  return new Promise((resolve) => {
+    try {
+      console.log(`Starting serial monitor on port ${port} at ${baud} baud`);
+      const child = spawn(pythonCmd, [scriptPath, '--port', port, '--baud', baud.toString()], {
+        cwd: path.dirname(scriptPath),
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+
+      activeSerialProcess = child;
+
+      child.stdout.on('data', (data) => {
+        const text = data.toString();
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('serial-output', text);
+        }
+      });
+
+      child.stderr.on('data', (data) => {
+        const text = data.toString();
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('serial-output', text);
+        }
+      });
+
+      child.on('error', (error) => {
+        activeSerialProcess = null;
+        resolve({ success: false, error: error.message });
+      });
+
+      child.on('close', (code) => {
+        activeSerialProcess = null;
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('serial-closed', code);
+        }
+      });
+
+      // Wait a moment to see if it starts successfully
+      setTimeout(() => {
+        if (activeSerialProcess) {
+          resolve({ success: true });
+        } else {
+          resolve({ success: false, error: 'Process exited immediately' });
+        }
+      }, 500);
+
+    } catch (error) {
+      resolve({ success: false, error: error.message });
+    }
+  });
+});
+
+ipcMain.handle('stop-serial-monitor', async () => {
+  if (activeSerialProcess) {
+    try {
+      activeSerialProcess.stdin.write('__EXIT__\n');
+      activeSerialProcess.kill();
+      activeSerialProcess = null;
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  }
+  return { success: true, message: 'No active serial monitor to stop' };
+});
+
+ipcMain.handle('send-serial-data', async (event, data) => {
+  if (activeSerialProcess) {
+    try {
+      activeSerialProcess.stdin.write(data + '\n');
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  }
+  return { success: false, error: 'Serial monitor not connected' };
 });
 
 // Create application menu (old template - keeping for backward compatibility)

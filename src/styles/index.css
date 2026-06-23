@@ -186,14 +186,14 @@ html {
   background: var(--glass-bg);
   backdrop-filter: blur(10px);
   border: 1px solid var(--glass-border);
-  border-radius: 12px;
+  border-radius: var(--card-radius, 12px);
 }
 
 .glass-lg {
   background: var(--glass-bg);
   backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
-  border-radius: 16px;
+  border-radius: calc(var(--card-radius, 12px) * 1.33);
 }
 
 /* Gradients */
@@ -382,7 +382,7 @@ textarea {
 .card {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  border-radius: 12px;
+  border-radius: var(--card-radius, 12px);
   padding: 1.5rem;
   transition: var(--transition);
 }
@@ -395,7 +395,7 @@ textarea {
 .card-lg {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  border-radius: 16px;
+  border-radius: calc(var(--card-radius, 12px) * 1.33);
   padding: 2rem;
 }
 
@@ -550,4 +550,43 @@ textarea {
   :root {
     font-size: 14px;
   }
+}
+
+/* Compact Mode Styles */
+html.compact-mode {
+  --p-1: 0.15rem;
+  --p-2: 0.35rem;
+  --p-3: 0.7rem;
+  --p-4: 1rem;
+  --p-5: 1.5rem;
+  
+  --gap-1: 0.15rem;
+  --gap-2: 0.35rem;
+  --gap-3: 0.7rem;
+  --gap-4: 1rem;
+  --gap-5: 1.5rem;
+}
+
+html.compact-mode .card,
+html.compact-mode .glass,
+html.compact-mode .glass-lg,
+html.compact-mode .terminal-card,
+html.compact-mode .firmware-card {
+  padding: 12px !important;
+}
+
+html.compact-mode input,
+html.compact-mode select,
+html.compact-mode textarea,
+html.compact-mode .btn {
+  padding: 6px 10px !important;
+  font-size: 0.85rem !important;
+}
+
+html.compact-mode .form-group {
+  margin-bottom: 12px !important;
+}
+
+html.compact-mode hr {
+  margin: 12px 0 !important;
 }

@@ -97,6 +97,18 @@ function App() {
           }
         }
 
+        // Load settings from settings.json if available
+        if (window.electronAPI && window.electronAPI.loadSettings) {
+          try {
+            const savedSettings = await window.electronAPI.loadSettings();
+            if (savedSettings) {
+              useStore.getState().loadSettings(savedSettings);
+            }
+          } catch (e) {
+            console.error('Error loading settings from settings.json:', e);
+          }
+        }
+
 
         // Fallback legacy persistence if the unified state file is missing
         if (loadedCollections.length === 0 && window.electronAPI && window.electronAPI.loadCollections) {

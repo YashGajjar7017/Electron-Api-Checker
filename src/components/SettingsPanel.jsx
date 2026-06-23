@@ -22,21 +22,22 @@ const DEFAULT_SETTINGS = {
 };
 
 function SettingsPanel({ isOpen, onClose }) {
+  const { user, storeSettings, updateSettings } = useStore((state) => ({
+    user: state.user,
+    storeSettings: state.settings,
+    updateSettings: state.updateSettings,
+  }));
+
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [isDirty, setIsDirty] = useState(false);
   const [activeTab, setActiveTab] = useState('appearance');
 
-  const { user } = useStore((state) => ({
-    user: state.user,
-  }));
-
   useEffect(() => {
-    if (isOpen && window.electronAPI?.loadSettings) {
-      window.electronAPI.loadSettings().then((saved) => {
-        if (saved) setSettings({ ...DEFAULT_SETTINGS, ...saved });
-      });
+    if (isOpen && storeSettings) {
+      setSettings({ ...DEFAULT_SETTINGS, ...storeSettings });
+      setIsDirty(false);
     }
-  }, [isOpen]);
+  }, [isOpen, storeSettings]);
 
   const handleSettingChange = (key, value) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
@@ -44,32 +45,14 @@ function SettingsPanel({ isOpen, onClose }) {
   };
 
   const handleSave = async () => {
-    if (window.electronAPI?.saveSettings) {
-      await window.electronAPI.saveSettings(settings);
-      applySettings();
-      setIsDirty(false);
-    }
+    updateSettings(settings);
+    setIsDirty(false);
+    onClose();
   };
 
   const handleReset = () => {
     setSettings(DEFAULT_SETTINGS);
     setIsDirty(true);
-  };
-
-  const applySettings = () => {
-    const root = document.documentElement;
-    root.style.setProperty('--font-size-scale', settings.fontSize === 'small' ? '0.9' : settings.fontSize === 'large' ? '1.1' : '1');
-    root.style.setProperty('--ui-scale', settings.uiScale);
-    root.style.setProperty('--card-radius', settings.cardRadius === 'small' ? '8px' : settings.cardRadius === 'large' ? '20px' : '14px');
-    root.style.setProperty('--accent-color', settings.accentColor);
-    root.style.setProperty('--bg-color', settings.backgroundColor);
-    root.style.setProperty('--transparency', settings.transparency);
-    
-    if (settings.compactMode) {
-      document.documentElement.classList.add('compact-mode');
-    } else {
-      document.documentElement.classList.remove('compact-mode');
-    }
   };
 
   if (!isOpen) return null;

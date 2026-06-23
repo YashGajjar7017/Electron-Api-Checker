@@ -49,6 +49,122 @@ const persistEnvironments = async (environments, activeEnvironment) => {
   }
 };
 
+const adjustColorBrightness = (hex, percent) => {
+  if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) return hex;
+  let num = parseInt(hex.replace("#",""), 16),
+      amt = Math.round(2.55 * percent),
+      R = ((num >> 16) & 0xFF) + amt,
+      G = ((num >> 8) & 0xFF) + amt,
+      B = (num & 0xFF) + amt;
+  return "#" + (0x1000000 + (R<255?R<0?0:R:255)*0x10000 + (G<255?G<0?0:G:255)*0x100 + (B<255?B<0?0:B:255)).toString(16).slice(1);
+};
+
+const applyGlobalSettings = (settings) => {
+  if (typeof window === 'undefined') return;
+  const root = document.documentElement;
+  if (!settings) return;
+
+  // Font Size Scale
+  const fsScale = settings.fontSize === 'small' ? '13px' : settings.fontSize === 'large' ? '18px' : '16px';
+  root.style.setProperty('--font-size-scale', fsScale);
+
+  // UI Scale
+  const uiScale = settings.uiScale || 1;
+  root.style.setProperty('--ui-scale', uiScale.toString());
+
+  // Apply root font-size based on text size and UI scale
+  let baseSize = 16;
+  if (settings.fontSize === 'small') baseSize = 13;
+  if (settings.fontSize === 'large') baseSize = 18;
+  const finalSize = baseSize * uiScale;
+  root.style.fontSize = `${finalSize}px`;
+
+  // Card border radius
+  const radius = settings.cardRadius === 'small' ? '8px' : settings.cardRadius === 'large' ? '20px' : '12px';
+  root.style.setProperty('--card-radius', radius);
+
+  // Accent / Primary color
+  if (settings.accentColor) {
+    root.style.setProperty('--primary', settings.accentColor);
+    root.style.setProperty('--accent', settings.accentColor);
+    
+    // Shift color for a nice gradient
+    const shifted = adjustColorBrightness(settings.accentColor, -15);
+    root.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${settings.accentColor} 0%, ${shifted} 100%)`);
+  }
+
+  // Background colors
+  if (settings.backgroundColor) {
+    root.style.setProperty('--bg-color', settings.backgroundColor);
+    if (settings.theme === 'dark' || settings.theme === 'amoled') {
+      root.style.setProperty('--bg-primary', settings.backgroundColor);
+      root.style.setProperty('--background', settings.backgroundColor);
+    }
+  }
+
+  // Transparency / Glass opacity
+  if (settings.transparency !== undefined) {
+    root.style.setProperty('--transparency', settings.transparency.toString());
+    root.style.setProperty('--glass-bg', `rgba(13, 18, 34, ${settings.transparency})`);
+  }
+
+  // Font Family
+  if (settings.fontFamily) {
+    let fontStack = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+    if (settings.fontFamily === 'inter') {
+      fontStack = '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    } else if (settings.fontFamily === 'jetbrains') {
+      fontStack = '"JetBrains Mono", Consolas, Monaco, monospace';
+    } else if (settings.fontFamily === 'fira') {
+      fontStack = '"Fira Code", Consolas, Monaco, monospace';
+    }
+    root.style.setProperty('--font-family', fontStack);
+    document.body.style.fontFamily = fontStack;
+  }
+
+  // Compact Mode class
+  if (settings.compactMode) {
+    document.documentElement.classList.add('compact-mode');
+  } else {
+    document.documentElement.classList.remove('compact-mode');
+  }
+
+  // Animation speed transition overrides
+  let speedMultiplier = 1;
+  if (settings.animationSpeed === 'fast') speedMultiplier = 0.5;
+  if (settings.animationSpeed === 'slow') speedMultiplier = 2;
+  root.style.setProperty('--transition', `all ${0.25 * speedMultiplier}s cubic-bezier(0.4, 0, 0.2, 1)`);
+  root.style.setProperty('--transition-fast', `${150 * speedMultiplier}ms cubic-bezier(0.4, 0, 0.2, 1)`);
+  root.style.setProperty('--transition-base', `${250 * speedMultiplier}ms cubic-bezier(0.4, 0, 0.2, 1)`);
+
+  // Themes
+  if (settings.theme === 'amoled') {
+    document.documentElement.classList.add('amoled-theme');
+    document.documentElement.classList.add('dark-theme');
+    document.documentElement.classList.remove('light-theme');
+    root.style.setProperty('--bg-primary', '#000000');
+    root.style.setProperty('--bg-secondary', '#050505');
+    root.style.setProperty('--bg-tertiary', '#111111');
+    root.style.setProperty('--background', '#000000');
+  } else if (settings.theme === 'dark') {
+    document.documentElement.classList.remove('amoled-theme');
+    document.documentElement.classList.add('dark-theme');
+    document.documentElement.classList.remove('light-theme');
+    if (!settings.backgroundColor) {
+      root.style.setProperty('--bg-primary', '#060913');
+      root.style.setProperty('--bg-secondary', '#0d1222');
+      root.style.setProperty('--bg-tertiary', '#192138');
+    }
+  } else if (settings.theme === 'light') {
+    document.documentElement.classList.remove('amoled-theme');
+    document.documentElement.classList.remove('dark-theme');
+    document.documentElement.classList.add('light-theme');
+    root.style.setProperty('--bg-primary', '#f8fafc');
+    root.style.setProperty('--bg-secondary', '#f1f5f9');
+    root.style.setProperty('--bg-tertiary', '#e2e8f0');
+  }
+};
+
 
 const useStore = create(
   subscribeWithSelector((set, get) => ({
@@ -425,10 +541,14 @@ const useStore = create(
         if (window.electronAPI?.saveSettings) {
           window.electronAPI.saveSettings(updated);
         }
+        applyGlobalSettings(updated);
         return { settings: updated };
       }),
-    loadSettings: (loadedSettings) =>
-      set({ settings: { ...get().settings, ...loadedSettings } }),
+    loadSettings: (loadedSettings) => {
+      const updated = { ...get().settings, ...loadedSettings };
+      applyGlobalSettings(updated);
+      set({ settings: updated });
+    },
 
     // GitHub OAuth state
     githubToken: null,

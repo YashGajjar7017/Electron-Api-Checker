@@ -18,13 +18,6 @@ function FirmwareUpdate({ defaultFlashMode }) {
   const [flashTool, setFlashTool] = useState('esptool'); // 'esptool' | 'arduino-cli'
   const [flashMode, setFlashMode] = useState(defaultFlashMode || 'single'); // 'single' | 'multiple'
 
-  // Sync flashMode with defaultFlashMode prop when it changes
-  useEffect(() => {
-    if (defaultFlashMode) {
-      setFlashMode(defaultFlashMode);
-    }
-  }, [defaultFlashMode]);
-
   // Multiple files selector states
   const [bootloaderFile, setBootloaderFile] = useState(null);
   const [partitionsFile, setPartitionsFile] = useState(null);
@@ -33,6 +26,36 @@ function FirmwareUpdate({ defaultFlashMode }) {
   const [bootloaderOffset, setBootloaderOffset] = useState('0x1000');
   const [partitionsOffset, setPartitionsOffset] = useState('0x8000');
   const [appOffset, setAppOffset] = useState('0x10000');
+
+  const [firmwareUrl, setFirmwareUrl] = useState('http://localhost:3000/firmware.bin');
+  const [downloading, setDownloading] = useState(false);
+  const [downloadedFile, setDownloadedFile] = useState(null);
+
+  // Sketch compilation states
+  const [sketchPath, setSketchPath] = useState('');
+  const [fqbn, setFqbn] = useState('esp32:esp32:esp32');
+  const [compiling, setCompiling] = useState(false);
+
+  // Serial & flash settings
+  const [ports, setPorts] = useState([]);
+  const [selectedPort, setSelectedPort] = useState('COM3');
+  const [selectedChip, setSelectedChip] = useState('esp32');
+  const [flashOffset, setFlashOffset] = useState('0x10000');
+  const [uploadSpeed, setUploadSpeed] = useState('115200');
+  
+  const [flashing, setFlashing] = useState(false);
+  const [flashLogs, setFlashLogs] = useState([]);
+  const [status, setStatus] = useState({ type: '', message: '' });
+  const [refreshingPorts, setRefreshingPorts] = useState(false);
+
+  const logsEndRef = useRef(null);
+
+  // Sync flashMode with defaultFlashMode prop when it changes
+  useEffect(() => {
+    if (defaultFlashMode) {
+      setFlashMode(defaultFlashMode);
+    }
+  }, [defaultFlashMode]);
 
   // File pickers for multiple flashing layout
   const handleSelectBootloader = async () => {
@@ -101,29 +124,6 @@ function FirmwareUpdate({ defaultFlashMode }) {
       setBootloaderOffset('0x1000');
     }
   }, [selectedChip]);
-  
-  const [firmwareUrl, setFirmwareUrl] = useState('http://localhost:3000/firmware.bin');
-  const [downloading, setDownloading] = useState(false);
-  const [downloadedFile, setDownloadedFile] = useState(null);
-
-  // Sketch compilation states
-  const [sketchPath, setSketchPath] = useState('');
-  const [fqbn, setFqbn] = useState('esp32:esp32:esp32');
-  const [compiling, setCompiling] = useState(false);
-
-  // Serial & flash settings
-  const [ports, setPorts] = useState([]);
-  const [selectedPort, setSelectedPort] = useState('COM3');
-  const [selectedChip, setSelectedChip] = useState('esp32');
-  const [flashOffset, setFlashOffset] = useState('0x10000');
-  const [uploadSpeed, setUploadSpeed] = useState('115200');
-  
-  const [flashing, setFlashing] = useState(false);
-  const [flashLogs, setFlashLogs] = useState([]);
-  const [status, setStatus] = useState({ type: '', message: '' });
-  const [refreshingPorts, setRefreshingPorts] = useState(false);
-
-  const logsEndRef = useRef(null);
 
   // Load available serial ports
   const fetchPorts = async () => {
@@ -249,7 +249,8 @@ function FirmwareUpdate({ defaultFlashMode }) {
           });
           setStatus({ type: 'success', message: '✓ Sketch compiled successfully!' });
         } else {
-          setStatus({ type: 'error', message: `✗ Compilation failed: ${result.error || 'Check logs'}` });
+          const errMsg = result.error || (result.code !== undefined ? `Exit code: ${result.code}` : 'Check logs');
+          setStatus({ type: 'error', message: `✗ Compilation failed: ${errMsg}` });
         }
       } else {
         setStatus({ type: 'error', message: 'Compilation API is not available' });
@@ -335,7 +336,8 @@ function FirmwareUpdate({ defaultFlashMode }) {
         if (result.success) {
           setStatus({ type: 'success', message: '✓ Firmware flashed successfully!' });
         } else {
-          setStatus({ type: 'error', message: `✗ Flashing failed: ${result.error || 'Check console logs'}` });
+          const errMsg = result.error || (result.code !== undefined ? `Exit code: ${result.code}` : 'Check console logs');
+          setStatus({ type: 'error', message: `✗ Flashing failed: ${errMsg}` });
         }
       } else {
         setStatus({ type: 'error', message: 'Flashing API is not available' });
@@ -364,7 +366,8 @@ function FirmwareUpdate({ defaultFlashMode }) {
         if (result.success) {
           setStatus({ type: 'success', message: '✓ Flash erased successfully!' });
         } else {
-          setStatus({ type: 'error', message: `✗ Erasing failed: ${result.error || 'Check console logs'}` });
+          const errMsg = result.error || (result.code !== undefined ? `Exit code: ${result.code}` : 'Check console logs');
+          setStatus({ type: 'error', message: `✗ Erasing failed: ${errMsg}` });
         }
       } else {
         setStatus({ type: 'error', message: 'Erase API is not available' });
