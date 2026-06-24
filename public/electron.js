@@ -19,7 +19,7 @@ let backendPort = null;
 let activeFlashProcess = null;
 const isDev = !app.isPackaged;
 const dataPath = app.isPackaged
-  ? path.join(path.dirname(app.getPath('exe')), 'data')
+  ? app.getPath('userData')
   : path.join(app.getAppPath(), 'data');
 const devServerUrl = 'http://localhost:3000';
 

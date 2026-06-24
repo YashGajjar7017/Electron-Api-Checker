@@ -1,0 +1,17 @@
+{
+  "fontSize": "medium",
+  "uiScale": 1,
+  "fontFamily": "system",
+  "theme": "dark",
+  "compactMode": false,
+  "cardRadius": "medium",
+  "animationSpeed": "normal",
+  "transparency": 0.95,
+  "accentColor": "#7c3aed",
+  "backgroundColor": "#0f172a",
+  "showNotifications": true,
+  "autoUpdate": true,
+  "gpuAcceleration": true,
+  "hardwareRendering": true,
+  "memoryOptimization": false
+}
