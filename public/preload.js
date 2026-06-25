@@ -94,6 +94,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeAllListeners('serial-closed');
   },
 
+  // ── Custom config files (dev.csv, req.csv, uuid.json, remote) ─────────────
+  loadDevCsv: () => ipcRenderer.invoke('load-dev-csv'),
+  saveDevCsv: (content) => ipcRenderer.invoke('save-dev-csv', content),
+  loadReqCsv: () => ipcRenderer.invoke('load-req-csv'),
+  saveReqCsv: (content) => ipcRenderer.invoke('save-req-csv', content),
+  loadUuidJson: () => ipcRenderer.invoke('load-uuid-json'),
+  saveUuidJson: (data) => ipcRenderer.invoke('save-uuid-json', data),
+  loadRemoteConfig: () => ipcRenderer.invoke('load-remote-config'),
+  saveRemoteConfig: (data) => ipcRenderer.invoke('save-remote-config', data),
+  readJsonFile: (filePath) => ipcRenderer.invoke('read-json-file', filePath),
+
   // ── Event listeners ────────────────────────────────────────────────────────
   onWindowResized: (callback) => {
     ipcRenderer.on('window-resized', callback);

@@ -1,0 +1,7 @@
+{
+  "imei": "",
+  "password": "",
+  "lastUrl": "https://httpbin.org/post",
+  "lastMethod": "POST",
+  "lastParamLocation": "body"
+}

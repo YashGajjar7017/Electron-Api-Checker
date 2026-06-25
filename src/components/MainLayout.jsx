@@ -11,6 +11,8 @@ import SystemMonitor from './SystemMonitor';
 import FirmwareUpdate from './FirmwareUpdate';
 import CertificateManager from './CertificateManager';
 import SerialTerminal from './SerialTerminal';
+import BusConfig from './BusConfig';
+import RemotePage from './RemotePage';
 import useStore from '../store';
 import {
   FiFolder,
@@ -26,7 +28,9 @@ import {
   FiDatabase,
   FiCode,
   FiInfo,
-  FiShield
+  FiShield,
+  FiSliders,
+  FiWifi
 } from 'react-icons/fi';
 import '../styles/MainLayout.css';
 
@@ -487,6 +491,22 @@ function MainLayout({ onThemeChange, currentTheme }) {
               <FiTerminal size={20} />
               <span className="switcher-text">Terminal</span>
             </button>
+            <button
+              className={`switcher-btn ${selectedSidebar === 'bus_config' ? 'active' : ''}`}
+              onClick={() => setSelectedSidebar('bus_config')}
+              title="Bus Configuration"
+            >
+              <FiSliders size={20} />
+              <span className="switcher-text">Bus Config</span>
+            </button>
+            <button
+              className={`switcher-btn ${selectedSidebar === 'remote' ? 'active' : ''}`}
+              onClick={() => setSelectedSidebar('remote')}
+              title="Remote Device Endpoint"
+            >
+              <FiWifi size={20} />
+              <span className="switcher-text">Remote Page</span>
+            </button>
             <div className="switcher-spacer"></div>
             <button
               className={`switcher-btn ${selectedSidebar === 'settings' ? 'active' : ''}`}
@@ -499,7 +519,7 @@ function MainLayout({ onThemeChange, currentTheme }) {
           </div>
 
           {/* Column 2: Sidebar Details Panel */}
-          {selectedSidebar && selectedSidebar !== 'firmware' && selectedSidebar !== 'boot' && selectedSidebar !== 'certificate' && selectedSidebar !== 'terminal' && (
+          {selectedSidebar && selectedSidebar !== 'firmware' && selectedSidebar !== 'boot' && selectedSidebar !== 'certificate' && selectedSidebar !== 'terminal' && selectedSidebar !== 'bus_config' && selectedSidebar !== 'remote' && (
             <div className="sidebar-panel" style={{ width: `${sidebarWidth}px` }}>
               {selectedSidebar === 'collections' && <Sidebar />}
               {selectedSidebar === 'environments' && renderEnvironmentsSidebar()}
@@ -527,6 +547,14 @@ function MainLayout({ onThemeChange, currentTheme }) {
             ) : selectedSidebar === 'terminal' ? (
               <div className="workspace-panel full-height">
                 <SerialTerminal />
+              </div>
+            ) : selectedSidebar === 'bus_config' ? (
+              <div className="workspace-panel full-height">
+                <BusConfig />
+              </div>
+            ) : selectedSidebar === 'remote' ? (
+              <div className="workspace-panel full-height">
+                <RemotePage />
               </div>
             ) : (
               <>

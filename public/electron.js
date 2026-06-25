@@ -1061,6 +1061,115 @@ ipcMain.handle('load-arduino-config', async () => {
   }
 });
 
+// Custom page CSV and config loaders/savers
+ipcMain.handle('load-dev-csv', async () => {
+  try {
+    const filePath = path.join(dataPath, 'dev.csv');
+    if (!fs.existsSync(filePath)) {
+      const defaultCsv = "id,busId,slaveId,active,ip,port,protocol\n1,2,1,1,0.0.0.0,502,1\n2,1,1,1,192.168.0.100,502,1";
+      fs.writeFileSync(filePath, defaultCsv, 'utf-8');
+      return defaultCsv;
+    }
+    return fs.readFileSync(filePath, 'utf-8');
+  } catch (error) {
+    console.error('Error loading dev.csv:', error);
+    return "";
+  }
+});
+
+ipcMain.handle('save-dev-csv', async (event, content) => {
+  try {
+    const filePath = path.join(dataPath, 'dev.csv');
+    fs.writeFileSync(filePath, content, 'utf-8');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('load-req-csv', async () => {
+  try {
+    const filePath = path.join(dataPath, 'req.csv');
+    if (!fs.existsSync(filePath)) {
+      const defaultCsv = "id,busId,slaveId,startAddress,length,requestType,deviceId\n1,2,1,1,120,3,1\n2,2,1,121,120,3,1\n3,1,1,1,120,3,2";
+      fs.writeFileSync(filePath, defaultCsv, 'utf-8');
+      return defaultCsv;
+    }
+    return fs.readFileSync(filePath, 'utf-8');
+  } catch (error) {
+    console.error('Error loading req.csv:', error);
+    return "";
+  }
+});
+
+ipcMain.handle('save-req-csv', async (event, content) => {
+  try {
+    const filePath = path.join(dataPath, 'req.csv');
+    fs.writeFileSync(filePath, content, 'utf-8');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('load-uuid-json', async () => {
+  try {
+    const filePath = path.join(dataPath, 'uuid.json');
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath, 'utf-8');
+      return JSON.parse(data);
+    }
+    return null;
+  } catch (error) {
+    console.error('Error loading uuid.json:', error);
+    return null;
+  }
+});
+
+ipcMain.handle('save-uuid-json', async (event, data) => {
+  try {
+    const filePath = path.join(dataPath, 'uuid.json');
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('load-remote-config', async () => {
+  try {
+    const filePath = path.join(dataPath, 'remote-config.json');
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath, 'utf-8');
+      return JSON.parse(data);
+    }
+    return { imei: '', password: '' };
+  } catch (error) {
+    console.error('Error loading remote-config.json:', error);
+    return { imei: '', password: '' };
+  }
+});
+
+ipcMain.handle('save-remote-config', async (event, data) => {
+  try {
+    const filePath = path.join(dataPath, 'remote-config.json');
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('read-json-file', async (event, filePath) => {
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    return { success: true, data: JSON.parse(content) };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+
 // Expose testing Arduino CLI connection
 ipcMain.handle('test-arduino-connection', async (event, cliPath) => {
   return new Promise((resolve) => {
