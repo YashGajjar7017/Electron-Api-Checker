@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import useStore from '../store';
 import { FiGithub, FiLogOut, FiRefreshCw, FiCopy, FiCheck, FiAlertTriangle, FiX } from 'react-icons/fi';
 import '../styles/GitHubAuth.css';
@@ -454,7 +455,7 @@ function GitHubAuth() {
           {isLoading ? 'Signing in...' : 'Sign in with GitHub'}
         </button>
 
-        {showConfigModal && (
+        {showConfigModal && createPortal(
           <div className="github-config-modal-overlay" onClick={() => setShowConfigModal(false)}>
             <div className="github-config-popup" onClick={(e) => e.stopPropagation()}>
               <button 
@@ -515,7 +516,8 @@ function GitHubAuth() {
                 </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {githubResponse && (

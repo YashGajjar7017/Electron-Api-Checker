@@ -436,6 +436,331 @@ app.get('/api/info', (req, res) => {
   });
 });
 
+// Maintenance Mode state & update check
+let maintenanceState = {
+  isMaintenance: false,
+  currentVersion: '1.2.5',
+  remoteVersion: null,
+  updateStatus: 'idle', // 'checking', 'downloading', 'applying', 'success', 'error'
+  error: null,
+  xmlUrl: 'http://192.168.4.1/update.xml',
+  progress: 0
+};
+
+// Simple semantic version comparator
+function compareVersions(v1, v2) {
+  const parse = v => v.split('.').map(Number);
+  const a = parse(v1);
+  const b = parse(v2);
+  for (let i = 0; i < 3; i++) {
+    if ((a[i] || 0) > (b[i] || 0)) return true;
+    if ((a[i] || 0) < (b[i] || 0)) return false;
+  }
+  return false;
+}
+
+// Background update logic
+async function triggerUpdate(xmlUrl) {
+  maintenanceState.updateStatus = 'checking';
+  maintenanceState.isMaintenance = true;
+  maintenanceState.xmlUrl = xmlUrl || maintenanceState.xmlUrl;
+  maintenanceState.error = null;
+  maintenanceState.progress = 0;
+  
+  io.emit('maintenance-update', maintenanceState);
+  
+  try {
+    // 1. Fetch update XML
+    const response = await axios.get(maintenanceState.xmlUrl, { timeout: 10000 });
+    const xmlText = response.data;
+    
+    // Parse using regex checks
+    const versionMatch = xmlText.match(/<version>(.*?)<\/version>/);
+    const urlMatch = xmlText.match(/<url>(.*?)<\/url>/);
+    const descMatch = xmlText.match(/<description>(.*?)<\/description>/);
+    
+    if (!versionMatch || !urlMatch) {
+      throw new Error("Invalid update XML structure. Missing version or url tags.");
+    }
+    
+    const version = versionMatch[1].trim();
+    const downloadUrl = urlMatch[1].trim();
+    
+    maintenanceState.remoteVersion = version;
+    
+    const isNew = compareVersions(version, maintenanceState.currentVersion);
+    if (!isNew) {
+      maintenanceState.updateStatus = 'idle';
+      maintenanceState.isMaintenance = false;
+      io.emit('maintenance-update', maintenanceState);
+      return;
+    }
+    
+    // 2. Download code update file
+    maintenanceState.updateStatus = 'downloading';
+    io.emit('maintenance-update', maintenanceState);
+    
+    const tempUpdateDir = path.join(dataDir, 'updates');
+    if (!fs.existsSync(tempUpdateDir)) {
+      fs.mkdirSync(tempUpdateDir, { recursive: true });
+    }
+    
+    const targetFilePath = path.join(tempUpdateDir, path.basename(downloadUrl) || 'update.bin');
+    const writer = fs.createWriteStream(targetFilePath);
+    
+    const downloadResponse = await axios({
+      method: 'get',
+      url: downloadUrl,
+      responseType: 'stream'
+    });
+    
+    const totalBytes = parseInt(downloadResponse.headers['content-length'] || 0, 10);
+    let downloadedBytes = 0;
+    
+    downloadResponse.data.on('data', (chunk) => {
+      downloadedBytes += chunk.length;
+      if (totalBytes > 0) {
+        maintenanceState.progress = Math.round((downloadedBytes / totalBytes) * 100);
+        io.emit('maintenance-update', maintenanceState);
+      }
+    });
+    
+    downloadResponse.data.pipe(writer);
+    
+    await new Promise((resolve, reject) => {
+      writer.on('finish', resolve);
+      writer.on('error', reject);
+    });
+    
+    // 3. Apply updates
+    maintenanceState.updateStatus = 'applying';
+    maintenanceState.progress = 100;
+    io.emit('maintenance-update', maintenanceState);
+    
+    // Simulate updating application code or patching local state files
+    await new Promise(r => setTimeout(r, 2000));
+    
+    maintenanceState.updateStatus = 'success';
+    maintenanceState.isMaintenance = false;
+    io.emit('maintenance-update', maintenanceState);
+  } catch (error) {
+    maintenanceState.updateStatus = 'error';
+    maintenanceState.error = error.message;
+    io.emit('maintenance-update', maintenanceState);
+    console.error('Update failed:', error);
+  }
+}
+
+// GET route for /maintenance supporting both JSON monitoring and HTML views
+app.get('/maintenance', async (req, res) => {
+  const trigger = req.query.trigger === 'true';
+  const xmlUrl = req.query.xmlUrl || 'http://192.168.4.1/update.xml';
+  
+  if (trigger && maintenanceState.updateStatus === 'idle') {
+    triggerUpdate(xmlUrl);
+  }
+  
+  const acceptsHtml = req.accepts('html');
+  if (req.query.json === 'true' || !acceptsHtml) {
+    return res.json(maintenanceState);
+  }
+  
+  const progressPercent = maintenanceState.progress + '%';
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>API Checker - Maintenance Mode</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        :root {
+          --bg: #030712;
+          --card: #1f2937;
+          --primary: #7c3aed;
+          --primary-glow: rgba(124, 58, 237, 0.3);
+          --text: #f9fafb;
+          --text-muted: #9ca3af;
+          --success: #10b981;
+          --error: #ef4444;
+        }
+        body {
+          margin: 0;
+          padding: 0;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          background: var(--bg);
+          color: var(--text);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          overflow: hidden;
+        }
+        .container {
+          text-align: center;
+          max-width: 480px;
+          padding: 2.5rem;
+          background: rgba(31, 41, 55, 0.4);
+          backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 24px;
+          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+        .spinner {
+          width: 80px;
+          height: 80px;
+          border: 4px solid rgba(255, 255, 255, 0.05);
+          border-top-color: var(--primary);
+          border-radius: 50%;
+          margin: 0 auto 2rem;
+          animation: spin 1s linear infinite;
+          box-shadow: 0 0 20px var(--primary-glow);
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        h1 {
+          font-size: 1.8rem;
+          font-weight: 800;
+          margin-bottom: 0.5rem;
+          background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+          font-size: 0.95rem;
+          color: var(--text-muted);
+          margin-bottom: 2rem;
+        }
+        .progress-bar-container {
+          width: 100%;
+          height: 8px;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 10px;
+          overflow: hidden;
+          margin-bottom: 1rem;
+        }
+        .progress-bar {
+          height: 100%;
+          width: ${progressPercent};
+          background: linear-gradient(90deg, #a78bfa 0%, #7c3aed 100%);
+          transition: width 0.3s ease;
+          border-radius: 10px;
+        }
+        .status-text {
+          font-size: 0.9rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: var(--primary);
+        }
+        .version-badge {
+          display: inline-block;
+          padding: 0.25rem 0.75rem;
+          border-radius: 20px;
+          background: rgba(255, 255, 255, 0.05);
+          font-size: 0.8rem;
+          font-weight: 600;
+          margin-top: 1rem;
+          color: var(--text-muted);
+        }
+        .error-box {
+          padding: 1rem;
+          border-radius: 12px;
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          color: var(--error);
+          font-size: 0.85rem;
+          margin-top: 1.5rem;
+          word-break: break-all;
+        }
+        .btn-trigger {
+          display: inline-block;
+          margin-top: 1.5rem;
+          background: var(--primary);
+          color: white;
+          border: none;
+          padding: 0.75rem 1.5rem;
+          font-size: 0.9rem;
+          font-weight: 700;
+          border-radius: 10px;
+          cursor: pointer;
+          transition: all 0.2s;
+          text-decoration: none;
+          box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+        }
+        .btn-trigger:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 20px rgba(124, 58, 237, 0.5);
+        }
+      </style>
+      <script>
+        setInterval(async () => {
+          try {
+            const res = await fetch(window.location.pathname + '?json=true');
+            const data = await res.json();
+            if (data.updateStatus !== '${maintenanceState.updateStatus}' || data.progress !== ${maintenanceState.progress}) {
+              window.location.reload();
+            }
+          } catch(e) {}
+        }, 1000);
+      </script>
+    </head>
+    <body>
+      <div class="container">
+        <div class="spinner"></div>
+        <h1>System Update Mode</h1>
+        <p class="subtitle">Applying remoteless updates to target systems and device configs</p>
+        
+        ${maintenanceState.updateStatus !== 'idle' ? `
+          <div class="progress-bar-container">
+            <div class="progress-bar"></div>
+          </div>
+          <div class="status-text">
+            ${maintenanceState.updateStatus}... ${maintenanceState.progress}%
+          </div>
+        ` : `
+          <div class="status-text" style="color: var(--success)">System is idle</div>
+          <a class="btn-trigger" href="/maintenance?trigger=true&xmlUrl=${encodeURIComponent(xmlUrl)}">Trigger Remote Update</a>
+        `}
+        
+        <div class="version-badge">
+          Current: ${maintenanceState.currentVersion} ${maintenanceState.remoteVersion ? `&rarr; Remote: ${maintenanceState.remoteVersion}` : ''}
+        </div>
+        
+        ${maintenanceState.error ? `
+          <div class="error-box">
+            Error: ${maintenanceState.error}
+          </div>
+        ` : ''}
+      </div>
+    </body>
+    </html>
+  `;
+  res.send(html);
+});
+
+// Post route to trigger update programmatically
+app.post('/api/maintenance/trigger', async (req, res) => {
+  const { xmlUrl } = req.body;
+  triggerUpdate(xmlUrl);
+  res.json({ success: true, message: 'Update triggered', state: maintenanceState });
+});
+
+// Reset maintenance state endpoint
+app.post('/api/maintenance/reset', (req, res) => {
+  maintenanceState = {
+    isMaintenance: false,
+    currentVersion: '1.2.5',
+    remoteVersion: null,
+    updateStatus: 'idle',
+    error: null,
+    xmlUrl: maintenanceState.xmlUrl,
+    progress: 0
+  };
+  io.emit('maintenance-update', maintenanceState);
+  res.json({ success: true, state: maintenanceState });
+});
+
 // Start server
 const startServer = (preferredPort = 5000) => {
   PORT = preferredPort;

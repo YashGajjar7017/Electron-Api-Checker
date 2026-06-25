@@ -14,6 +14,7 @@ import SerialTerminal from './SerialTerminal';
 import BusConfig from './BusConfig';
 import RemotePage from './RemotePage';
 import GitHubSync from './GitHubSync';
+import Maintenance from './Maintenance';
 import useStore from '../store';
 import {
   FiFolder,
@@ -32,7 +33,8 @@ import {
   FiShield,
   FiSliders,
   FiWifi,
-  FiGithub
+  FiGithub,
+  FiZap
 } from 'react-icons/fi';
 import '../styles/MainLayout.css';
 
@@ -51,6 +53,7 @@ function MainLayout({ onThemeChange, currentTheme }) {
   const [showArduinoModal, setShowArduinoModal] = useState(false);
 
   const {
+    apis,
     sessionToken,
     clearResponseHistory,
     shuffleAPIs,
@@ -132,14 +135,45 @@ function MainLayout({ onThemeChange, currentTheme }) {
     }
 
     setIsRunningScript(true);
-    setPythonScriptOutput('Starting Python script execution...\n');
+    setPythonScriptOutput('Preparing API configurations and executing Python automation script...\n');
 
     try {
-      const result = await window.electronAPI.runPythonScript({ token: sessionToken });
+      const activeEnvObj = environments?.find((env) => env.id === activeEnvironment) || environments?.[0];
+      const currentBaseUrl = activeEnvObj ? activeEnvObj.baseUrl : 'http://localhost:5000';
+
+      const apisToRun = apis.map(api => {
+        let fullUrl = api.endpoint;
+        if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
+          const base = currentBaseUrl.endsWith('/') ? currentBaseUrl.slice(0, -1) : currentBaseUrl;
+          const path = api.endpoint.startsWith('/') ? api.endpoint : `/${api.endpoint}`;
+          fullUrl = `${base}${path}`;
+        }
+
+        const headers = { ...api.headers };
+        if (sessionToken && !headers['Authorization'] && !headers['authorization']) {
+          headers['Authorization'] = `Bearer ${sessionToken}`;
+        }
+
+        return {
+          id: api.id,
+          name: api.name,
+          method: api.method || 'GET',
+          url: fullUrl,
+          headers: headers,
+          body: api.body || '',
+          bodyType: api.bodyType || 'none'
+        };
+      });
+
+      const result = await window.electronAPI.runPythonScript({
+        token: sessionToken,
+        apis: apisToRun
+      });
+
       if (result.success) {
         setPythonScriptOutput(`✓ Script completed successfully!\n\n${result.stdout || ''}\n\nFiles saved:\n- output.json\n- output.csv`);
       } else {
-        setPythonScriptOutput(`✗ Script failed:\n${result.error || result.stderr || 'Unknown error'}`);
+        setPythonScriptOutput(`✗ Script failed:\n${result.error || result.stderr || 'Unknown error'}\n\nConsole logs:\n${result.stdout || ''}`);
       }
     } catch (error) {
       setPythonScriptOutput(`✗ Error executing script:\n${error.message}`);
@@ -502,20 +536,28 @@ function MainLayout({ onThemeChange, currentTheme }) {
               <span className="switcher-text">Remote Page</span>
             </button>
             <button
-              className={`switcher-btn ${selectedSidebar === 'github_sync' ? 'active' : ''}`}
-              onClick={() => setSelectedSidebar('github_sync')}
-              title="GitHub Sync"
-            >
-              <FiGithub size={20} />
-              <span className="switcher-text">GitHub Sync</span>
-            </button>
-            <button
               className={`switcher-btn ${selectedSidebar === 'terminal' ? 'active' : ''}`}
               onClick={() => setSelectedSidebar('terminal')}
               title="Terminal"
             >
               <FiTerminal size={20} />
               <span className="switcher-text">Terminal</span>
+            </button>
+            <button
+              className={`switcher-btn ${selectedSidebar === 'maintenance' ? 'active' : ''}`}
+              onClick={() => setSelectedSidebar('maintenance')}
+              title="Maintenance"
+            >
+              <FiZap size={20} />
+              <span className="switcher-text">Maintenance</span>
+            </button>
+            <button
+              className={`switcher-btn ${selectedSidebar === 'github_sync' ? 'active' : ''}`}
+              onClick={() => setSelectedSidebar('github_sync')}
+              title="GitHub Sync"
+            >
+              <FiGithub size={20} />
+              <span className="switcher-text">GitHub Sync</span>
             </button>
             <div className="switcher-spacer"></div>
             <button
@@ -529,7 +571,7 @@ function MainLayout({ onThemeChange, currentTheme }) {
           </div>
 
           {/* Column 2: Sidebar Details Panel */}
-          {selectedSidebar && selectedSidebar !== 'firmware' && selectedSidebar !== 'boot' && selectedSidebar !== 'certificate' && selectedSidebar !== 'terminal' && selectedSidebar !== 'bus_config' && selectedSidebar !== 'remote' && selectedSidebar !== 'github_sync' && (
+          {selectedSidebar && selectedSidebar !== 'firmware' && selectedSidebar !== 'boot' && selectedSidebar !== 'certificate' && selectedSidebar !== 'terminal' && selectedSidebar !== 'bus_config' && selectedSidebar !== 'remote' && selectedSidebar !== 'github_sync' && selectedSidebar !== 'maintenance' && (
             <div className="sidebar-panel" style={{ width: `${sidebarWidth}px` }}>
               {selectedSidebar === 'collections' && <Sidebar />}
               {selectedSidebar === 'environments' && renderEnvironmentsSidebar()}
@@ -569,6 +611,10 @@ function MainLayout({ onThemeChange, currentTheme }) {
             ) : selectedSidebar === 'github_sync' ? (
               <div className="workspace-panel full-height">
                 <GitHubSync />
+              </div>
+            ) : selectedSidebar === 'maintenance' ? (
+              <div className="workspace-panel full-height">
+                <Maintenance />
               </div>
             ) : (
               <>

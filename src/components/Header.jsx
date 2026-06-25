@@ -12,6 +12,7 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
   const [pinging, setPinging] = useState(false);
   const [pingStatus, setPingStatus] = useState(null);
   const [token, setToken] = useState(null);
+  const [timeLeft, setTimeLeft] = useState('');
   
   const { 
     user, 
@@ -25,7 +26,13 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
     environments,
     activeEnvironment,
     setActiveEnvironment,
-    updateEnvironment
+    updateEnvironment,
+    authToken,
+    setAuthToken,
+    sessionToken,
+    setSessionToken,
+    clearSessionToken,
+    sessionTokenExpiry
   } = useStore(
     (state) => ({
       user: state.user,
@@ -40,8 +47,43 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
       activeEnvironment: state.activeEnvironment,
       setActiveEnvironment: state.setActiveEnvironment,
       updateEnvironment: state.updateEnvironment,
+      authToken: state.authToken,
+      setAuthToken: state.setAuthToken,
+      sessionToken: state.sessionToken,
+      setSessionToken: state.setSessionToken,
+      clearSessionToken: state.clearSessionToken,
+      sessionTokenExpiry: state.sessionTokenExpiry,
     })
   );
+
+  useEffect(() => {
+    const updateTimeLeft = () => {
+      if (sessionToken && sessionTokenExpiry) {
+        const remaining = sessionTokenExpiry - Date.now();
+        if (remaining > 0) {
+          const minutes = Math.floor(remaining / 60000);
+          const seconds = Math.floor((remaining % 60000) / 1000);
+          setTimeLeft(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+          return;
+        }
+      }
+      setTimeLeft('');
+    };
+
+    updateTimeLeft();
+    const interval = setInterval(updateTimeLeft, 1000);
+    return () => clearInterval(interval);
+  }, [sessionToken, sessionTokenExpiry]);
+
+  const handleGlobalTokenChange = (e) => {
+    const val = e.target.value;
+    setAuthToken(val);
+    if (val) {
+      setSessionToken(val, 10);
+    } else {
+      clearSessionToken();
+    }
+  };
 
   const activeEnvObj = environments?.find((env) => env.id === activeEnvironment) || environments?.[0];
   const currentBaseUrl = activeEnvObj ? activeEnvObj.baseUrl : serverUrl;
@@ -189,6 +231,17 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
             onChange={handleServerUrlChange}
             placeholder="http://localhost:3000"
             className="url-input"
+          />
+          <label htmlFor="global-token-input">
+            Token{timeLeft && <span className="token-timer" style={{ color: '#ef4444', fontWeight: 'bold', marginLeft: '4px' }}>({timeLeft})</span>}:
+          </label>
+          <input
+            id="global-token-input"
+            type="password"
+            value={sessionToken || ''}
+            onChange={handleGlobalTokenChange}
+            placeholder="Enter Bearer Token"
+            className="token-input"
           />
         </div>
         {/* <div className="header-actions">

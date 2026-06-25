@@ -32,6 +32,7 @@ function RequestBuilder() {
     environments,
     activeEnvironment,
     collections,
+    authToken,
   } = useStore();
   const { otpData, setOTPData } = useStore();
 
@@ -496,39 +497,60 @@ function RequestBuilder() {
       requestHeaders['Authorization'] = `Bearer ${overrideAuthToken}`;
       console.log('🔑 Using override auth token');
     } else {
-      console.log('🔑 Token priority check - Manual:', !!authTokenState?.trim(), 'Session:', !!(sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry), 'API:', !!(useStore.getState().getAPIResponseToken()));
-      
-      if (authType === 'bearer' && authTokenState && authTokenState.trim().length > 0 && (!manualTokenExpiry || Date.now() < manualTokenExpiry)) {
-        requestHeaders['Authorization'] = `Bearer ${authTokenState}`;
-        console.log('🔑 Using MANUAL bearer token (overwriting any headers)');
-      } else if (authType === 'basic' && authTokenState && authTokenState.trim().length > 0 && (!manualTokenExpiry || Date.now() < manualTokenExpiry)) {
-        requestHeaders['Authorization'] = `Basic ${authTokenState}`;
-        console.log('🔑 Using MANUAL basic auth (overwriting any headers)');
-      }
-
       const authKeywords = ['login', 'auth', 'signin', 'authenticate', 'otp'];
       const isLoginRequest = authKeywords.some(keyword => endpoint.toLowerCase().includes(keyword));
 
-      if (!isLoginRequest && authType === 'none' && !requestHeaders['Authorization']) {
-        const hasValidSessionToken = sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry;
-        if (hasValidSessionToken) {
-          requestHeaders['Authorization'] = `Bearer ${sessionToken}`;
-          console.log('🔑 Using SESSION token');
-        } else {
+      if (!isLoginRequest && !requestHeaders['Authorization']) {
+        let resolvedToken = null;
+        let tokenType = null;
+
+        // 1. Manual API token
+        if (authTokenState && authTokenState.trim().length > 0 && (!manualTokenExpiry || Date.now() < manualTokenExpiry)) {
+          resolvedToken = authTokenState.trim();
+          tokenType = 'manual';
+        }
+
+        // 2. Global session token
+        if (!resolvedToken) {
+          const hasValidSessionToken = sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry;
+          if (hasValidSessionToken) {
+            resolvedToken = sessionToken;
+            tokenType = 'session';
+          }
+        }
+
+        // 3. Global API response token
+        if (!resolvedToken) {
           const apiToken = useStore.getState().getAPIResponseToken();
           if (apiToken) {
-            requestHeaders['Authorization'] = `Bearer ${apiToken}`;
-            console.log('🔑 Using API response token');
+            resolvedToken = apiToken;
+            tokenType = 'apiResponse';
           }
+        }
+
+        // 4. Global store authToken
+        if (!resolvedToken) {
+          const globalStoreAuthToken = useStore.getState().authToken || authToken;
+          if (globalStoreAuthToken && globalStoreAuthToken.trim().length > 0) {
+            resolvedToken = globalStoreAuthToken.trim();
+            tokenType = 'globalStore';
+          }
+        }
+
+        if (resolvedToken) {
+          // If authType is basic and we are using manual token, format as Basic. Otherwise, format as Bearer.
+          if (tokenType === 'manual' && authType === 'basic') {
+            requestHeaders['Authorization'] = `Basic ${resolvedToken}`;
+            console.log('🔑 Using MANUAL basic auth (overwriting any headers)');
+          } else {
+            requestHeaders['Authorization'] = `Bearer ${resolvedToken}`;
+            console.log(`🔑 Injected Authorization header using ${tokenType} token: Bearer ...`);
+          }
+        } else {
+          console.log('⚠️  No authorization token available');
         }
       } else if (isLoginRequest) {
         console.log('🔑 Skipping automatic token injection for login endpoint');
-      } else if (authType !== 'none') {
-        console.log('🔑 Skipping automatic token injection since manual auth type is active:', authType);
-      }
-      
-      if (!requestHeaders['Authorization']) {
-        console.log('⚠️  No authorization token available');
       }
     }
 

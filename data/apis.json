@@ -48,7 +48,7 @@
     "serverUrl": "http://192.168.4.1",
     "fullUrl": "http://192.168.4.1/api/login",
     "collectionId": "9mfnk7qmr",
-    "bodyType": "none",
+    "bodyType": "json",
     "bodyParams": {},
     "skipOtp": false,
     "automation": {
@@ -99,7 +99,7 @@
     "endpoint": "/api/device/broker/connect",
     "headers": {},
     "params": {},
-    "body": "",
+    "body": "\nBatch Results\n2 responses\n$0",
     "auth": {
       "type": "bearer",
       "token": "29919",
@@ -110,7 +110,7 @@
     "serverUrl": "http://192.168.4.1",
     "fullUrl": "http://192.168.4.1/api/device/broker/connect",
     "collectionId": "9mfnk7qmr",
-    "bodyType": "none",
+    "bodyType": "json",
     "bodyParams": {},
     "skipOtp": false,
     "automation": {

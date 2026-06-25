@@ -924,9 +924,7 @@ ipcMain.handle('run-python-script', async (event, options = {}) => {
         resolve({ success: code === 0, stdout, stderr, code });
       });
 
-      if (options.token) {
-        child.stdin.write(`${options.token}\n`);
-      }
+      child.stdin.write(JSON.stringify(options));
       child.stdin.end();
     } catch (error) {
       resolve({ success: false, error: error.message });
