@@ -188,6 +188,138 @@ function App() {
     loadPersistedData();
   }, [loginUser]);
 
+  // GitHub deep linking callback handler
+  useEffect(() => {
+    if (window.electronAPI?.onGithubToken) {
+      const handleToken = async (data) => {
+        console.log('GitHub token/auth event received in App:', data);
+        if (!data) return;
+        
+        let token = null;
+        let code = null;
+        let state = null;
+        
+        if (typeof data === 'string') {
+          token = data;
+        } else if (typeof data === 'object') {
+          token = data.token;
+          code = data.code;
+          state = data.state;
+        }
+        
+        if (code) {
+          try {
+            const storedState = localStorage.getItem('github_oauth_state');
+            if (storedState && state && storedState !== state) {
+              console.error('State mismatch in deep link callback');
+              window.dispatchEvent(
+                new CustomEvent('app:toast', {
+                  detail: { message: 'GitHub login error', detail: 'State mismatch — possible CSRF attack.' },
+                })
+              );
+              return;
+            }
+            
+            // Exchange code for token
+            const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
+            const payload = { code };
+            const clientSecret = process.env.REACT_APP_GITHUB_CLIENT_SECRET || process.env.GITHUB_CLIENT_SECRET;
+            if (clientSecret) {
+              payload.client_secret = clientSecret;
+            }
+            
+            const res = await fetch(`${BACKEND_URL}/api/auth/github/callback`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            
+            if (res.ok) {
+              const exchangeData = await res.json();
+              token = exchangeData.accessToken;
+            } else {
+              console.error('Code exchange failed:', await res.text());
+            }
+          } catch (err) {
+            console.error('Failed to exchange code in App.jsx:', err);
+          }
+        }
+        
+        if (!token) {
+          const GITHUB_CLIENT_ID = process.env.REACT_APP_GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID || '';
+          if (!GITHUB_CLIENT_ID) {
+            token = `ghu_mock_${Math.random().toString(36).slice(2, 22)}`;
+          }
+        }
+        
+        if (token) {
+          try {
+            const headers = {
+              Authorization: `token ${token}`,
+              Accept: 'application/vnd.github.v3+json',
+            };
+            
+            const [userRes, emailRes] = await Promise.all([
+              fetch('https://api.github.com/user', { headers }),
+              fetch('https://api.github.com/user/emails', { headers }).catch(() => null),
+            ]);
+            
+            if (userRes.ok) {
+              const userData = await userRes.json();
+              let primaryEmail = userData.email || '';
+              
+              if (emailRes && emailRes.ok) {
+                const emailData = await emailRes.json();
+                const primary = emailData.find(e => e.primary)?.email || emailData[0]?.email;
+                if (primary) primaryEmail = primary;
+              }
+              
+              const profile = {
+                id: userData.id,
+                login: userData.login,
+                email: primaryEmail,
+                avatar: userData.avatar_url,
+                name: userData.name,
+                bio: userData.bio,
+                company: userData.company,
+                location: userData.location,
+                blog: userData.blog,
+                publicRepos: userData.public_repos,
+                followers: userData.followers,
+                following: userData.following,
+                provider: 'github',
+                token,
+                loginTime: new Date().toISOString(),
+              };
+              
+              loginUser(profile);
+              
+              if (window.electronAPI?.saveUser) {
+                await window.electronAPI.saveUser(profile);
+              }
+              if (window.electronAPI?.storeToken) {
+                await window.electronAPI.storeToken('github', token);
+              }
+              
+              window.dispatchEvent(
+                new CustomEvent('app:toast', {
+                  detail: {
+                    message: 'Successfully Signed In with GitHub',
+                    detail: `Logged in as ${profile.name || profile.login}`,
+                  },
+                })
+              );
+            }
+          } catch (err) {
+            console.error('Failed to login with token in App.jsx:', err);
+          }
+        }
+      };
+      
+      window.electronAPI.onGithubToken(handleToken);
+    }
+  }, [loginUser]);
+
   const handleThemeChange = (newTheme) => {
     updateSettings({ theme: newTheme });
   };

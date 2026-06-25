@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import useStore from '../store';
 import { FiMail, FiLock, FiLogIn } from 'react-icons/fi';
+import GitHubAuth from './GitHubAuth';
 import '../styles/AuthScreen.css';
 
 function AuthScreen({ onThemeChange, currentTheme }) {
-  const [isLogin, setIsLogin] = useState(true);
+  const [activeTab, setActiveTab] = useState('login'); // 'login' | 'signup' | 'github'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -20,7 +21,7 @@ function AuthScreen({ onThemeChange, currentTheme }) {
       return;
     }
 
-    if (!isLogin && password !== confirmPassword) {
+    if (activeTab === 'signup' && password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
@@ -65,76 +66,96 @@ function AuthScreen({ onThemeChange, currentTheme }) {
 
           <div className="auth-tabs">
             <button
-              className={`tab ${isLogin ? 'active' : ''}`}
+              className={`tab ${activeTab === 'login' ? 'active' : ''}`}
               onClick={() => {
-                setIsLogin(true);
+                setActiveTab('login');
                 setError('');
               }}
             >
               Login
             </button>
             <button
-              className={`tab ${!isLogin ? 'active' : ''}`}
+              className={`tab ${activeTab === 'signup' ? 'active' : ''}`}
               onClick={() => {
-                setIsLogin(false);
+                setActiveTab('signup');
                 setError('');
               }}
             >
               Sign Up
             </button>
+            <button
+              className={`tab ${activeTab === 'github' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('github');
+                setError('');
+              }}
+            >
+              GitHub Auth
+            </button>
           </div>
 
-          <form onSubmit={handleAuth} className="auth-form">
-            {error && <div className="error-message">{error}</div>}
+          {(activeTab === 'login' || activeTab === 'signup') && (
+            <form onSubmit={handleAuth} className="auth-form">
+              {error && <div className="error-message">{error}</div>}
 
-            <div className="form-group">
-              <label htmlFor="email">Email Address</label>
-              <div className="input-wrapper">
-                <FiMail className="input-icon" />
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <div className="input-wrapper">
-                <FiLock className="input-icon" />
-                <input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {!isLogin && (
               <div className="form-group">
-                <label htmlFor="confirmPassword">Confirm Password</label>
+                <label htmlFor="email">Email Address</label>
                 <div className="input-wrapper">
-                  <FiLock className="input-icon" />
+                  <FiMail className="input-icon" />
                   <input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="Confirm your password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
               </div>
-            )}
 
-            <button type="submit" className="btn btn-primary btn-lg auth-btn">
-              {isLogin ? 'Login' : 'Create Account'}
-            </button>
-          </form>
+              <div className="form-group">
+                <label htmlFor="password">Password</label>
+                <div className="input-wrapper">
+                  <FiLock className="input-icon" />
+                  <input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {activeTab === 'signup' && (
+                <div className="form-group">
+                  <label htmlFor="confirmPassword">Confirm Password</label>
+                  <div className="input-wrapper">
+                    <FiLock className="input-icon" />
+                    <input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="Confirm your password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <button type="submit" className="btn btn-primary btn-lg auth-btn">
+                {activeTab === 'login' ? 'Login' : 'Create Account'}
+              </button>
+            </form>
+          )}
+
+          {activeTab === 'github' && (
+            <div className="auth-github-tab-panel animate-fadeIn">
+              <p className="tab-instructions">
+                Sign in using your GitHub account to backup and synchronize your collections, API requests, and environment settings to GitHub secure private Gist.
+              </p>
+              <GitHubAuth />
+            </div>
+          )}
 
           <div className="demo-note">
             💡 Tip: Use any email and password to get started

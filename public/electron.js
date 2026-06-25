@@ -49,9 +49,11 @@ if (!singleInstanceLock) {
       try {
         const url = new URL(deepLink);
         const token = url.searchParams.get("token");
+        const code = url.searchParams.get("code");
+        const state = url.searchParams.get("state");
 
         if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send("github-token", token);
+          mainWindow.webContents.send("github-token", { token, code, state });
         }
       } catch (_err) {
         // malformed deep link – ignore
@@ -263,6 +265,21 @@ async function createWindow() {
   mainWindow.once('ready-to-show', () => {
     console.log('Window ready to show');
     mainWindow.show();
+  });
+
+  mainWindow.webContents.once('did-finish-load', () => {
+    const deepLink = process.argv.find(arg => typeof arg === "string" && arg.startsWith("myapp://"));
+    if (deepLink) {
+      try {
+        const url = new URL(deepLink);
+        const token = url.searchParams.get("token");
+        const code = url.searchParams.get("code");
+        const state = url.searchParams.get("state");
+        mainWindow.webContents.send("github-token", { token, code, state });
+      } catch (_err) {
+        // ignore
+      }
+    }
   });
 
   // Fallback: show window after 2 seconds if ready-to-show doesn't fire

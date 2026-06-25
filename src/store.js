@@ -534,6 +534,7 @@ const useStore = create(
       gpuAcceleration: true,
       hardwareRendering: true,
       memoryOptimization: false,
+      githubGistId: '',
     },
     updateSettings: (newSettings) =>
       set((state) => {

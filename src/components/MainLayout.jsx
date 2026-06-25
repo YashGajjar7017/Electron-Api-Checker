@@ -13,6 +13,7 @@ import CertificateManager from './CertificateManager';
 import SerialTerminal from './SerialTerminal';
 import BusConfig from './BusConfig';
 import RemotePage from './RemotePage';
+import GitHubSync from './GitHubSync';
 import useStore from '../store';
 import {
   FiFolder,
@@ -30,7 +31,8 @@ import {
   FiInfo,
   FiShield,
   FiSliders,
-  FiWifi
+  FiWifi,
+  FiGithub
 } from 'react-icons/fi';
 import '../styles/MainLayout.css';
 
@@ -484,14 +486,6 @@ function MainLayout({ onThemeChange, currentTheme }) {
               <span className="switcher-text">Certificate</span>
             </button>
             <button
-              className={`switcher-btn ${selectedSidebar === 'terminal' ? 'active' : ''}`}
-              onClick={() => setSelectedSidebar('terminal')}
-              title="Terminal"
-            >
-              <FiTerminal size={20} />
-              <span className="switcher-text">Terminal</span>
-            </button>
-            <button
               className={`switcher-btn ${selectedSidebar === 'bus_config' ? 'active' : ''}`}
               onClick={() => setSelectedSidebar('bus_config')}
               title="Bus Configuration"
@@ -507,6 +501,22 @@ function MainLayout({ onThemeChange, currentTheme }) {
               <FiWifi size={20} />
               <span className="switcher-text">Remote Page</span>
             </button>
+            <button
+              className={`switcher-btn ${selectedSidebar === 'github_sync' ? 'active' : ''}`}
+              onClick={() => setSelectedSidebar('github_sync')}
+              title="GitHub Sync"
+            >
+              <FiGithub size={20} />
+              <span className="switcher-text">GitHub Sync</span>
+            </button>
+            <button
+              className={`switcher-btn ${selectedSidebar === 'terminal' ? 'active' : ''}`}
+              onClick={() => setSelectedSidebar('terminal')}
+              title="Terminal"
+            >
+              <FiTerminal size={20} />
+              <span className="switcher-text">Terminal</span>
+            </button>
             <div className="switcher-spacer"></div>
             <button
               className={`switcher-btn ${selectedSidebar === 'settings' ? 'active' : ''}`}
@@ -519,7 +529,7 @@ function MainLayout({ onThemeChange, currentTheme }) {
           </div>
 
           {/* Column 2: Sidebar Details Panel */}
-          {selectedSidebar && selectedSidebar !== 'firmware' && selectedSidebar !== 'boot' && selectedSidebar !== 'certificate' && selectedSidebar !== 'terminal' && selectedSidebar !== 'bus_config' && selectedSidebar !== 'remote' && (
+          {selectedSidebar && selectedSidebar !== 'firmware' && selectedSidebar !== 'boot' && selectedSidebar !== 'certificate' && selectedSidebar !== 'terminal' && selectedSidebar !== 'bus_config' && selectedSidebar !== 'remote' && selectedSidebar !== 'github_sync' && (
             <div className="sidebar-panel" style={{ width: `${sidebarWidth}px` }}>
               {selectedSidebar === 'collections' && <Sidebar />}
               {selectedSidebar === 'environments' && renderEnvironmentsSidebar()}
@@ -555,6 +565,10 @@ function MainLayout({ onThemeChange, currentTheme }) {
             ) : selectedSidebar === 'remote' ? (
               <div className="workspace-panel full-height">
                 <RemotePage />
+              </div>
+            ) : selectedSidebar === 'github_sync' ? (
+              <div className="workspace-panel full-height">
+                <GitHubSync />
               </div>
             ) : (
               <>

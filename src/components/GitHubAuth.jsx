@@ -9,7 +9,7 @@ const GITHUB_CLIENT_ID = process.env.REACT_APP_GITHUB_CLIENT_ID || process.env.G
 const GITHUB_CLIENT_SECRET = process.env.REACT_APP_GITHUB_CLIENT_SECRET || process.env.GITHUB_CLIENT_SECRET || '';
 const GITHUB_REDIRECT_URI = process.env.REACT_APP_GITHUB_REDIRECT_URI || process.env.GITHUB_CALLBACK_URL || 'myapp://github-auth';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000';
-const AUTH_SCOPE = process.env.REACT_APP_GITHUB_SCOPE || process.env.GITHUB_SCOPE || 'user:email read:user';
+const AUTH_SCOPE = process.env.REACT_APP_GITHUB_SCOPE || process.env.GITHUB_SCOPE || 'user:email read:user gist';
 const MOCK_TOKEN_USER = `ghu_mock_${Math.random().toString(36).slice(2, 22)}`;   // For development without a registered GitHub OAuth app
 
 // ── Constants ─────────────────────────────────────────────────────────────────
