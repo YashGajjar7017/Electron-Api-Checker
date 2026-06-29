@@ -323,7 +323,7 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
               background: 'rgba(15, 23, 42, 0.95)',
               backdropFilter: 'blur(20px)',
               boxShadow: 'var(--shadow-xl)',
-              zIndex: 1000,
+              zIndex: 9999,
               display: 'flex',
               flexDirection: 'column',
               gap: '12px',

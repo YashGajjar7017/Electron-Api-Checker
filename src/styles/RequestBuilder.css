@@ -362,17 +362,58 @@
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-bottom: 2px solid transparent;
+  position: relative;
 }
 
-.tabs:hover {
+.tab:hover {
   color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.03);
 }
 
-.tabs.active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
+.tab.active {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab[data-tab="params"].active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+}
+
+.tab[data-tab="auth"].active, .tab[data-tab="authorization"].active {
+  color: #10b981;
+  border-bottom-color: #10b981;
+}
+
+.tab[data-tab="headers"].active {
+  color: #8b5cf6;
+  border-bottom-color: #8b5cf6;
+}
+
+.tab[data-tab="body"].active {
+  color: #f97316;
+  border-bottom-color: #f97316;
+}
+
+.tab[data-tab="scripts"].active {
+  color: #ec4899;
+  border-bottom-color: #ec4899;
+}
+
+.tab[data-tab="docs"].active {
+  color: #14b8a6;
+  border-bottom-color: #14b8a6;
+}
+
+.tab[data-tab="settings"].active {
+  color: #ef4444;
+  border-bottom-color: #ef4444;
+}
+
+.tab[data-tab="automation"].active {
+  color: #a855f7;
+  border-bottom-color: #a855f7;
 }
 
 .tab-content {

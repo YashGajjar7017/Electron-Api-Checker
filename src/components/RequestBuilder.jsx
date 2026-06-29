@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useStore from '../store';
-// Monaco editor import removed
+import Editor from '@monaco-editor/react';
 import {
   FiX,
   FiPlus,
@@ -1142,6 +1142,7 @@ function RequestBuilder() {
           return (
             <button
               key={tab}
+              data-tab={tab === 'authorization' ? 'auth' : tab}
               className={`tab ${activeTab === (tab === 'authorization' ? 'auth' : tab) ? 'active' : ''}`}
               onClick={() => setActiveTab(tab === 'authorization' ? 'auth' : tab)}
             >
@@ -1188,50 +1189,26 @@ function RequestBuilder() {
               </div>
             )}
             {bodyType === 'json' && (
-              <textarea
-                className="body-textarea plaintext-editor"
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                placeholder='{ "key": "value" }'
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  minHeight: '200px',
-                  fontFamily: 'Consolas, Monaco, "Courier New", monospace',
-                  fontSize: '13px',
-                  background: 'rgba(15, 23, 42, 0.4)',
-                  color: 'var(--text-light)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  outline: 'none',
-                  resize: 'vertical',
-                  boxSizing: 'border-box'
-                }}
-              />
+              <div className="response-panel-body" style={{ height: '300px', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
+                <Editor
+                  height="100%"
+                  language="json"
+                  value={body}
+                  onChange={(val) => setBody(val || '')}
+                  options={{ minimap: { enabled: false }, wordWrap: 'on', theme: 'vs-dark' }}
+                />
+              </div>
             )}
             {(bodyType === 'raw' || bodyType === 'graphql') && (
-              <textarea
-                className="body-textarea plaintext-editor"
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                placeholder={bodyType === 'graphql' ? 'query { ... }' : 'Enter raw body content...'}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  minHeight: '200px',
-                  fontFamily: 'Consolas, Monaco, "Courier New", monospace',
-                  fontSize: '13px',
-                  background: 'rgba(15, 23, 42, 0.4)',
-                  color: 'var(--text-light)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  outline: 'none',
-                  resize: 'vertical',
-                  boxSizing: 'border-box'
-                }}
-              />
+              <div className="response-panel-body" style={{ height: '300px', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
+                <Editor
+                  height="100%"
+                  language={bodyType === 'graphql' ? 'graphql' : 'plaintext'}
+                  value={body}
+                  onChange={(val) => setBody(val || '')}
+                  options={{ minimap: { enabled: false }, wordWrap: 'on', theme: 'vs-dark' }}
+                />
+              </div>
             )}
             {bodyType === 'form-data' && (
               <div className="key-value-editor">
@@ -1651,55 +1628,41 @@ function RequestBuilder() {
           <div className="scripts-editor">
             <div className="form-group">
               <label>Pre-request Script (JavaScript)</label>
-              <textarea
-                className="script-textarea plaintext-editor"
-                value={currentAPI?.preRequestScript || ''}
-                onChange={(e) => {
-                  if (currentAPI) {
-                    updateAPI(currentAPI.id, { 
-                      ...currentAPI, 
-                      preRequestScript: e.target.value || '' 
-                    });
-                  }
-                }}
-                placeholder="// Enter JavaScript pre-request script code..."
-                style={{
-                  width: '100%',
-                  height: '150px',
-                  fontFamily: 'Consolas, Monaco, "Courier New", monospace',
-                  fontSize: '13px',
-                  background: 'rgba(15, 23, 42, 0.4)',
-                  color: 'var(--text-light)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  outline: 'none',
-                  resize: 'vertical',
-                  boxSizing: 'border-box'
-                }}
-              />
-              />
+              <div className="response-panel-body" style={{ height: '200px', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
+                <Editor
+                  height="100%"
+                  language="javascript"
+                  value={currentAPI?.preRequestScript || ''}
+                  onChange={(val) => {
+                    if (currentAPI) {
+                      updateAPI(currentAPI.id, { 
+                        ...currentAPI, 
+                        preRequestScript: val || '' 
+                      });
+                    }
+                  }}
+                  options={{ minimap: { enabled: false }, wordWrap: 'on', theme: 'vs-dark' }}
+                />
+              </div>
             </div>
             <div className="form-group">
               <label>Test Script (JavaScript)</label>
-              <Editor
-                height="150px"
-                defaultLanguage="javascript"
-                value={currentAPI?.testScript || ''}
-                onChange={(value) => {
-                  if (currentAPI) {
-                    updateAPI(currentAPI.id, { 
-                      ...currentAPI, 
-                      testScript: value || '' 
-                    });
-                  }
-                }}
-                theme="vs-dark"
-                options={{
-                  minimap: { enabled: false },
-                  scrollBeyondLastLine: false,
-                }}
-              />
+              <div className="response-panel-body" style={{ height: '200px', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
+                <Editor
+                  height="100%"
+                  language="javascript"
+                  value={currentAPI?.testScript || ''}
+                  onChange={(val) => {
+                    if (currentAPI) {
+                      updateAPI(currentAPI.id, { 
+                        ...currentAPI, 
+                        testScript: val || '' 
+                      });
+                    }
+                  }}
+                  options={{ minimap: { enabled: false }, wordWrap: 'on', theme: 'vs-dark' }}
+                />
+              </div>
             </div>
             <div className="form-group script-runner-group">
               <label>Run Python Automation</label>

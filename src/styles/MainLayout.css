@@ -191,6 +191,12 @@
   font-size: 11px;
   color: var(--text-muted);
   word-break: break-all;
+  margin-top: 5px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  display: inline-block;
 }
 
 .env-edit-box {
@@ -468,4 +474,39 @@
 .env-delete-btn:hover {
   background: rgba(239, 68, 68, 0.2) !important;
   border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+/* History items method-based border highlights */
+.history-item {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.history-item.method-get:hover {
+  border-color: #10b981 !important;
+  background: rgba(16, 185, 129, 0.05) !important;
+}
+
+.history-item.method-post:hover {
+  border-color: #f59e0b !important;
+  background: rgba(245, 158, 11, 0.05) !important;
+}
+
+.history-item.method-put:hover {
+  border-color: #3b82f6 !important;
+  background: rgba(59, 130, 246, 0.05) !important;
+}
+
+.history-item.method-patch:hover {
+  border-color: #a855f7 !important;
+  background: rgba(168, 85, 247, 0.05) !important;
+}
+
+.history-item.method-delete:hover {
+  border-color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.05) !important;
+}
+
+.history-item.method-head:hover {
+  border-color: #6b7280 !important;
+  background: rgba(107, 114, 128, 0.05) !important;
 }

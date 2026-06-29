@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import useStore from '../store';
-import { 
-  FiZap, 
-  FiRefreshCw, 
-  FiAlertTriangle, 
-  FiCheckCircle, 
-  FiDownload, 
-  FiInfo, 
+import {
+  FiZap,
+  FiRefreshCw,
+  FiAlertTriangle,
+  FiCheckCircle,
+  FiDownload,
+  FiInfo,
   FiServer,
   FiActivity
 } from 'react-icons/fi';
@@ -14,7 +14,7 @@ import '../styles/Maintenance.css';
 
 function Maintenance() {
   const { settings, updateSettings } = useStore();
-  const [xmlUrl, setXmlUrl] = useState(localStorage.getItem('update_xml_url') || 'http://192.168.4.1/update.xml');
+  const [xmlUrl, setXmlUrl] = useState(localStorage.getItem('update_xml_url') || 'http://localhost:4222');
   const [status, setStatus] = useState('idle'); // 'idle' | 'checking' | 'downloading' | 'applying' | 'success' | 'error'
   const [currentVersion] = useState('1.2.5');
   const [remoteVersion, setRemoteVersion] = useState(null);
@@ -68,7 +68,7 @@ function Maintenance() {
     setRemoteVersion(null);
     setDescription('');
     setDownloadUrl('');
-    
+
     try {
       // Direct CORS-bypassing proxy request or fetch using electron if available
       let xmlText = '';
@@ -103,7 +103,7 @@ function Maintenance() {
       setDownloadUrl(url);
       setDescription(desc);
       setStatus('idle');
-      
+
       // Compare versions
       const isNew = compareVersions(version, currentVersion);
       if (isNew) {
@@ -146,7 +146,7 @@ function Maintenance() {
   const handleTriggerUpdate = async () => {
     setStatus('checking');
     setErrorMsg('');
-    
+
     try {
       // Trigger update on Express backend to simulate the remoteless server execution flow
       const res = await fetch(`http://localhost:5000/maintenance?trigger=true&xmlUrl=${encodeURIComponent(xmlUrl)}&json=true`);
@@ -168,7 +168,7 @@ function Maintenance() {
       setStatus('idle');
       setProgress(0);
       setErrorMsg('');
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const isUpdateAvailable = remoteVersion && compareVersions(remoteVersion, currentVersion);
@@ -197,14 +197,14 @@ function Maintenance() {
               <p className="card-description">
                 Input the URL pointing to the remote server's update XML index file. The application parses this XML to fetch version details and binary download paths.
               </p>
-              
+
               <div className="form-group">
                 <label htmlFor="xml-url-input">Server XML Check Path</label>
                 <div className="input-group">
                   <input
                     id="xml-url-input"
                     type="text"
-                    placeholder="e.g. http://192.168.4.1/update.xml"
+                    placeholder="e.g. http://localhost:4222"
                     value={xmlUrl}
                     onChange={(e) => setXmlUrl(e.target.value)}
                     disabled={status !== 'idle' && status !== 'error'}

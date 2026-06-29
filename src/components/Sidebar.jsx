@@ -461,7 +461,7 @@ function Sidebar() {
                         return (
                           <div
                             key={api.id}
-                            className={`api-item ${currentAPI?.id === api.id ? 'active' : ''}`}
+                            className={`api-item method-${(api.method || 'GET').toLowerCase()} ${currentAPI?.id === api.id ? 'active' : ''}`}
                             onClick={() => setCurrentAPI(api)}
                           >
                             <div className="api-item-header">

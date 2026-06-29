@@ -11,6 +11,8 @@
   backdrop-filter: blur(10px);
   animation: fadeInDown 0.4s ease-out;
   transition: all var(--transition-base) var(--ease-in-out);
+  z-index: 1000;
+  position: relative;
 }
 
 .header-left {

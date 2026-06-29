@@ -347,24 +347,24 @@ function MainLayout({ onThemeChange, currentTheme }) {
 
   const renderHistorySidebar = () => {
     return (
-      <div className="sidebar-details-inner">
-        <div className="sidebar-detail-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ margin: 0 }}>History</h3>
+      <div className="sidebar-details-inner" style={{ padding: 0 }}>
+        <div className="sidebar-detail-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Request History</h4>
           {responseHistory.length > 0 && (
             <button
               className="btn btn-icon-only"
               onClick={clearResponseHistory}
               title="Clear History"
-              style={{ padding: '4px', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              style={{ padding: '2px', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
             >
-              <FiTrash2 size={16} style={{ color: 'var(--text-muted)' }} />
+              <FiTrash2 size={14} style={{ color: 'var(--text-muted)' }} />
             </button>
           )}
         </div>
-        <div className="history-list animate-fadeIn" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="history-list animate-fadeIn" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {responseHistory.length === 0 ? (
-            <div className="empty-state" style={{ color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center', padding: '30px 10px', border: '1px dashed var(--border)', borderRadius: '8px' }}>
-              No request history yet. Send a request to see it here!
+            <div className="empty-state" style={{ color: 'var(--text-muted)', fontSize: '11px', textAlign: 'center', padding: '20px 10px', border: '1px dashed var(--border)', borderRadius: '6px' }}>
+              No history yet. Send a request!
             </div>
           ) : (
             responseHistory.map((item) => {
@@ -373,7 +373,7 @@ function MainLayout({ onThemeChange, currentTheme }) {
               return (
                 <div
                   key={item.id}
-                  className="history-item"
+                  className={`history-item ${methodClass}`}
                   onClick={() => {
                     setCurrentAPI({
                       id: item.id || Math.random().toString(36).substr(2, 9),
@@ -388,29 +388,29 @@ function MainLayout({ onThemeChange, currentTheme }) {
                     });
                   }}
                   style={{
-                    padding: '12px',
-                    borderRadius: '8px',
-                    background: 'rgba(30, 41, 59, 0.3)',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    background: 'rgba(30, 41, 59, 0.25)',
                     border: '1px solid var(--border)',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '6px'
+                    gap: '4px'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span className={`method-badge ${methodClass}`} style={{ fontSize: '10px', fontWeight: 'bold' }}>
+                    <span className={`method-badge ${methodClass}`} style={{ fontSize: '9px', padding: '1px 4px', fontWeight: 'bold' }}>
                       {item.method}
                     </span>
-                    <span style={{ fontSize: '11px', color: statusColor, fontWeight: '600' }}>
+                    <span style={{ fontSize: '10px', color: statusColor, fontWeight: '600' }}>
                       {item.status || 'ERROR'}
                     </span>
                   </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-light)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.endpoint}>
                     {item.endpoint}
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9px', color: 'var(--text-muted)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '8.5px', color: 'var(--text-muted)' }}>
                     <span>{item.responseTime ? `${item.responseTime}ms` : ''}</span>
                     <span>{item.timestamp ? new Date(item.timestamp).toLocaleTimeString() : ''}</span>
                   </div>
@@ -487,14 +487,7 @@ function MainLayout({ onThemeChange, currentTheme }) {
               <FiGlobe size={20} />
               <span className="switcher-text">Environments</span>
             </button>
-            <button
-              className={`switcher-btn ${selectedSidebar === 'history' ? 'active' : ''}`}
-              onClick={() => setSelectedSidebar('history')}
-              title="History"
-            >
-              <FiRefreshCcw size={20} />
-              <span className="switcher-text">History</span>
-            </button>
+
             <button
               className={`switcher-btn ${selectedSidebar === 'automation' ? 'active' : ''}`}
               onClick={() => setSelectedSidebar('automation')}
@@ -570,12 +563,10 @@ function MainLayout({ onThemeChange, currentTheme }) {
             </button>
           </div>
 
-          {/* Column 2: Sidebar Details Panel */}
-          {selectedSidebar && selectedSidebar !== 'firmware' && selectedSidebar !== 'boot' && selectedSidebar !== 'certificate' && selectedSidebar !== 'terminal' && selectedSidebar !== 'bus_config' && selectedSidebar !== 'remote' && selectedSidebar !== 'github_sync' && selectedSidebar !== 'maintenance' && (
+          {selectedSidebar && selectedSidebar !== 'history' && selectedSidebar !== 'firmware' && selectedSidebar !== 'boot' && selectedSidebar !== 'certificate' && selectedSidebar !== 'terminal' && selectedSidebar !== 'bus_config' && selectedSidebar !== 'remote' && selectedSidebar !== 'github_sync' && selectedSidebar !== 'maintenance' && (
             <div className="sidebar-panel" style={{ width: `${sidebarWidth}px` }}>
               {selectedSidebar === 'collections' && <Sidebar />}
               {selectedSidebar === 'environments' && renderEnvironmentsSidebar()}
-              {selectedSidebar === 'history' && renderHistorySidebar()}
               {selectedSidebar === 'automation' && renderAutomationSidebar()}
               {selectedSidebar === 'settings' && renderSettingsSidebar()}
 
@@ -618,9 +609,25 @@ function MainLayout({ onThemeChange, currentTheme }) {
               </div>
             ) : (
               <>
-                {/* Active Request Builder */}
-                <div className="workspace-panel flex-grow">
-                  <RequestBuilder />
+                <div style={{ display: 'flex', flex: 1, width: '100%', overflow: 'hidden' }}>
+                  {/* Active Request Builder */}
+                  <div className="workspace-panel flex-grow" style={{ overflow: 'auto' }}>
+                    <RequestBuilder />
+                  </div>
+
+                  {/* History Right Sidebar */}
+                  <div className="history-right-sidebar glass-panel" style={{ 
+                    width: '230px', 
+                    borderLeft: '1px solid var(--border)',
+                    padding: '12px 14px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflowY: 'auto',
+                    flexShrink: 0,
+                    boxSizing: 'border-box'
+                  }}>
+                    {renderHistorySidebar()}
+                  </div>
                 </div>
 
                 {/* Horizontal Resizer */}

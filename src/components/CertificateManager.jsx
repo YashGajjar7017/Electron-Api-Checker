@@ -21,39 +21,103 @@ import '../styles/CertificateManager.css';
 function CertificateManager() {
   const imei = useStore((state) => state.globalImei) || '869742085795508';
   const setImei = useStore((state) => state.setGlobalImei);
-  const [password, setPassword] = useState('3376b22');
-  const [bearerToken, setBearerToken] = useState('02453');
-  const [payloadType, setPayloadType] = useState('json');
+  const [password, setPassword] = useState(() => localStorage.getItem('cert_password') || '3376b22');
+  const [bearerToken, setBearerToken] = useState(() => localStorage.getItem('cert_bearerToken') || '02453');
+  const [payloadType, setPayloadType] = useState(() => localStorage.getItem('cert_payloadType') || 'json');
 
   // Download URLs (with placeholders)
-  const [downloadUrls, setDownloadUrls] = useState([
-    'https://api.iotscada-pmsg.com/api/SSLCert/certdownload?imei={IMEI}&user={IMEI}&pass={PASSWORD}&ctype=1&PROJCD=re',
-    'https://api.iotscada-pmsg.com/api/SSLCert/certdownload?imei={IMEI}&user={IMEI}&pass={PASSWORD}&ctype=2&PROJCD=re',
-    'https://api.iotscada-pmsg.com/api/SSLCert/certdownload?imei={IMEI}&user={IMEI}&pass={PASSWORD}&ctype=3&PROJCD=re'
-  ]);
+  const [downloadUrls, setDownloadUrls] = useState(() => {
+    const saved = localStorage.getItem('cert_downloadUrls');
+    return saved ? JSON.parse(saved) : [
+      'https://api.iotscada-pmsg.com/api/SSLCert/certdownload?imei={IMEI}&user={IMEI}&pass={PASSWORD}&ctype=1&PROJCD=re',
+      'https://api.iotscada-pmsg.com/api/SSLCert/certdownload?imei={IMEI}&user={IMEI}&pass={PASSWORD}&ctype=2&PROJCD=re',
+      'https://api.iotscada-pmsg.com/api/SSLCert/certdownload?imei={IMEI}&user={IMEI}&pass={PASSWORD}&ctype=3&PROJCD=re'
+    ];
+  });
 
   // Upload POST URLs
-  const [postUrls, setPostUrls] = useState([
-    'http://192.168.4.1/write.html?filename=rootCA.pem',
-    'http://192.168.4.1/write.html?filename=client.pem',
-    'http://192.168.4.1/write.html?filename=key.pem'
-  ]);
+  const [postUrls, setPostUrls] = useState(() => {
+    const saved = localStorage.getItem('cert_postUrls');
+    return saved ? JSON.parse(saved) : [
+      'http://192.168.4.1/write.html?filename=rootCA.pem',
+      'http://192.168.4.1/write.html?filename=client.pem',
+      'http://192.168.4.1/write.html?filename=key.pem'
+    ];
+  });
 
   // Acknowledgement URL
-  const [ackUrl, setAckUrl] = useState('http://localhost:4000/api/status');
+  const [ackUrl, setAckUrl] = useState(() => localStorage.getItem('cert_ackUrl') || 'http://localhost:4000/api/status');
 
   const [provisioning, setProvisioning] = useState(false);
-  const [certSources, setCertSources] = useState(['url', 'url', 'url']); // 'url' | 'paste' for each cert
-  const [caCert, setCaCert] = useState('');
-  const [clientCert, setClientCert] = useState('');
-  const [privateKey, setPrivateKey] = useState('');
-  const [logs, setLogs] = useState([]);
+  const [certSources, setCertSources] = useState(() => {
+    const saved = localStorage.getItem('cert_certSources');
+    return saved ? JSON.parse(saved) : ['url', 'url', 'url'];
+  });
+  const [caCert, setCaCert] = useState(() => localStorage.getItem('cert_caCert') || '');
+  const [clientCert, setClientCert] = useState(() => localStorage.getItem('cert_clientCert') || '');
+  const [privateKey, setPrivateKey] = useState(() => localStorage.getItem('cert_privateKey') || '');
+  const [logs, setLogs] = useState(() => {
+    const saved = localStorage.getItem('cert_logs');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [status, setStatus] = useState({ type: '', message: '' });
 
   // Track step statuses: 'idle' | 'running' | 'success' | 'failed' | 'skipped'
-  const [stepStatuses, setStepStatuses] = useState(Array(7).fill('idle'));
+  const [stepStatuses, setStepStatuses] = useState(() => {
+    const saved = localStorage.getItem('cert_stepStatuses');
+    return saved ? JSON.parse(saved) : Array(7).fill('idle');
+  });
 
   const logsEndRef = useRef(null);
+
+  // Sync to localStorage
+  useEffect(() => {
+    localStorage.setItem('cert_password', password);
+  }, [password]);
+
+  useEffect(() => {
+    localStorage.setItem('cert_bearerToken', bearerToken);
+  }, [bearerToken]);
+
+  useEffect(() => {
+    localStorage.setItem('cert_payloadType', payloadType);
+  }, [payloadType]);
+
+  useEffect(() => {
+    localStorage.setItem('cert_downloadUrls', JSON.stringify(downloadUrls));
+  }, [downloadUrls]);
+
+  useEffect(() => {
+    localStorage.setItem('cert_postUrls', JSON.stringify(postUrls));
+  }, [postUrls]);
+
+  useEffect(() => {
+    localStorage.setItem('cert_ackUrl', ackUrl);
+  }, [ackUrl]);
+
+  useEffect(() => {
+    localStorage.setItem('cert_certSources', JSON.stringify(certSources));
+  }, [certSources]);
+
+  useEffect(() => {
+    localStorage.setItem('cert_caCert', caCert);
+  }, [caCert]);
+
+  useEffect(() => {
+    localStorage.setItem('cert_clientCert', clientCert);
+  }, [clientCert]);
+
+  useEffect(() => {
+    localStorage.setItem('cert_privateKey', privateKey);
+  }, [privateKey]);
+
+  useEffect(() => {
+    localStorage.setItem('cert_logs', JSON.stringify(logs));
+  }, [logs]);
+
+  useEffect(() => {
+    localStorage.setItem('cert_stepStatuses', JSON.stringify(stepStatuses));
+  }, [stepStatuses]);
 
   // Parse logs and match steps
   const updateStep = (index, status) => {

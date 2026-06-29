@@ -141,6 +141,71 @@ app.post('/api/endpoint', (req, res) => {
   });
 });
 
+// Inverter Communication mock config
+let inverterConfig = {
+  "asn": "bansee",
+  "baudrate": 9600,
+  "parity": 1,
+  "stopBit": 1,
+  "databits": 8,
+  "reqCount_1": 2,
+  "slaveID_11": 1,
+  "busID_11": 2,
+  "startAddr_11": 30001,
+  "length_11": 50,
+  "funcType_11": 4,
+  "slaveID_12": 1,
+  "busID_12": 2,
+  "startAddr_12": 40001,
+  "length_12": 50,
+  "funcType_12": 3,
+  "slaveID_13": 1,
+  "startAddr_13": 1,
+  "length_13": 2,
+  "funcType_13": 2,
+  "slaveID_14": 1,
+  "startAddr_14": 2,
+  "length_14": 3,
+  "funcType_14": 4,
+  "slaveID_15": 5,
+  "startAddr_15": 14,
+  "length_15": 10,
+  "funcType_15": 3,
+  "devCount_1": 1,
+  "devbusId_11": "2",
+  "devslaveId_11": "1",
+  "devactive_11": "1",
+  "devIP_11": "0.0.0.0",
+  "devport_11": "502",
+  "devprotocol_11": "1",
+  "devbusId_12": "1",
+  "devslaveId_12": "1",
+  "devactive_12": "1",
+  "devIP_12": "10.22.145.43",
+  "devport_12": "502",
+  "devprotocol_12": "1"
+};
+
+app.get('/api/config/inverter-communication', (req, res) => {
+  res.json(inverterConfig);
+});
+
+app.post('/api/config/inverter-communication', (req, res) => {
+  inverterConfig = { ...inverterConfig, ...req.body };
+  res.json({ success: true, config: inverterConfig });
+});
+
+// Remote Server mock config
+let remoteServerConfig = {};
+app.get('/api/config/remote-server', (req, res) => {
+  res.json(remoteServerConfig);
+});
+
+app.post('/api/config/remote-server', (req, res) => {
+  remoteServerConfig = { ...remoteServerConfig, ...req.body };
+  res.json({ success: true, config: remoteServerConfig });
+});
+
 // Accept both GET and POST for login endpoint (flexible for client implementations)
 app.get('/api/login', (req, res) => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -413,7 +478,7 @@ app.delete('/api/presets/:id', (req, res) => {
 app.post('/api/auth/github/callback', (req, res) => {
   try {
     const { code } = req.body;
-    
+
     if (!code) {
       return res.status(400).json({ error: 'Authorization code is required' });
     }
@@ -459,7 +524,7 @@ let maintenanceState = {
   remoteVersion: null,
   updateStatus: 'idle', // 'checking', 'downloading', 'applying', 'success', 'error'
   error: null,
-  xmlUrl: 'http://192.168.4.1/update.xml',
+  xmlUrl: 'http://localhost:4222',
   progress: 0
 };
 
@@ -482,28 +547,28 @@ async function triggerUpdate(xmlUrl) {
   maintenanceState.xmlUrl = xmlUrl || maintenanceState.xmlUrl;
   maintenanceState.error = null;
   maintenanceState.progress = 0;
-  
+
   io.emit('maintenance-update', maintenanceState);
-  
+
   try {
     // 1. Fetch update XML
     const response = await axios.get(maintenanceState.xmlUrl, { timeout: 10000 });
     const xmlText = response.data;
-    
+
     // Parse using regex checks
     const versionMatch = xmlText.match(/<version>(.*?)<\/version>/);
     const urlMatch = xmlText.match(/<url>(.*?)<\/url>/);
     const descMatch = xmlText.match(/<description>(.*?)<\/description>/);
-    
+
     if (!versionMatch || !urlMatch) {
       throw new Error("Invalid update XML structure. Missing version or url tags.");
     }
-    
+
     const version = versionMatch[1].trim();
     const downloadUrl = urlMatch[1].trim();
-    
+
     maintenanceState.remoteVersion = version;
-    
+
     const isNew = compareVersions(version, maintenanceState.currentVersion);
     if (!isNew) {
       maintenanceState.updateStatus = 'idle';
@@ -511,28 +576,28 @@ async function triggerUpdate(xmlUrl) {
       io.emit('maintenance-update', maintenanceState);
       return;
     }
-    
+
     // 2. Download code update file
     maintenanceState.updateStatus = 'downloading';
     io.emit('maintenance-update', maintenanceState);
-    
+
     const tempUpdateDir = path.join(dataDir, 'updates');
     if (!fs.existsSync(tempUpdateDir)) {
       fs.mkdirSync(tempUpdateDir, { recursive: true });
     }
-    
+
     const targetFilePath = path.join(tempUpdateDir, path.basename(downloadUrl) || 'update.bin');
     const writer = fs.createWriteStream(targetFilePath);
-    
+
     const downloadResponse = await axios({
       method: 'get',
       url: downloadUrl,
       responseType: 'stream'
     });
-    
+
     const totalBytes = parseInt(downloadResponse.headers['content-length'] || 0, 10);
     let downloadedBytes = 0;
-    
+
     downloadResponse.data.on('data', (chunk) => {
       downloadedBytes += chunk.length;
       if (totalBytes > 0) {
@@ -540,22 +605,22 @@ async function triggerUpdate(xmlUrl) {
         io.emit('maintenance-update', maintenanceState);
       }
     });
-    
+
     downloadResponse.data.pipe(writer);
-    
+
     await new Promise((resolve, reject) => {
       writer.on('finish', resolve);
       writer.on('error', reject);
     });
-    
+
     // 3. Apply updates
     maintenanceState.updateStatus = 'applying';
     maintenanceState.progress = 100;
     io.emit('maintenance-update', maintenanceState);
-    
+
     // Simulate updating application code or patching local state files
     await new Promise(r => setTimeout(r, 2000));
-    
+
     maintenanceState.updateStatus = 'success';
     maintenanceState.isMaintenance = false;
     io.emit('maintenance-update', maintenanceState);
@@ -570,17 +635,17 @@ async function triggerUpdate(xmlUrl) {
 // GET route for /maintenance supporting both JSON monitoring and HTML views
 app.get('/maintenance', async (req, res) => {
   const trigger = req.query.trigger === 'true';
-  const xmlUrl = req.query.xmlUrl || 'http://192.168.4.1/update.xml';
-  
+  const xmlUrl = req.query.xmlUrl || 'http://localhost:4222';
+
   if (trigger && maintenanceState.updateStatus === 'idle') {
     triggerUpdate(xmlUrl);
   }
-  
+
   const acceptsHtml = req.accepts('html');
   if (req.query.json === 'true' || !acceptsHtml) {
     return res.json(maintenanceState);
   }
-  
+
   const progressPercent = maintenanceState.progress + '%';
   const html = `
     <!DOCTYPE html>

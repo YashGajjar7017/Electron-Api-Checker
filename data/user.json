@@ -85,7 +85,7 @@
       "serverUrl": "http://192.168.4.1",
       "fullUrl": "http://192.168.4.1/api/auth/status",
       "collectionId": "9mfnk7qmr",
-      "bodyType": "json",
+      "bodyType": "none",
       "bodyParams": {},
       "skipOtp": false,
       "automation": {
@@ -1825,12 +1825,12 @@
     "hardwareRendering": true,
     "memoryOptimization": false
   },
-  "sessionToken": "",
-  "sessionTokenExpiry": null,
+  "sessionToken": "sess-1782735486417",
+  "sessionTokenExpiry": 1782736086420,
   "otpData": {
-    "current": null,
-    "cached": null,
-    "expiry": null,
+    "current": "174686",
+    "cached": "174686",
+    "expiry": 1782736085912,
     "attempts": 0
   },
   "environments": [
