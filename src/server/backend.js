@@ -107,6 +107,14 @@ app.get('/handOverToken:', (req, res) => {
 
 // Mock test endpoints for demonstration
 app.get('/api/endpoint', (req, res) => {
+  const authHeader = req.headers['authorization'];
+  if (authHeader && (authHeader.includes('invalid') || authHeader.includes('expired'))) {
+    return res.status(401).json({
+      Flag: false,
+      Message: "UNAUTHORIZED",
+      Data: null
+    });
+  }
   res.json({
     message: 'Success! Test GET endpoint working',
     timestamp: new Date(),
@@ -116,6 +124,14 @@ app.get('/api/endpoint', (req, res) => {
 });
 
 app.post('/api/endpoint', (req, res) => {
+  const authHeader = req.headers['authorization'];
+  if (authHeader && (authHeader.includes('invalid') || authHeader.includes('expired'))) {
+    return res.status(401).json({
+      Flag: false,
+      Message: "UNAUTHORIZED",
+      Data: null
+    });
+  }
   res.json({
     message: 'Success! Test POST endpoint working',
     receivedData: req.body,

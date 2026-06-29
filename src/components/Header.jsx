@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import useStore from '../store';
-import { FiLogOut, FiWifi, FiGithub, FiCloud, FiRefreshCcw, FiPower, FiShuffle, FiLayers, FiSettings, FiZap, FiPlay, FiTrash2, FiActivity } from 'react-icons/fi';
+import { FiLogOut, FiWifi, FiGithub, FiCloud, FiRefreshCcw, FiPower, FiShuffle, FiLayers, FiSettings, FiZap, FiPlay, FiTrash2, FiActivity, FiKey } from 'react-icons/fi';
 import BackendStatus from './BackendStatus';
 import SystemMonitor from './SystemMonitor';
 import SettingsPanel from './SettingsPanel';
@@ -13,6 +13,8 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
   const [pingStatus, setPingStatus] = useState(null);
   const [token, setToken] = useState(null);
   const [timeLeft, setTimeLeft] = useState('');
+  const [showTokenPopup, setShowTokenPopup] = useState(false);
+  const tokenPopupRef = useRef(null);
   
   const { 
     user, 
@@ -74,6 +76,16 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
     const interval = setInterval(updateTimeLeft, 1000);
     return () => clearInterval(interval);
   }, [sessionToken, sessionTokenExpiry]);
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (tokenPopupRef.current && !tokenPopupRef.current.contains(e.target)) {
+        setShowTokenPopup(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
 
   const handleGlobalTokenChange = (e) => {
     const val = e.target.value;
@@ -232,17 +244,6 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
             placeholder="http://localhost:3000"
             className="url-input"
           />
-          <label htmlFor="global-token-input">
-            Token{timeLeft && <span className="token-timer" style={{ color: '#ef4444', fontWeight: 'bold', marginLeft: '4px' }}>({timeLeft})</span>}:
-          </label>
-          <input
-            id="global-token-input"
-            type="password"
-            value={sessionToken || ''}
-            onChange={handleGlobalTokenChange}
-            placeholder="Enter Bearer Token"
-            className="token-input"
-          />
         </div>
         {/* <div className="header-actions">
           <button className="header-action-btn" onClick={handleRunAutomation} title="Run automation workflows">
@@ -283,6 +284,107 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
           <FiActivity size={18} />
           <span className="status-pulse" />
         </button>
+
+        <div style={{ position: 'relative' }} ref={tokenPopupRef}>
+          <button
+            className={`header-btn token-menu-btn ${sessionToken ? 'active-token' : ''}`}
+            onClick={() => setShowTokenPopup(!showTokenPopup)}
+            title="Manage Session Token"
+            style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <FiKey size={18} style={{ color: sessionToken ? '#10b981' : 'inherit' }} />
+            {timeLeft && (
+              <span style={{ 
+                position: 'absolute', 
+                top: '-5px', 
+                right: '-5px', 
+                background: '#ef4444', 
+                color: '#fff', 
+                fontSize: '8px', 
+                padding: '1px 3px', 
+                borderRadius: '6px',
+                fontWeight: 'bold',
+                lineHeight: '1'
+              }}>
+                {timeLeft.split(':')[0]}m
+              </span>
+            )}
+          </button>
+
+          {showTokenPopup && (
+            <div className="token-popup-dropdown glass-lg" style={{
+              position: 'absolute',
+              top: '40px',
+              right: '0',
+              width: '280px',
+              padding: '16px',
+              borderRadius: '12px',
+              border: '1px solid var(--border)',
+              background: 'rgba(15, 23, 42, 0.95)',
+              backdropFilter: 'blur(20px)',
+              boxShadow: 'var(--shadow-xl)',
+              zIndex: 1000,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              animation: 'fadeIn 0.2s ease',
+              textAlign: 'left'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-light)' }}>
+                  Manage Session Token
+                </span>
+                {sessionToken && (
+                  <span style={{ fontSize: '10px', color: '#10b981', background: 'rgba(16, 185, 129, 0.15)', padding: '2px 6px', borderRadius: '4px', fontWeight: '600' }}>
+                    Active ({timeLeft})
+                  </span>
+                )}
+              </div>
+
+              <input
+                type="text"
+                value={sessionToken || authToken || ''}
+                onChange={handleGlobalTokenChange}
+                placeholder="Enter Bearer Token"
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border)',
+                  background: 'rgba(0, 0, 0, 0.3)',
+                  color: 'var(--text-light)',
+                  fontSize: '13px',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+
+              {sessionToken ? (
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => {
+                    clearSessionToken();
+                    setAuthToken('');
+                  }}
+                  style={{
+                    borderColor: '#ef4444',
+                    color: '#ef4444',
+                    width: '100%',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    background: 'transparent'
+                  }}
+                >
+                  Clear Token
+                </button>
+              ) : (
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
+                  No token set. Paste a token or verify OTP to generate one.
+                </span>
+              )}
+            </div>
+          )}
+        </div>
         
         <button
           className="header-btn"

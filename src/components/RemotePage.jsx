@@ -1,10 +1,27 @@
 import React, { useState, useEffect } from 'react';
+import useStore from '../store';
 import { FiWifi, FiLock, FiGlobe, FiCpu, FiSend, FiCheckCircle, FiShield, FiAlertTriangle, FiSettings, FiCheck, FiPlay, FiRefreshCw } from 'react-icons/fi';
 import '../styles/RemotePage.css';
 
 function RemotePage() {
+  const {
+    sessionToken,
+    sessionTokenExpiry,
+    setSessionToken,
+    authToken,
+    setAuthToken,
+    clearSessionToken,
+    globalImei,
+    setGlobalImei
+  } = useStore();
+
+  const [timeLeft, setTimeLeft] = useState('');
+
+  const hasValidSessionToken = sessionToken && sessionTokenExpiry && Date.now() < sessionTokenExpiry;
+
   // Saved credentials / profile state (Server 0)
-  const [imei, setImei] = useState('869742085795508');
+  const imei = globalImei || '869742085795508';
+  const setImei = setGlobalImei;
   const [password, setPassword] = useState('db4f247f');
   const [serverUrl, setServerUrl] = useState('rms.iotscada-pmsg.com');
   const [serverPort, setServerPort] = useState('8883');
@@ -100,6 +117,28 @@ function RemotePage() {
     }
   };
 
+  // Countdown timer for 10-minute session token
+  useEffect(() => {
+    const updateTimeLeft = () => {
+      if (sessionToken && sessionTokenExpiry) {
+        const remaining = sessionTokenExpiry - Date.now();
+        if (remaining > 0) {
+          const minutes = Math.floor(remaining / 60000);
+          const seconds = Math.floor((remaining % 60000) / 1000);
+          setTimeLeft(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+          return;
+        }
+      }
+      setTimeLeft('');
+    };
+
+    updateTimeLeft();
+    const interval = setInterval(updateTimeLeft, 1000);
+    return () => clearInterval(interval);
+  }, [sessionToken, sessionTokenExpiry]);
+
+
+
   const getCompiledJson = () => {
     return {
       server_url: serverUrl,
@@ -171,26 +210,47 @@ function RemotePage() {
 
     try {
       if (window.electronAPI?.sendRequest) {
+        const token = sessionToken || authToken;
+        const requestHeaders = {
+          'Content-Type': 'application/json'
+        };
+        if (token) {
+          requestHeaders['Authorization'] = `Bearer ${token}`;
+        }
+
         const res = await window.electronAPI.sendRequest({
           url: postServerUrl.trim(),
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: requestHeaders,
           body: JSON.stringify(payload)
         });
 
         const latency = Math.round(performance.now() - startTime);
 
         if (res.success) {
-          setPostResponse({
-            status: res.status,
-            statusText: res.statusText || 'OK',
-            latency,
-            body: res.body
-          });
-          // Cache successful options
-          await handleSaveCredentials();
+          // Parse response body to check for 401 unauthorized shape
+          let responseData = {};
+          try {
+            responseData = JSON.parse(res.body);
+          } catch (e) {
+            responseData = res.body;
+          }
+
+          const isUnauth = res.status === 401 || (responseData && typeof responseData === 'object' && responseData.Flag === false && responseData.Message === 'UNAUTHORIZED');
+          if (isUnauth) {
+            clearSessionToken();
+            setAuthToken('');
+            setPostError('Session unauthorized (401). Active tokens cleared.');
+          } else {
+            setPostResponse({
+              status: res.status,
+              statusText: res.statusText || 'OK',
+              latency,
+              body: res.body
+            });
+            // Cache successful options
+            await handleSaveCredentials();
+          }
         } else {
           setPostError(res.error || 'Server rejected synchronization request.');
         }
@@ -210,6 +270,10 @@ function RemotePage() {
 
     const startTime = performance.now();
     let headers = { 'Content-Type': 'application/json' };
+    const token = sessionToken || authToken;
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     let body = null;
     let urlString = requestUrl.trim();
 
@@ -267,6 +331,83 @@ function RemotePage() {
       <div className="remote-grid">
         {/* Left Column: Config Panel */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+          {/* Token Status / Input Bar */}
+          <div className={`glass-panel token-bar ${hasValidSessionToken ? 'token-active' : 'token-manual'}`} 
+               style={{ 
+                 border: hasValidSessionToken ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
+                 background: hasValidSessionToken ? 'rgba(16, 185, 129, 0.05)' : 'rgba(255, 255, 255, 0.03)',
+                 padding: '16px',
+                 borderRadius: '12px',
+                 transition: 'all 0.3s ease'
+               }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <h3 style={{ 
+                color: hasValidSessionToken ? '#10b981' : 'var(--text-muted)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px', 
+                margin: 0,
+                fontSize: '14px',
+                fontWeight: '600'
+              }}>
+                <FiLock /> {hasValidSessionToken ? 'Session Token Active' : 'Manual Session Token Required'}
+              </h3>
+              {hasValidSessionToken && (
+                <span style={{ 
+                  fontSize: '11px', 
+                  fontWeight: 'bold', 
+                  color: '#10b981', 
+                  background: 'rgba(16, 185, 129, 0.15)', 
+                  padding: '4px 8px', 
+                  borderRadius: '4px' 
+                }}>
+                  Valid for: {timeLeft}
+                </span>
+              )}
+            </div>
+            
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <input
+                type="text"
+                value={sessionToken || authToken || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setAuthToken(val);
+                  if (val) {
+                    setSessionToken(val, 10);
+                  } else {
+                    clearSessionToken();
+                  }
+                }}
+                disabled={hasValidSessionToken}
+                placeholder="Enter authorization token manually..."
+                style={{
+                  flex: 1,
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: hasValidSessionToken ? '1px solid #10b981' : '1px solid rgba(255,255,255,0.15)',
+                  background: hasValidSessionToken ? 'rgba(16, 185, 129, 0.1)' : 'rgba(0,0,0,0.2)',
+                  color: hasValidSessionToken ? '#10b981' : '#ffffff',
+                  fontWeight: hasValidSessionToken ? '600' : 'normal',
+                  transition: 'all 0.3s ease',
+                  outline: 'none'
+                }}
+              />
+              {hasValidSessionToken && (
+                <button 
+                  className="btn btn-secondary" 
+                  onClick={() => {
+                    clearSessionToken();
+                    setAuthToken('');
+                  }}
+                  style={{ padding: '0 16px', borderColor: '#ef4444', color: '#ef4444', cursor: 'pointer', background: 'transparent', borderRadius: '8px' }}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
           
           {/* Target Sync Address bar */}
           <div className="glass-panel" style={{ border: '1px solid rgba(16, 185, 129, 0.2)' }}>

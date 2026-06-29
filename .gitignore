@@ -44,3 +44,6 @@ dist_electron/
 
 # OS
 Thumbs.db
+.env
+.env.example
+.env.production

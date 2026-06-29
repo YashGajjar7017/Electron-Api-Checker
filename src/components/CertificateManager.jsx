@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import useStore from '../store';
 import {
   FiDownload,
   FiUpload,
@@ -18,7 +19,8 @@ import {
 import '../styles/CertificateManager.css';
 
 function CertificateManager() {
-  const [imei, setImei] = useState('866738083623502');
+  const imei = useStore((state) => state.globalImei) || '869742085795508';
+  const setImei = useStore((state) => state.setGlobalImei);
   const [password, setPassword] = useState('3376b22');
   const [bearerToken, setBearerToken] = useState('02453');
   const [payloadType, setPayloadType] = useState('json');

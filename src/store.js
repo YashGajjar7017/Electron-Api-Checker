@@ -456,6 +456,10 @@ const useStore = create(
       return 0;
     },
 
+    // Global IMEI state for synchronization across Certificate, Remote, etc.
+    globalImei: '869742085795508',
+    setGlobalImei: (imei) => set({ globalImei: imei }),
+
     // Batch testing state - enhanced with stats
     isBatchTesting: false,
     batchResults: [],

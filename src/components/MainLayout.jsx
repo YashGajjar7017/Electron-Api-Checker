@@ -520,20 +520,20 @@ function MainLayout({ onThemeChange, currentTheme }) {
               <span className="switcher-text">Certificate</span>
             </button>
             <button
-              className={`switcher-btn ${selectedSidebar === 'bus_config' ? 'active' : ''}`}
-              onClick={() => setSelectedSidebar('bus_config')}
-              title="Bus Configuration"
-            >
-              <FiSliders size={20} />
-              <span className="switcher-text">Bus Config</span>
-            </button>
-            <button
               className={`switcher-btn ${selectedSidebar === 'remote' ? 'active' : ''}`}
               onClick={() => setSelectedSidebar('remote')}
               title="Remote Device Endpoint"
             >
               <FiWifi size={20} />
               <span className="switcher-text">Remote Page</span>
+            </button>
+            <button
+              className={`switcher-btn ${selectedSidebar === 'bus_config' ? 'active' : ''}`}
+              onClick={() => setSelectedSidebar('bus_config')}
+              title="Bus Configuration"
+            >
+              <FiSliders size={20} />
+              <span className="switcher-text">Bus Config</span>
             </button>
             <button
               className={`switcher-btn ${selectedSidebar === 'terminal' ? 'active' : ''}`}

@@ -1,8 +1,8 @@
 {
   "user": {
-    "id": "gbybkhci7",
+    "id": "wnqdysdr9",
     "email": "tihey75421@3dkai.com",
-    "createdAt": "2026-06-19T07:23:41.395Z"
+    "createdAt": "2026-06-29T06:26:52.283Z"
   },
   "apis": [
     {
@@ -43,7 +43,7 @@
       "endpoint": "/api/login",
       "headers": {},
       "params": {},
-      "body": "{ \n\"username\": \"RMS-09C0\", \n\"password\": \"Admin@123\" \n}",
+      "body": "{ \n\"username\": \"RMS-2090\", \n\"password\": \"Admin@123\" \n}",
       "auth": {
         "type": "none",
         "token": "",
@@ -85,7 +85,7 @@
       "serverUrl": "http://192.168.4.1",
       "fullUrl": "http://192.168.4.1/api/auth/status",
       "collectionId": "9mfnk7qmr",
-      "bodyType": "none",
+      "bodyType": "json",
       "bodyParams": {},
       "skipOtp": false,
       "automation": {
@@ -211,7 +211,7 @@
       "serverUrl": "http://localhost:5000",
       "fullUrl": "",
       "collectionId": "9mfnk7qmr",
-      "bodyType": "none",
+      "bodyType": "json",
       "bodyParams": {},
       "skipOtp": false,
       "automation": {
@@ -348,11 +348,26 @@
       "body": "",
       "auth": {
         "type": "bearer",
-        "token": "15904"
+        "token": "15904",
+        "certFile": "",
+        "keyFile": "",
+        "caFile": ""
       },
       "serverUrl": "http://192.168.4.1",
       "fullUrl": "http://192.168.4.1/api/config/parameters?table=1",
-      "collectionId": "9mfnk7qmr"
+      "collectionId": "9mfnk7qmr",
+      "bodyType": "json",
+      "bodyParams": {},
+      "skipOtp": false,
+      "automation": {
+        "enabled": false,
+        "variable": "{{id}}",
+        "start": 1,
+        "end": 10,
+        "step": 1,
+        "padding": 0,
+        "delay": 500
+      }
     },
     {
       "id": "qbzf0cy60",
@@ -432,11 +447,26 @@
       "body": "{\r\n    \"server_url\": \"rms.iotscada-pmsg.com\",\r\n    \"server_port\": 8883,\r\n    \"solution_type\": \"ongridrooftop\",\r\n    \"client_id\": \"d:866082075799826$ongridrooftop$500092\",\r\n    \"username\": \"866082075799826$ongridrooftop$500092\",\r\n    \"password\": \"f886db2f\",\r\n    \"server_url1\": \"rms.iotscada-pmsg.com\",\r\n    \"server_port1\": 8883,\r\n    \"solution_type1\": \"ongridrooftop\",\r\n    \"client_id1\": \"d:866082075799828$ongridrooftop$500092\",\r\n    \"username1\": \"866082075799828$ongridrooftop$500092\",\r\n    \"password1\": \"466b856f\",\r\n    \"imei\": \"866082075799826\",\r\n    \"imei1\": \"866082075799828\"\r\n}",
       "auth": {
         "type": "bearer",
-        "token": "45163"
+        "token": "45163",
+        "certFile": "",
+        "keyFile": "",
+        "caFile": ""
       },
       "serverUrl": "http://192.168.4.1",
       "fullUrl": "http://192.168.4.1/api/config/remote-server",
-      "collectionId": "9mfnk7qmr"
+      "collectionId": "9mfnk7qmr",
+      "bodyType": "json",
+      "bodyParams": {},
+      "skipOtp": false,
+      "automation": {
+        "enabled": false,
+        "variable": "{{id}}",
+        "start": 1,
+        "end": 10,
+        "step": 1,
+        "padding": 0,
+        "delay": 500
+      }
     },
     {
       "id": "or5ee9tzz",
@@ -512,11 +542,26 @@
       "body": "",
       "auth": {
         "type": "bearer",
-        "token": "44590"
+        "token": "95123",
+        "certFile": "",
+        "keyFile": "",
+        "caFile": ""
       },
       "serverUrl": "http://192.168.4.1",
       "fullUrl": "http://192.168.4.1/api/config/remote-server",
-      "collectionId": "9mfnk7qmr"
+      "collectionId": "9mfnk7qmr",
+      "bodyType": "json",
+      "bodyParams": {},
+      "skipOtp": false,
+      "automation": {
+        "enabled": false,
+        "variable": "{{id}}",
+        "start": 1,
+        "end": 10,
+        "step": 1,
+        "padding": 0,
+        "delay": 500
+      }
     },
     {
       "id": "agq5ih670",
@@ -1783,9 +1828,9 @@
   "sessionToken": "",
   "sessionTokenExpiry": null,
   "otpData": {
-    "current": "48141",
-    "cached": "48141",
-    "expiry": 1782390249871,
+    "current": null,
+    "cached": null,
+    "expiry": null,
     "attempts": 0
   },
   "environments": [

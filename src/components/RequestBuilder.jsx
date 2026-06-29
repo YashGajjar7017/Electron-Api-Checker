@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useStore from '../store';
-import Editor from '@monaco-editor/react';
+// Monaco editor import removed
 import {
   FiX,
   FiPlus,
@@ -550,7 +550,9 @@ function RequestBuilder() {
           console.log('⚠️  No authorization token available');
         }
       } else if (isLoginRequest) {
-        console.log('🔑 Skipping automatic token injection for login endpoint');
+        delete requestHeaders['Authorization'];
+        delete requestHeaders['authorization'];
+        console.log('🔑 Skipping & removing Authorization header for login/token issue request');
       }
     }
 
@@ -771,8 +773,6 @@ function RequestBuilder() {
   };
 
   const handleOtpVerify = async (otp) => {
-    const hasManualToken = authTokenState && authTokenState.trim().length > 0;
-    const hasAPIToken = useStore.getState().apiResponseToken;
     const validForMinutes = 10;
     let sessionTokenFromVerify = null;
 
@@ -795,12 +795,9 @@ function RequestBuilder() {
     }
 
     const finalToken = sessionTokenFromVerify || `sess-${otp}-${Date.now()}`;
-    if (!hasManualToken && !hasAPIToken) {
-      setSessionToken(finalToken, validForMinutes);
-      console.log('✅ Session token set for 10 min');
-    } else {
-      console.log('⚠️ Session token not stored because manual/API token already active');
-    }
+    // Always store/cache the session token for 10 minutes so it is valid and persistent
+    setSessionToken(finalToken, validForMinutes);
+    console.log('✅ Session token set/updated for 10 min');
     // Store OTP value for 10 minutes so it can be injected into request bodies
     try {
       const expiry = Date.now() + validForMinutes * 60 * 1000;
@@ -887,6 +884,18 @@ function RequestBuilder() {
         responseTime: Math.round(responseTime),
         responseSize: new Blob([result.body]).size,
       });
+
+      // Check for 401 unauthorized or custom unauthorized body shape
+      const isUnauthorized = result.status === 401 || (responseData && typeof responseData === 'object' && responseData.Flag === false && (responseData.Message === 'UNAUTHORIZED' || responseData.Message === 'INVALID_TOKEN'));
+      if (isUnauthorized) {
+        clearSessionToken();
+        useStore.getState().clearAPIResponseToken();
+        pendingSendRef.current = true;
+        setShowOtpModal(true);
+        showActionMessage('Session expired. Please enter new OTP.');
+        console.log('🔒 Stored tokens cleared and OTP modal prompted due to 401 Unauthorized response');
+        return;
+      }
 
       // Check if response contains a token (from login API)
       if (responseData && typeof responseData === 'object' && responseData.Data && responseData.Data.token) {
@@ -1179,29 +1188,48 @@ function RequestBuilder() {
               </div>
             )}
             {bodyType === 'json' && (
-              <Editor
-                height="100%"
-                defaultLanguage="json"
+              <textarea
+                className="body-textarea plaintext-editor"
                 value={body}
-                onChange={(value) => setBody(value || '')}
-                theme="vs-dark"
-                options={{
-                  minimap: { enabled: false },
-                  scrollBeyondLastLine: false,
-                  formatOnPaste: true,
+                onChange={(e) => setBody(e.target.value)}
+                placeholder='{ "key": "value" }'
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  minHeight: '200px',
+                  fontFamily: 'Consolas, Monaco, "Courier New", monospace',
+                  fontSize: '13px',
+                  background: 'rgba(15, 23, 42, 0.4)',
+                  color: 'var(--text-light)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  outline: 'none',
+                  resize: 'vertical',
+                  boxSizing: 'border-box'
                 }}
               />
             )}
             {(bodyType === 'raw' || bodyType === 'graphql') && (
-              <Editor
-                height="100%"
-                defaultLanguage={bodyType === 'graphql' ? 'graphql' : 'plaintext'}
+              <textarea
+                className="body-textarea plaintext-editor"
                 value={body}
-                onChange={(value) => setBody(value || '')}
-                theme="vs-dark"
-                options={{
-                  minimap: { enabled: false },
-                  scrollBeyondLastLine: false,
+                onChange={(e) => setBody(e.target.value)}
+                placeholder={bodyType === 'graphql' ? 'query { ... }' : 'Enter raw body content...'}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  minHeight: '200px',
+                  fontFamily: 'Consolas, Monaco, "Courier New", monospace',
+                  fontSize: '13px',
+                  background: 'rgba(15, 23, 42, 0.4)',
+                  color: 'var(--text-light)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  outline: 'none',
+                  resize: 'vertical',
+                  boxSizing: 'border-box'
                 }}
               />
             )}
@@ -1623,23 +1651,33 @@ function RequestBuilder() {
           <div className="scripts-editor">
             <div className="form-group">
               <label>Pre-request Script (JavaScript)</label>
-              <Editor
-                height="150px"
-                defaultLanguage="javascript"
+              <textarea
+                className="script-textarea plaintext-editor"
                 value={currentAPI?.preRequestScript || ''}
-                onChange={(value) => {
+                onChange={(e) => {
                   if (currentAPI) {
                     updateAPI(currentAPI.id, { 
                       ...currentAPI, 
-                      preRequestScript: value || '' 
+                      preRequestScript: e.target.value || '' 
                     });
                   }
                 }}
-                theme="vs-dark"
-                options={{
-                  minimap: { enabled: false },
-                  scrollBeyondLastLine: false,
+                placeholder="// Enter JavaScript pre-request script code..."
+                style={{
+                  width: '100%',
+                  height: '150px',
+                  fontFamily: 'Consolas, Monaco, "Courier New", monospace',
+                  fontSize: '13px',
+                  background: 'rgba(15, 23, 42, 0.4)',
+                  color: 'var(--text-light)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  outline: 'none',
+                  resize: 'vertical',
+                  boxSizing: 'border-box'
                 }}
+              />
               />
             </div>
             <div className="form-group">
