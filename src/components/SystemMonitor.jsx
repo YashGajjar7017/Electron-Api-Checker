@@ -131,8 +131,8 @@ function SystemMonitor({ isOpen, onClose }) {
       {
         label: 'CPU %',
         data: history.cpu,
-        borderColor: '#f97316',
-        backgroundColor: 'rgba(249, 115, 22, 0.1)',
+        borderColor: '#6366f1',
+        backgroundColor: 'rgba(99, 102, 241, 0.1)',
         fill: true,
         tension: 0.35,
         pointRadius: 0,

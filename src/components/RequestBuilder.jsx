@@ -67,6 +67,7 @@ function RequestBuilder() {
   const [actionMessage, setActionMessage] = useState('');
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [debugDetails, setDebugDetails] = useState(null);
+  const activeRequestIdRef = useRef(null);
 
   // Split-button dropdown states and refs
   const [showSendDropdown, setShowSendDropdown] = useState(false);
@@ -814,12 +815,32 @@ function RequestBuilder() {
     }
   };
 
+  const handleCancelRequest = async () => {
+    const activeId = activeRequestIdRef.current;
+    if (activeId) {
+      activeRequestIdRef.current = null;
+      if (window.electronAPI?.cancelRequest) {
+        await window.electronAPI.cancelRequest(activeId);
+      }
+      updateResponse(activeId, {
+        error: 'Request cancelled by user.',
+        status: 'CANCELLED',
+        statusText: 'CANCELLED',
+        body: 'Error: Request cancelled by user.',
+        rawBody: 'Error: Request cancelled by user.',
+        isPending: false
+      });
+    }
+    setIsSending(false);
+  };
+
   const executeRequest = async (overrideAuthToken) => {
     setIsSending(true);
     handleUpdateAPI();
 
     const responseId = Math.random().toString(36).substr(2, 9);
-    
+    activeRequestIdRef.current = responseId;
+
     // Add a temporary fetching response to history so the response panel can display "Fetching..." instantly
     addResponse({
       id: responseId,
@@ -859,7 +880,12 @@ function RequestBuilder() {
         headers: requestHeaders,
         body: getRequestBody(),
         sslOptions,
+        requestId: responseId
       });
+
+      if (activeRequestIdRef.current !== responseId) {
+        return;
+      }
 
       const responseTime = performance.now() - startTime;
 
@@ -929,6 +955,9 @@ function RequestBuilder() {
         isPending: false
       });
     } catch (error) {
+      if (activeRequestIdRef.current !== responseId) {
+        return;
+      }
       // Update the temporary fetching response with error details
       updateResponse(responseId, {
         error: error.message,
@@ -939,7 +968,10 @@ function RequestBuilder() {
       });
     }
 
-    setIsSending(false);
+    if (activeRequestIdRef.current === responseId) {
+      activeRequestIdRef.current = null;
+      setIsSending(false);
+    }
   };
 
   const shouldSkipOtp = () => {
@@ -1007,11 +1039,10 @@ function RequestBuilder() {
             {/* Split Send Button */}
             <div className="btn-split-group" ref={sendDropdownRef}>
               <button
-                className="btn btn-primary btn-send-main"
-                onClick={handleSendRequest}
-                disabled={isSending}
+                className={`btn btn-send-main ${isSending ? 'btn-danger' : 'btn-primary'}`}
+                onClick={isSending ? handleCancelRequest : handleSendRequest}
               >
-                {isSending ? 'Sending...' : 'Send'}
+                {isSending ? 'Cancel' : 'Send'}
               </button>
               <button
                 className="btn btn-primary btn-split-toggle"

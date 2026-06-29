@@ -18,7 +18,7 @@
       "caFile": ""
     },
     "skipOtp": true,
-    "bodyType": "none",
+    "bodyType": "json",
     "bodyParams": {},
     "automation": {
       "enabled": false,
@@ -37,7 +37,7 @@
     "endpoint": "/api/login",
     "headers": {},
     "params": {},
-    "body": "{ \n\"username\": \"RMS-2090\", \n\"password\": \"Admin@123\" \n}",
+    "body": "{ \n\"username\": \"RMS-A558\", \n\"password\": \"Admin@123\" \n}",
     "auth": {
       "type": "none",
       "token": "",

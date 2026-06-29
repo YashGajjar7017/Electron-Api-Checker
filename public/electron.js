@@ -679,10 +679,23 @@ ipcMain.handle('reload-app', async () => {
   }
 });
 
+const activeRequests = new Map();
+
+ipcMain.handle('cancel-request', async (event, requestId) => {
+  if (requestId && activeRequests.has(requestId)) {
+    const req = activeRequests.get(requestId);
+    req.destroy();
+    activeRequests.delete(requestId);
+    console.log(`[IPC] Request ${requestId} successfully cancelled/destroyed.`);
+    return { success: true };
+  }
+  return { success: false, error: 'Request not found or already completed' };
+});
+
 ipcMain.handle('send-request', async (event, requestOptions) => {
   return new Promise((resolve) => {
     try {
-      const { url, method, headers, body, sslOptions } = requestOptions;
+      const { url, method, headers, body, sslOptions, requestId } = requestOptions;
 
       if (!url) {
         return resolve({ success: false, error: 'URL is required' });
@@ -774,6 +787,7 @@ ipcMain.handle('send-request', async (event, requestOptions) => {
         path: options.path,
         headers: options.headers,
         hasBody: !!requestBody,
+        requestId,
       });
 
       const req = client.request(options, (res) => {
@@ -782,6 +796,7 @@ ipcMain.handle('send-request', async (event, requestOptions) => {
           responseBody += chunk;
         });
         res.on('end', () => {
+          if (requestId) activeRequests.delete(requestId);
           const responseHeaders = [];
           for (const [key, value] of Object.entries(res.headers)) {
             if (Array.isArray(value)) {
@@ -814,12 +829,18 @@ ipcMain.handle('send-request', async (event, requestOptions) => {
         });
       });
 
+      if (requestId) {
+        activeRequests.set(requestId, req);
+      }
+
       req.on('error', (error) => {
+        if (requestId) activeRequests.delete(requestId);
         console.error('Request error:', error.message);
         resolve({ success: false, error: error.message });
       });
 
       req.on('timeout', () => {
+        if (requestId) activeRequests.delete(requestId);
         req.destroy();
         resolve({ success: false, error: 'Request timed out after 60 seconds' });
       });

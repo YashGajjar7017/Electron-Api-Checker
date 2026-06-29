@@ -38,6 +38,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // ── Network requests ───────────────────────────────────────────────────────
   sendRequest:     (requestOptions) => ipcRenderer.invoke('send-request', requestOptions),
+  cancelRequest:   (requestId) => ipcRenderer.invoke('cancel-request', requestId),
   pingServer:      (serverUrl)        => ipcRenderer.invoke('ping-server', serverUrl),
   runPythonScript: (options)         => ipcRenderer.invoke('run-python-script', options),
   reloadApp:       ()                => ipcRenderer.invoke('reload-app'),
