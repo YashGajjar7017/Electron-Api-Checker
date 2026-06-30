@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import useStore from '../store';
-import { FiX, FiCheck, FiRefreshCw } from 'react-icons/fi';
+import { FiX, FiCheck, FiRefreshCw, FiDatabase } from 'react-icons/fi';
 import '../styles/SettingsPanel.css';
 
 const DEFAULT_SETTINGS = {
@@ -31,6 +31,50 @@ function SettingsPanel({ isOpen, onClose }) {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [isDirty, setIsDirty] = useState(false);
   const [activeTab, setActiveTab] = useState('appearance');
+
+  const [mongoUri, setMongoUri] = useState('');
+  const [isSavingMongo, setIsSavingMongo] = useState(false);
+  const [mongoStatus, setMongoStatus] = useState(null);
+
+  const fetchMongoUri = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/mongodb/config');
+      const data = await response.json();
+      if (data.success) {
+        setMongoUri(data.uri || '');
+      }
+    } catch (err) {
+      console.error('Failed to fetch MongoDB URI:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchMongoUri();
+    }
+  }, [isOpen]);
+
+  const handleSaveMongoUri = async () => {
+    setIsSavingMongo(true);
+    setMongoStatus(null);
+    try {
+      const response = await fetch('http://localhost:5000/api/mongodb/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uri: mongoUri })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setMongoStatus({ success: true, message: 'MongoDB connection settings saved to server successfully' });
+      } else {
+        setMongoStatus({ success: false, message: data.error || 'Failed to save settings' });
+      }
+    } catch (err) {
+      setMongoStatus({ success: false, message: err.message || 'Network error' });
+    } finally {
+      setIsSavingMongo(false);
+    }
+  };
 
   useEffect(() => {
     if (isOpen && storeSettings) {
@@ -69,13 +113,13 @@ function SettingsPanel({ isOpen, onClose }) {
 
         <div className="settings-container">
           <div className="settings-sidebar">
-            {['appearance', 'theme', 'performance', 'behavior'].map((tab) => (
+            {['appearance', 'theme', 'performance', 'behavior', 'database'].map((tab) => (
               <button
                 key={tab}
                 className={`settings-tab ${activeTab === tab ? 'active' : ''}`}
                 onClick={() => setActiveTab(tab)}
               >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {tab === 'database' ? 'MongoDB Connect' : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             ))}
           </div>
@@ -336,6 +380,67 @@ function SettingsPanel({ isOpen, onClose }) {
                   </div>
                 )}
               </>
+            )}
+
+            {activeTab === 'database' && (
+              <div className="settings-db-section animate-fadeIn" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <h3>MongoDB Connect Config</h3>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 8px 0', lineHeight: '1.5' }}>
+                  Enter your MongoDB Connection string (URI) to authenticate and save settings directly on the server.
+                </p>
+
+                <div className="setting-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Connection URI</label>
+                  <input
+                    type="text"
+                    value={mongoUri}
+                    onChange={(e) => setMongoUri(e.target.value)}
+                    placeholder="mongodb+srv://user:password@host/database"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      background: 'rgba(0,0,0,0.3)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '6px',
+                      color: 'var(--text-light)',
+                      fontFamily: 'monospace',
+                      fontSize: '12px',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={handleSaveMongoUri}
+                    disabled={isSavingMongo}
+                    style={{ display: 'flex', gap: '6px', alignItems: 'center' }}
+                  >
+                    {isSavingMongo ? <FiRefreshCw className="animate-spin" /> : <FiCheck />}
+                    Save Configuration
+                  </button>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={fetchMongoUri}
+                    disabled={isSavingMongo}
+                    style={{ display: 'flex', gap: '6px', alignItems: 'center' }}
+                  >
+                    <FiRefreshCw /> Fetch Settings
+                  </button>
+                </div>
+
+                {mongoStatus && (
+                  <div style={{
+                    marginTop: '12px',
+                    fontSize: '12px',
+                    color: mongoStatus.success ? 'var(--success)' : 'var(--error)',
+                    fontWeight: '600'
+                  }}>
+                    {mongoStatus.message}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>

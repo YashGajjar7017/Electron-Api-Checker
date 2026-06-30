@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiDatabase, FiCpu, FiFileText, FiUpload, FiPlay, FiPlus, FiTrash2, FiSave, FiAlertCircle, FiSettings, FiCheck, FiRefreshCw } from 'react-icons/fi';
+import { FiDatabase, FiCpu, FiFileText, FiUpload, FiPlay, FiPlus, FiTrash2, FiSave, FiAlertCircle, FiSettings, FiCheck, FiRefreshCw, FiSliders, FiActivity, FiTerminal, FiInfo } from 'react-icons/fi';
 import '../styles/BusConfig.css';
 
 function BusConfig() {
@@ -644,19 +644,20 @@ function BusConfig() {
   const renderInverterTab = () => {
     return (
       <div className="config-layout-grid">
-        <div className="glass-panel" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-          <div className="panel-header-row">
-            <h3>Inverter Communication Settings</h3>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Device Parameter Schema</span>
-          </div>
-
-          <div className="config-form-card">
-            <h4 style={{ color: 'var(--primary-light)', marginBottom: '10px', fontSize: '13px' }}>Serial & Baudrate Config</h4>
+        <div style={{ maxHeight: '75vh', overflowY: 'auto', paddingRight: '4px' }}>
+          {/* Card 1: Serial & Baudrate Configuration */}
+          <div className="inverter-section-card animate-fadeIn">
+            <div className="inverter-section-title">
+              <FiSettings size={15} />
+              <span>Serial Port & Communication Parameters</span>
+            </div>
+            
             <div className="form-grid">
               <div className="form-group">
                 <label>ASN</label>
                 <input
                   type="text"
+                  className="inverter-input"
                   value={inverterForm.asn}
                   onChange={(e) => setInverterForm({ ...inverterForm, asn: e.target.value })}
                 />
@@ -664,185 +665,193 @@ function BusConfig() {
               <div className="form-group">
                 <label>Baudrate</label>
                 <select
+                  className="inverter-input"
                   value={inverterForm.baudrate}
                   onChange={(e) => setInverterForm({ ...inverterForm, baudrate: parseInt(e.target.value) })}
                 >
-                  <option value={2400}>2400</option>
-                  <option value={4800}>4800</option>
-                  <option value={9600}>9600</option>
-                  <option value={19200}>19200</option>
-                  <option value={38400}>38400</option>
-                  <option value={115200}>115200</option>
+                  <option value={2400}>2400 bps</option>
+                  <option value={4800}>4800 bps</option>
+                  <option value={9600}>9600 bps</option>
+                  <option value={19200}>19200 bps</option>
+                  <option value={38400}>38400 bps</option>
+                  <option value={115200}>115200 bps</option>
                 </select>
               </div>
-              <div className="form-grid-3" style={{ gridColumn: 'span 2', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-                <div className="form-group">
-                  <label>Parity</label>
-                  <select
-                    value={inverterForm.parity}
-                    onChange={(e) => setInverterForm({ ...inverterForm, parity: parseInt(e.target.value) })}
-                  >
-                    <option value={0}>None (0)</option>
-                    <option value={1}>Odd (1)</option>
-                    <option value={2}>Even (2)</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Stop Bits</label>
-                  <select
-                    value={inverterForm.stopBit}
-                    onChange={(e) => setInverterForm({ ...inverterForm, stopBit: parseInt(e.target.value) })}
-                  >
-                    <option value={1}>1</option>
-                    <option value={2}>2</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Data Bits</label>
-                  <select
-                    value={inverterForm.databits}
-                    onChange={(e) => setInverterForm({ ...inverterForm, databits: parseInt(e.target.value) })}
-                  >
-                    <option value={7}>7</option>
-                    <option value={8}>8</option>
-                  </select>
-                </div>
+              <div className="form-group">
+                <label>Parity</label>
+                <select
+                  className="inverter-input"
+                  value={inverterForm.parity}
+                  onChange={(e) => setInverterForm({ ...inverterForm, parity: parseInt(e.target.value) })}
+                >
+                  <option value={0}>None (0)</option>
+                  <option value={1}>Odd (1)</option>
+                  <option value={2}>Even (2)</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Stop Bits</label>
+                <select
+                  className="inverter-input"
+                  value={inverterForm.stopBit}
+                  onChange={(e) => setInverterForm({ ...inverterForm, stopBit: parseInt(e.target.value) })}
+                >
+                  <option value={1}>1 bit</option>
+                  <option value={2}>2 bits</option>
+                </select>
+              </div>
+              <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                <label>Data Bits</label>
+                <select
+                  className="inverter-input"
+                  value={inverterForm.databits}
+                  onChange={(e) => setInverterForm({ ...inverterForm, databits: parseInt(e.target.value) })}
+                >
+                  <option value={7}>7 bits</option>
+                  <option value={8}>8 bits</option>
+                </select>
               </div>
             </div>
+          </div>
 
-            <h4 style={{ color: 'var(--primary-light)', marginTop: '20px', marginBottom: '10px', fontSize: '13px' }}>Modbus Bus & Slave Mappings</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Card 2: Modbus Bus & Slave Mappings */}
+          <div className="inverter-section-card animate-fadeIn" style={{ animationDelay: '100ms' }}>
+            <div className="inverter-section-title">
+              <FiSliders size={15} />
+              <span>Modbus Address & Register Mapping Table</span>
+            </div>
+
+            <div className="modbus-header-row">
+              <span>Mapping ID</span>
+              <span>Slave ID</span>
+              <span>Bus ID</span>
+              <span>Start Addr</span>
+              <span>Length</span>
+              <span>Function Type</span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {[11, 12, 13, 14, 15].map((suffix) => {
                 const s = suffix.toString();
                 return (
-                  <div key={s} style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: '1fr 1.2fr 2fr 1.5fr 1.5fr', 
-                    gap: '8px', 
-                    alignItems: 'center', 
-                    padding: '8px', 
-                    background: 'rgba(255,255,255,0.02)', 
-                    borderRadius: '6px', 
-                    border: '1px solid var(--border)' 
-                  }}>
-                    <span style={{ fontSize: '11px', fontWeight: 'bold' }}>Mapping {s}</span>
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <input
-                        type="number"
-                        placeholder="Slave ID"
-                        value={inverterForm[`slaveID_${s}`] !== undefined ? inverterForm[`slaveID_${s}`] : ''}
-                        onChange={(e) => setInverterForm({ ...inverterForm, [`slaveID_${s}`]: parseInt(e.target.value) || 0 })}
-                        style={{ padding: '4px', fontSize: '11px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: 'var(--text-light)' }}
-                      />
-                    </div>
-                    {inverterForm[`busID_${s}`] !== undefined && (
-                      <div className="form-group" style={{ margin: 0 }}>
-                        <input
-                          type="number"
-                          placeholder="Bus ID"
-                          value={inverterForm[`busID_${s}`]}
-                          onChange={(e) => setInverterForm({ ...inverterForm, [`busID_${s}`]: parseInt(e.target.value) || 0 })}
-                          style={{ padding: '4px', fontSize: '11px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: 'var(--text-light)' }}
-                        />
-                      </div>
-                    )}
-                    <div className="form-group" style={{ margin: 0, gridColumn: inverterForm[`busID_${s}`] !== undefined ? 'auto' : 'span 2' }}>
-                      <input
-                        type="number"
-                        placeholder="Start Addr"
-                        value={inverterForm[`startAddr_${s}`] !== undefined ? inverterForm[`startAddr_${s}`] : ''}
-                        onChange={(e) => setInverterForm({ ...inverterForm, [`startAddr_${s}`]: parseInt(e.target.value) || 0 })}
-                        style={{ padding: '4px', fontSize: '11px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: 'var(--text-light)' }}
-                      />
-                    </div>
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <input
-                        type="number"
-                        placeholder="Length"
-                        value={inverterForm[`length_${s}`] !== undefined ? inverterForm[`length_${s}`] : ''}
-                        onChange={(e) => setInverterForm({ ...inverterForm, [`length_${s}`]: parseInt(e.target.value) || 0 })}
-                        style={{ padding: '4px', fontSize: '11px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: 'var(--text-light)' }}
-                      />
-                    </div>
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <select
-                        value={inverterForm[`funcType_${s}`] !== undefined ? inverterForm[`funcType_${s}`] : 3}
-                        onChange={(e) => setInverterForm({ ...inverterForm, [`funcType_${s}`]: parseInt(e.target.value) || 3 })}
-                        style={{ padding: '4px', fontSize: '11px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: 'var(--text-light)' }}
-                      >
-                        <option value={1}>Coils (1)</option>
-                        <option value={2}>Discrete (2)</option>
-                        <option value={3}>Holding (3)</option>
-                        <option value={4}>Input (4)</option>
-                      </select>
-                    </div>
+                  <div key={s} className="modbus-mapping-row">
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-light)' }}>
+                      Map #{s}
+                    </span>
+                    <input
+                      type="number"
+                      className="inverter-input"
+                      placeholder="Slave ID"
+                      value={inverterForm[`slaveID_${s}`] !== undefined ? inverterForm[`slaveID_${s}`] : ''}
+                      onChange={(e) => setInverterForm({ ...inverterForm, [`slaveID_${s}`]: parseInt(e.target.value) || 0 })}
+                    />
+                    <input
+                      type="number"
+                      className="inverter-input"
+                      placeholder="Bus ID"
+                      disabled={inverterForm[`busID_${s}`] === undefined}
+                      value={inverterForm[`busID_${s}`] !== undefined ? inverterForm[`busID_${s}`] : ''}
+                      onChange={(e) => setInverterForm({ ...inverterForm, [`busID_${s}`]: parseInt(e.target.value) || 0 })}
+                      style={{ opacity: inverterForm[`busID_${s}`] === undefined ? 0.3 : 1 }}
+                    />
+                    <input
+                      type="number"
+                      className="inverter-input"
+                      placeholder="Start Addr"
+                      value={inverterForm[`startAddr_${s}`] !== undefined ? inverterForm[`startAddr_${s}`] : ''}
+                      onChange={(e) => setInverterForm({ ...inverterForm, [`startAddr_${s}`]: parseInt(e.target.value) || 0 })}
+                    />
+                    <input
+                      type="number"
+                      className="inverter-input"
+                      placeholder="Length"
+                      value={inverterForm[`length_${s}`] !== undefined ? inverterForm[`length_${s}`] : ''}
+                      onChange={(e) => setInverterForm({ ...inverterForm, [`length_${s}`]: parseInt(e.target.value) || 0 })}
+                    />
+                    <select
+                      className="inverter-input"
+                      value={inverterForm[`funcType_${s}`] !== undefined ? inverterForm[`funcType_${s}`] : 3}
+                      onChange={(e) => setInverterForm({ ...inverterForm, [`funcType_${s}`]: parseInt(e.target.value) || 3 })}
+                    >
+                      <option value={1}>Coils (1)</option>
+                      <option value={2}>Discrete (2)</option>
+                      <option value={3}>Holding (3)</option>
+                      <option value={4}>Input (4)</option>
+                    </select>
                   </div>
                 );
               })}
             </div>
+          </div>
 
-            <h4 style={{ color: 'var(--primary-light)', marginTop: '20px', marginBottom: '10px', fontSize: '13px' }}>Active Connected Devices</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Card 3: Connected Modbus Gateways / Active Devices */}
+          <div className="inverter-section-card animate-fadeIn" style={{ animationDelay: '200ms' }}>
+            <div className="inverter-section-title">
+              <FiActivity size={15} />
+              <span>Active Gateways / Connected Modbus Devices</span>
+            </div>
+
+            <div className="device-header-row">
+              <span>Device ID</span>
+              <span>Bus ID</span>
+              <span>Slave ID</span>
+              <span>Device IP</span>
+              <span>Port</span>
+              <span>Status</span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {[11, 12].map((suffix) => {
                 const s = suffix.toString();
+                const isActive = inverterForm[`devactive_${s}`] === '1';
                 return (
-                  <div key={s} style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: '1.2fr 1fr 1fr 2.5fr 1fr 1.2fr', 
-                    gap: '6px', 
-                    alignItems: 'center', 
-                    padding: '8px', 
-                    background: 'rgba(255,255,255,0.02)', 
-                    borderRadius: '6px', 
-                    border: '1px solid var(--border)' 
+                  <div key={s} className="device-config-row" style={{
+                    borderColor: isActive ? 'rgba(16, 185, 129, 0.2)' : 'var(--border-light)',
+                    background: isActive ? 'rgba(16, 185, 129, 0.01)' : 'rgba(15, 23, 42, 0.3)'
                   }}>
-                    <span style={{ fontSize: '11px', fontWeight: 'bold' }}>Device {s}</span>
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <input
-                        type="text"
-                        placeholder="Bus ID"
-                        value={inverterForm[`devbusId_${s}`]}
-                        onChange={(e) => setInverterForm({ ...inverterForm, [`devbusId_${s}`]: e.target.value })}
-                        style={{ padding: '4px', fontSize: '11px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: 'var(--text-light)' }}
-                      />
-                    </div>
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <input
-                        type="text"
-                        placeholder="Slave ID"
-                        value={inverterForm[`devslaveId_${s}`]}
-                        onChange={(e) => setInverterForm({ ...inverterForm, [`devslaveId_${s}`]: e.target.value })}
-                        style={{ padding: '4px', fontSize: '11px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: 'var(--text-light)' }}
-                      />
-                    </div>
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <input
-                        type="text"
-                        placeholder="Device IP"
-                        value={inverterForm[`devIP_${s}`]}
-                        onChange={(e) => setInverterForm({ ...inverterForm, [`devIP_${s}`]: e.target.value })}
-                        style={{ padding: '4px', fontSize: '11px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: 'var(--text-light)' }}
-                      />
-                    </div>
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <input
-                        type="text"
-                        placeholder="Port"
-                        value={inverterForm[`devport_${s}`]}
-                        onChange={(e) => setInverterForm({ ...inverterForm, [`devport_${s}`]: e.target.value })}
-                        style={{ padding: '4px', fontSize: '11px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: 'var(--text-light)' }}
-                      />
-                    </div>
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <select
-                        value={inverterForm[`devactive_${s}`]}
-                        onChange={(e) => setInverterForm({ ...inverterForm, [`devactive_${s}`]: e.target.value })}
-                        style={{ padding: '4px', fontSize: '11px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: 'var(--text-light)' }}
-                      >
-                        <option value="0">Inactive</option>
-                        <option value="1">Active</option>
-                      </select>
-                    </div>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-light)' }}>
+                      Dev #{s}
+                    </span>
+                    <input
+                      type="text"
+                      className="inverter-input"
+                      placeholder="Bus ID"
+                      value={inverterForm[`devbusId_${s}`] || ''}
+                      onChange={(e) => setInverterForm({ ...inverterForm, [`devbusId_${s}`]: e.target.value })}
+                    />
+                    <input
+                      type="text"
+                      className="inverter-input"
+                      placeholder="Slave ID"
+                      value={inverterForm[`devslaveId_${s}`] || ''}
+                      onChange={(e) => setInverterForm({ ...inverterForm, [`devslaveId_${s}`]: e.target.value })}
+                    />
+                    <input
+                      type="text"
+                      className="inverter-input"
+                      placeholder="Device IP"
+                      value={inverterForm[`devIP_${s}`] || ''}
+                      onChange={(e) => setInverterForm({ ...inverterForm, [`devIP_${s}`]: e.target.value })}
+                    />
+                    <input
+                      type="text"
+                      className="inverter-input"
+                      placeholder="Port"
+                      value={inverterForm[`devport_${s}`] || ''}
+                      onChange={(e) => setInverterForm({ ...inverterForm, [`devport_${s}`]: e.target.value })}
+                    />
+                    <select
+                      className="inverter-input"
+                      value={inverterForm[`devactive_${s}`] || '0'}
+                      onChange={(e) => setInverterForm({ ...inverterForm, [`devactive_${s}`]: e.target.value })}
+                      style={{
+                        color: isActive ? 'var(--success)' : 'var(--text-muted)',
+                        fontWeight: '600'
+                      }}
+                    >
+                      <option value="0">Inactive</option>
+                      <option value="1">Active</option>
+                    </select>
                   </div>
                 );
               })}
@@ -850,62 +859,77 @@ function BusConfig() {
           </div>
         </div>
 
-        <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* Right Column: Endpoint Configuration & Console Sync Logs */}
+        <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: 'fit-content' }}>
           <div>
-            <h3>Inverter Config Sync (Fiddler Endpoint)</h3>
-            <p className="activation-description">Read or write inverter configurations directly from/to the device.</p>
+            <h3 style={{ margin: '0 0 6px 0', fontSize: '15px' }}>Inverter Device Synchronization</h3>
+            <p className="activation-description">Sync configurations to the device using a Fiddler proxy / inverter REST endpoint.</p>
           </div>
 
-          <div className="config-form-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="config-form-card" style={{ gap: '10px' }}>
             <div className="form-group">
-              <label>Inverter API Endpoint URL</label>
+              <label>API Endpoint Destination URL</label>
               <input
                 type="text"
+                className="inverter-input"
                 value={inverterReadUrl}
                 onChange={(e) => setInverterReadUrl(e.target.value)}
-                style={{ fontFamily: 'monospace', fontSize: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: 'var(--text-light)' }}
+                style={{ fontFamily: 'monospace' }}
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px' }}>
               <button
                 type="button"
-                className="btn btn-secondary"
+                className="btn btn-secondary btn-sm"
                 onClick={handleReadInverterConfig}
                 disabled={inverterLoading}
-                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                style={{ display: 'flex', gap: '6px', alignItems: 'center', justifyContent: 'center' }}
               >
-                <FiUpload size={14} style={{ transform: 'rotate(180deg)' }} /> {inverterLoading ? 'Reading...' : 'Read Config'}
+                {inverterLoading ? (
+                  <FiRefreshCw className="animate-spin" />
+                ) : (
+                  <FiUpload style={{ transform: 'rotate(180deg)' }} />
+                )}
+                {inverterLoading ? 'Reading...' : 'Load Config'}
               </button>
               <button
                 type="button"
-                className="btn btn-primary"
+                className="btn btn-primary btn-sm"
                 onClick={handleWriteInverterConfig}
                 disabled={inverterLoading}
-                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                style={{ display: 'flex', gap: '6px', alignItems: 'center', justifyContent: 'center' }}
               >
-                <FiSave size={14} /> {inverterLoading ? 'Saving...' : 'Save to Device'}
+                {inverterLoading ? (
+                  <FiRefreshCw className="animate-spin" />
+                ) : (
+                  <FiSave />
+                )}
+                {inverterLoading ? 'Saving...' : 'Sync Config'}
               </button>
             </div>
           </div>
 
-          <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}>
-            <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', color: 'var(--text-secondary)' }}>Sync Logs</h4>
-            <div style={{ 
-              flex: 1, 
-              overflowY: 'auto', 
-              fontFamily: 'monospace', 
-              fontSize: '11px', 
-              color: 'var(--text-light)', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '4px',
-              maxHeight: '220px'
-            }}>
+          {/* Sync Terminal Logs */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              <FiTerminal size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} /> Sync Diagnostics Logs
+            </span>
+            <div className="inverter-logs-terminal">
               {inverterLogs.length === 0 ? (
-                <span style={{ color: 'var(--text-muted)' }}>Console idle... Ready to sync.</span>
+                <div className="inverter-log-line info">Console idle... Ready to synchronize config values.</div>
               ) : (
-                inverterLogs.map((log, idx) => <div key={idx}>{log}</div>)
+                inverterLogs.map((log, idx) => {
+                  let logClass = 'info';
+                  if (log.includes('✅') || log.includes('success')) logClass = 'success';
+                  if (log.includes('❌') || log.includes('fail') || log.includes('Exception')) logClass = 'error';
+                  
+                  return (
+                    <div key={idx} className={`inverter-log-line ${logClass}`}>
+                      {log}
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>

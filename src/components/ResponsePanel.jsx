@@ -207,6 +207,22 @@ function ResponsePanel() {
                       height="100%"
                       language={selectedResponse.dataFormat || 'json'}
                       value={parsedJson}
+                      theme="vs-dark"
+                      loading={
+                        <div style={{
+                          background: '#1e1e1e',
+                          color: '#888',
+                          height: '100%',
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '13px',
+                          fontFamily: 'monospace'
+                        }}>
+                          Loading Editor...
+                        </div>
+                      }
                       options={{ readOnly: true, minimap: { enabled: false }, wordWrap: 'on', theme: 'vs-dark' }}
                     />
                   </div>

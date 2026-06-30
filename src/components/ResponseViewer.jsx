@@ -14,6 +14,7 @@ import {
   FiLayers,
 } from 'react-icons/fi';
 import OutputModal from './OutputModal';
+import { findTokenInObject } from '../utils/tokenExtractor';
 import '../styles/ResponseViewer.css';
 
 function ResponseViewer() {
@@ -120,16 +121,27 @@ const runBatchTests = async () => {
     setIsBatchRunning(true);
     startBatchTesting();
 
+    let isFirstApi = true;
     for (const api of apisToRun) {
       if (batchAbortRef.current) {
         break;
       }
       try {
-        const headers = api.headers || {};
-        if (api.auth?.type === 'bearer' && api.auth?.token) {
-          headers['Authorization'] = `Bearer ${api.auth.token}`;
-        } else if (api.auth?.type === 'basic' && api.auth?.token) {
-          headers['Authorization'] = `Basic ${api.auth.token}`;
+        const headers = { ...api.headers };
+        
+        // 1. Get the auto-injected apiResponseToken if we are NOT running the first api
+        let activeToken = useStore.getState().getAPIResponseToken();
+        
+        if (!isFirstApi && activeToken) {
+          headers['Authorization'] = `Bearer ${activeToken}`;
+          console.log(`🔑 Batch Run: Auto-injecting Bearer token into afterwards API "${api.name}"`);
+        } else {
+          // If it's the first API, or there's no active auto-token, fallback to the API's own auth config
+          if (api.auth?.type === 'bearer' && api.auth?.token) {
+            headers['Authorization'] = `Bearer ${api.auth.token}`;
+          } else if (api.auth?.type === 'basic' && api.auth?.token) {
+            headers['Authorization'] = `Basic ${api.auth.token}`;
+          }
         }
 
         const url = serverUrl + api.endpoint;
@@ -153,6 +165,15 @@ const runBatchTests = async () => {
           responseData = JSON.parse(result.body);
         } catch {
           responseData = result.body;
+        }
+
+        // If it's the first API in the run queue, check if it returned a token and save it for 10 minutes
+        if (isFirstApi && result.status >= 200 && result.status < 300 && responseData && typeof responseData === 'object') {
+          const foundToken = findTokenInObject(responseData);
+          if (foundToken) {
+            console.log('🔑 Batch Run: Auto-detected Bearer token in first API response, storing for 10 minutes');
+            useStore.getState().setAPIResponseToken(foundToken, 10);
+          }
         }
 
         const batchResult = {
@@ -189,6 +210,8 @@ const runBatchTests = async () => {
         };
         addBatchResult(batchResult);
         addResponse(batchResult);
+      } finally {
+        isFirstApi = false;
       }
     }
 

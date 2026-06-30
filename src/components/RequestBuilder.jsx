@@ -13,6 +13,7 @@ import DebugPanel from './DebugPanel';
 import OTPAutoFetch from './OTPAutoFetch';
 import { applyTemplateVariables } from '../utils/variableUtils';
 import { useSaveStatusEffect } from './useSaveStatusEffect.js';
+import { findTokenInObject } from '../utils/tokenExtractor';
 import '../styles/RequestBuilder.css';
 
 function RequestBuilder() {
@@ -900,6 +901,15 @@ function RequestBuilder() {
         responseData = result.body;
       }
 
+      // Auto-extract token from successful response
+      if (result.status >= 200 && result.status < 300 && responseData && typeof responseData === 'object') {
+        const extractedToken = findTokenInObject(responseData);
+        if (extractedToken) {
+          console.log('🔑 Auto-detected token in response, storing for 10 minutes');
+          useStore.getState().setAPIResponseToken(extractedToken, 10);
+        }
+      }
+
       // Print the response to console
       console.log('API Response:', {
         status: result.status,
@@ -1226,6 +1236,22 @@ function RequestBuilder() {
                   language="json"
                   value={body}
                   onChange={(val) => setBody(val || '')}
+                  theme="vs-dark"
+                  loading={
+                    <div style={{
+                      background: '#1e1e1e',
+                      color: '#888',
+                      height: '100%',
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '13px',
+                      fontFamily: 'monospace'
+                    }}>
+                      Loading Editor...
+                    </div>
+                  }
                   options={{ minimap: { enabled: false }, wordWrap: 'on', theme: 'vs-dark' }}
                 />
               </div>
@@ -1237,6 +1263,22 @@ function RequestBuilder() {
                   language={bodyType === 'graphql' ? 'graphql' : 'plaintext'}
                   value={body}
                   onChange={(val) => setBody(val || '')}
+                  theme="vs-dark"
+                  loading={
+                    <div style={{
+                      background: '#1e1e1e',
+                      color: '#888',
+                      height: '100%',
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '13px',
+                      fontFamily: 'monospace'
+                    }}>
+                      Loading Editor...
+                    </div>
+                  }
                   options={{ minimap: { enabled: false }, wordWrap: 'on', theme: 'vs-dark' }}
                 />
               </div>
@@ -1672,6 +1714,22 @@ function RequestBuilder() {
                       });
                     }
                   }}
+                  theme="vs-dark"
+                  loading={
+                    <div style={{
+                      background: '#1e1e1e',
+                      color: '#888',
+                      height: '100%',
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '13px',
+                      fontFamily: 'monospace'
+                    }}>
+                      Loading Editor...
+                    </div>
+                  }
                   options={{ minimap: { enabled: false }, wordWrap: 'on', theme: 'vs-dark' }}
                 />
               </div>
@@ -1691,6 +1749,22 @@ function RequestBuilder() {
                       });
                     }
                   }}
+                  theme="vs-dark"
+                  loading={
+                    <div style={{
+                      background: '#1e1e1e',
+                      color: '#888',
+                      height: '100%',
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '13px',
+                      fontFamily: 'monospace'
+                    }}>
+                      Loading Editor...
+                    </div>
+                  }
                   options={{ minimap: { enabled: false }, wordWrap: 'on', theme: 'vs-dark' }}
                 />
               </div>

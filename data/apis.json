@@ -48,7 +48,7 @@
     "serverUrl": "http://192.168.4.1",
     "fullUrl": "http://192.168.4.1/api/login",
     "collectionId": "9mfnk7qmr",
-    "bodyType": "graphql",
+    "bodyType": "json",
     "bodyParams": {},
     "skipOtp": false,
     "automation": {
@@ -567,11 +567,26 @@
     "body": "{\r\n\"http_url\": \"api.iotscada-pmsg.com\",\r\n\"http_port\":443,\r\n\"imei\":\"866082075799826\",\r\n\"username\":\"866082075799826\",\r\n\"password\":\"f886db2f\"\r\n}",
     "auth": {
       "type": "bearer",
-      "token": "86122"
+      "token": "86122",
+      "certFile": "",
+      "keyFile": "",
+      "caFile": ""
     },
     "serverUrl": "http://192.168.4.1",
     "fullUrl": "http://192.168.4.1/api/config/mqtt-server",
-    "collectionId": "9mfnk7qmr"
+    "collectionId": "9mfnk7qmr",
+    "bodyType": "json",
+    "bodyParams": {},
+    "skipOtp": false,
+    "automation": {
+      "enabled": false,
+      "variable": "{{id}}",
+      "start": 1,
+      "end": 10,
+      "step": 1,
+      "padding": 0,
+      "delay": 500
+    }
   },
   {
     "id": "069skuhdo",

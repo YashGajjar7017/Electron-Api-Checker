@@ -14,6 +14,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const http = require('http');
+const mongoose = require('mongoose');
 const { Server } = require('socket.io');
 
 const app = express();
@@ -840,6 +841,195 @@ app.post('/api/maintenance/reset', (req, res) => {
   };
   io.emit('maintenance-update', maintenanceState);
   res.json({ success: true, state: maintenanceState });
+});
+
+// ── MongoDB Manager endpoints ───────────────────────────────────────────
+
+let savedMongoUri = 'mongodb+srv://yashacker:Iamyash@reactdb.d04du.mongodb.net/ReactDB';
+
+app.get('/api/mongodb/config', (req, res) => {
+  res.json({ success: true, uri: savedMongoUri });
+});
+
+app.post('/api/mongodb/config', (req, res) => {
+  const { uri } = req.body;
+  if (uri) {
+    savedMongoUri = uri;
+    res.json({ success: true, message: 'MongoDB connection settings saved to server successfully', uri: savedMongoUri });
+  } else {
+    res.status(400).json({ success: false, error: 'URI is required' });
+  }
+});
+
+const parseMongoUri = (uri) => {
+  try {
+    let protocol = 'mongodb';
+    let working = uri;
+    if (uri.startsWith('mongodb+srv://')) {
+      protocol = 'mongodb+srv';
+      working = uri.slice(14);
+    } else if (uri.startsWith('mongodb://')) {
+      protocol = 'mongodb';
+      working = uri.slice(10);
+    }
+
+    let credentials = '';
+    let hostDbStr = '';
+    
+    if (working.includes('@')) {
+      const parts = working.split('@');
+      credentials = parts[0];
+      hostDbStr = parts.slice(1).join('@');
+    } else {
+      hostDbStr = working;
+    }
+
+    let user = '';
+    let password = '';
+    if (credentials.includes(':')) {
+      const credParts = credentials.split(':');
+      user = credParts[0];
+      password = credParts.slice(1).join(':');
+    } else if (credentials) {
+      user = credentials;
+    }
+
+    let hostAndPort = '';
+    let dbAndParams = '';
+    if (hostDbStr.includes('/')) {
+      const parts = hostDbStr.split('/');
+      hostAndPort = parts[0];
+      dbAndParams = parts.slice(1).join('/');
+    } else {
+      hostAndPort = hostDbStr;
+    }
+
+    let database = '';
+    let queryParams = '';
+    if (dbAndParams.includes('?')) {
+      const parts = dbAndParams.split('?');
+      database = parts[0];
+      queryParams = parts[1];
+    } else {
+      database = dbAndParams;
+    }
+
+    return {
+      success: true,
+      protocol,
+      user: decodeURIComponent(user),
+      password: '*'.repeat(password.length) || '(none)',
+      host: hostAndPort,
+      database: database ? decodeURIComponent(database.split('?')[0]) : 'admin',
+      queryParams: queryParams || '(none)'
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
+app.post('/api/mongodb/connect', async (req, res) => {
+  const { uri } = req.body;
+  if (!uri) {
+    return res.status(400).json({ success: false, error: 'Connection URI is required' });
+  }
+
+  const parsed = parseMongoUri(uri);
+  
+  try {
+    console.log(`🔌 Attempting to connect to MongoDB URI: ${uri.replace(/:([^@]+)@/, ':****@')}`);
+    const connection = await mongoose.createConnection(uri, {
+      serverSelectionTimeoutMS: 5000,
+    }).asPromise();
+
+    const collectionInfos = await connection.db.listCollections().toArray();
+    const collections = [];
+    
+    for (const coll of collectionInfos) {
+      let docCount = 0;
+      try {
+        docCount = await connection.db.collection(coll.name).countDocuments();
+      } catch (cntErr) {
+        // Ignored, might be permissions
+      }
+      collections.push({
+        name: coll.name,
+        type: coll.type,
+        count: docCount
+      });
+    }
+
+    await connection.close();
+
+    res.json({
+      success: true,
+      message: 'Successfully connected to MongoDB!',
+      parameters: parsed,
+      collections
+    });
+  } catch (err) {
+    console.error('❌ MongoDB Connection failed:', err.message);
+    res.json({
+      success: false,
+      error: err.message,
+      parameters: parsed
+    });
+  }
+});
+
+app.post('/api/mongodb/export', async (req, res) => {
+  const { uri, collectionName, format } = req.body;
+  if (!uri || !collectionName) {
+    return res.status(400).json({ success: false, error: 'URI and collectionName are required' });
+  }
+
+  try {
+    const connection = await mongoose.createConnection(uri, {
+      serverSelectionTimeoutMS: 5000,
+    }).asPromise();
+
+    const dbCollection = connection.db.collection(collectionName);
+    const documents = await dbCollection.find({}).toArray();
+    await connection.close();
+
+    if (format === 'csv') {
+      if (documents.length === 0) {
+        return res.json({ success: true, data: '', filename: `${collectionName}.csv` });
+      }
+      
+      const keys = Object.keys(documents[0]);
+      const csvRows = [];
+      csvRows.push(keys.join(','));
+
+      for (const doc of documents) {
+        const values = keys.map(key => {
+          let val = doc[key];
+          if (val === undefined || val === null) return '';
+          if (typeof val === 'object') val = JSON.stringify(val);
+          const escaped = ('' + val).replace(/"/g, '""');
+          return `"${escaped}"`;
+        });
+        csvRows.push(values.join(','));
+      }
+      
+      return res.json({
+        success: true,
+        data: csvRows.join('\n'),
+        filename: `${collectionName}.csv`
+      });
+    } else {
+      return res.json({
+        success: true,
+        data: JSON.stringify(documents, null, 2),
+        filename: `${collectionName}.json`
+      });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // Start server

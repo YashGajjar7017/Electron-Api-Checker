@@ -1,0 +1,249 @@
+.mongodb-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--bg-primary);
+  color: var(--text-light);
+}
+
+.mongodb-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px;
+}
+
+.mongodb-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-light);
+  margin: 0 0 4px 0;
+}
+
+.mongodb-header p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.mongodb-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 1024px) {
+  .mongodb-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.connection-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.uri-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.uri-input-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.uri-input-container {
+  display: flex;
+  gap: 8px;
+}
+
+.uri-input {
+  flex-grow: 1;
+  background: rgba(15, 23, 42, 0.6) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-light);
+  font-family: monospace;
+  outline: none;
+  transition: var(--transition);
+}
+
+.uri-input:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.param-badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.param-badge-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.param-badge-card .label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.param-badge-card .value {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  word-break: break-all;
+}
+
+.status-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--border-light);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  position: relative;
+}
+
+.status-dot::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  animation: glowPulse 2s infinite;
+  opacity: 0.4;
+}
+
+.status-dot.disconnected { background-color: #94a3b8; }
+.status-dot.disconnected::after { background-color: #94a3b8; }
+
+.status-dot.connecting { background-color: #eab308; }
+.status-dot.connecting::after { background-color: #eab308; }
+
+.status-dot.connected { background-color: var(--success); }
+.status-dot.connected::after { background-color: var(--success); }
+
+.status-dot.error { background-color: var(--error); }
+.status-dot.error::after { background-color: var(--error); }
+
+.mongodb-manager .collections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.mongodb-manager .collection-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 12px 16px;
+  transition: var(--transition);
+}
+
+.mongodb-manager .collection-item:hover {
+  border-color: var(--primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.mongodb-manager .collection-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mongodb-manager .collection-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-light);
+}
+
+.mongodb-manager .collection-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.mongodb-manager .collection-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.export-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.export-modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  width: 400px;
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.export-modal h3 {
+  margin: 0;
+  color: var(--text-light);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.export-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+@keyframes glowPulse {
+  0% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 0.6; }
+}

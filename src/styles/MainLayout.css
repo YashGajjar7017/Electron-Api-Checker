@@ -282,7 +282,7 @@
 
 .workspace-panel.full-height {
   height: 100%;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .response-panel {

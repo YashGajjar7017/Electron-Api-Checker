@@ -13,6 +13,7 @@ import CertificateManager from './CertificateManager';
 import SerialTerminal from './SerialTerminal';
 import BusConfig from './BusConfig';
 import RemotePage from './RemotePage';
+import MongoDBManager from './MongoDBManager';
 import GitHubSync from './GitHubSync';
 import Maintenance from './Maintenance';
 import useStore from '../store';
@@ -53,6 +54,7 @@ function MainLayout({ onThemeChange, currentTheme }) {
   const [showArduinoModal, setShowArduinoModal] = useState(false);
 
   const {
+    user,
     apis,
     sessionToken,
     clearResponseHistory,
@@ -73,6 +75,8 @@ function MainLayout({ onThemeChange, currentTheme }) {
     responseHistory,
     setCurrentAPI,
   } = useStore();
+
+  const isAdmin = user && user.email && user.email.toLowerCase().includes('admin');
 
   const [localBackendMessage, setLocalBackendMessage] = useState('');
   const [newEnvName, setNewEnvName] = useState('');
@@ -528,6 +532,16 @@ function MainLayout({ onThemeChange, currentTheme }) {
               <FiSliders size={20} />
               <span className="switcher-text">Bus Config</span>
             </button>
+            {isAdmin && (
+              <button
+                className={`switcher-btn ${selectedSidebar === 'mongodb' ? 'active' : ''}`}
+                onClick={() => setSelectedSidebar('mongodb')}
+                title="MongoDB Connection Manager"
+              >
+                <FiDatabase size={20} />
+                <span className="switcher-text">MongoDB</span>
+              </button>
+            )}
             <button
               className={`switcher-btn ${selectedSidebar === 'terminal' ? 'active' : ''}`}
               onClick={() => setSelectedSidebar('terminal')}
@@ -563,7 +577,7 @@ function MainLayout({ onThemeChange, currentTheme }) {
             </button>
           </div>
 
-          {selectedSidebar && selectedSidebar !== 'history' && selectedSidebar !== 'firmware' && selectedSidebar !== 'boot' && selectedSidebar !== 'certificate' && selectedSidebar !== 'terminal' && selectedSidebar !== 'bus_config' && selectedSidebar !== 'remote' && selectedSidebar !== 'github_sync' && selectedSidebar !== 'maintenance' && (
+          {selectedSidebar && selectedSidebar !== 'history' && selectedSidebar !== 'firmware' && selectedSidebar !== 'boot' && selectedSidebar !== 'certificate' && selectedSidebar !== 'terminal' && selectedSidebar !== 'bus_config' && selectedSidebar !== 'mongodb' && selectedSidebar !== 'remote' && selectedSidebar !== 'github_sync' && selectedSidebar !== 'maintenance' && (
             <div className="sidebar-panel" style={{ width: `${sidebarWidth}px` }}>
               {selectedSidebar === 'collections' && <Sidebar />}
               {selectedSidebar === 'environments' && renderEnvironmentsSidebar()}
@@ -598,6 +612,10 @@ function MainLayout({ onThemeChange, currentTheme }) {
             ) : selectedSidebar === 'remote' ? (
               <div className="workspace-panel full-height">
                 <RemotePage />
+              </div>
+            ) : selectedSidebar === 'mongodb' ? (
+              <div className="workspace-panel full-height">
+                {isAdmin ? <MongoDBManager /> : <div style={{ padding: '24px', color: 'var(--error)' }}>Access Denied: Admin permission required.</div>}
               </div>
             ) : selectedSidebar === 'github_sync' ? (
               <div className="workspace-panel full-height">
