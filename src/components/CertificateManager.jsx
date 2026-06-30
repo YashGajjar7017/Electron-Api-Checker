@@ -14,7 +14,9 @@ import {
   FiTerminal,
   FiLock,
   FiFileText,
-  FiGlobe
+  FiGlobe,
+  FiSend,
+  FiSettings
 } from 'react-icons/fi';
 import '../styles/CertificateManager.css';
 
@@ -69,6 +71,19 @@ function CertificateManager() {
   });
 
   const logsEndRef = useRef(null);
+
+  // Section 3: Remote Config variables
+  const [remoteUrl, setRemoteUrl] = useState(() => localStorage.getItem('cert_remoteUrl') || 'http://192.168.4.1/api/config/remote-server');
+  const [remotePassword, setRemotePassword] = useState(() => localStorage.getItem('cert_remotePassword') || 'db4f247f');
+  const [syncingRemote, setSyncingRemote] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('cert_remoteUrl', remoteUrl);
+  }, [remoteUrl]);
+
+  useEffect(() => {
+    localStorage.setItem('cert_remotePassword', remotePassword);
+  }, [remotePassword]);
 
   // Sync to localStorage
   useEffect(() => {
@@ -307,6 +322,78 @@ function CertificateManager() {
       setStatus({ type: 'error', message: `✗ Error: ${err.message}` });
     } finally {
       setProvisioning(false);
+    }
+  };
+
+  const handleSendRemoteConfig = async () => {
+    if (!imei.trim()) {
+      setLogs((prev) => [...prev, `[Client] [Error] Cannot sync config: IMEI number is required.\r\n`]);
+      return;
+    }
+
+    setSyncingRemote(true);
+    setLogs((prev) => [
+      ...prev,
+      `[Client] Compiling remote server configuration payload for IMEI: ${imei}...\r\n`
+    ]);
+
+    const payload = {
+      server_url: "rms.iotscada-pmsg.com",
+      server_port: 8883,
+      solution_type: "ongridrooftop",
+      client_id: `d:${imei}$ongridrooftop$510017`,
+      username: `${imei}$ongridrooftop$510017`,
+      password: remotePassword,
+      server_url1: "rms.iotscada-pmsg.com",
+      server_port1: 8883,
+      imei: imei
+    };
+
+    setLogs((prev) => [
+      ...prev,
+      `[Client] Sending POST request to ${remoteUrl} with payload:\r\n${JSON.stringify(payload, null, 2)}\r\n`
+    ]);
+
+    try {
+      if (window.electronAPI?.sendRequest) {
+        const token = useStore.getState().sessionToken || useStore.getState().authToken;
+        const requestHeaders = {
+          'Content-Type': 'application/json'
+        };
+        if (token) {
+          requestHeaders['Authorization'] = `Bearer ${token}`;
+        }
+
+        const res = await window.electronAPI.sendRequest({
+          url: remoteUrl.trim(),
+          method: 'POST',
+          headers: requestHeaders,
+          body: JSON.stringify(payload)
+        });
+
+        if (res.success) {
+          setLogs((prev) => [
+            ...prev,
+            `[Client] Response received: Status ${res.status} ${res.statusText || ''}\r\n` +
+            `[Client] Body: ${res.body}\r\n` +
+            `[Client] ✓ Remote Server config updated successfully!\r\n`
+          ]);
+        } else {
+          setLogs((prev) => [
+            ...prev,
+            `[Client] ✗ Sync request failed: ${res.error || 'Server rejected sync payload.'}\r\n`
+          ]);
+        }
+      } else {
+        throw new Error('Native request API unavailable. Are you running inside Electron?');
+      }
+    } catch (err) {
+      setLogs((prev) => [
+        ...prev,
+        `[Client] ✗ Sync error: ${err.message}\r\n`
+      ]);
+    } finally {
+      setSyncingRemote(false);
     }
   };
 
@@ -570,10 +657,48 @@ function CertificateManager() {
 
           <hr className="divider" />
 
+          {/* Remote Config Sync Section */}
+          <div className="section-title-wrapper">
+            <FiSettings size={14} />
+            <h4>3. Remote Configuration config sync</h4>
+          </div>
+          <div className="form-group">
+            <label>Remote Server URL</label>
+            <input
+              type="text"
+              value={remoteUrl}
+              onChange={(e) => setRemoteUrl(e.target.value)}
+              placeholder="http://192.168.4.1/api/config/remote-server"
+              disabled={provisioning || syncingRemote}
+            />
+          </div>
+          <div className="form-group">
+            <label>Remote Config Password</label>
+            <input
+              type="text"
+              value={remotePassword}
+              onChange={(e) => setRemotePassword(e.target.value)}
+              placeholder="Enter remote config password..."
+              disabled={provisioning || syncingRemote}
+            />
+          </div>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleSendRemoteConfig}
+            disabled={provisioning || syncingRemote || !imei.trim()}
+            style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid var(--primary-light)', color: 'var(--primary-light)', background: 'transparent', marginBottom: '16px' }}
+          >
+            {syncingRemote ? <FiRefreshCw className="spinning" /> : <FiSend />}
+            {syncingRemote ? 'Syncing...' : 'Send Config to Remote Server'}
+          </button>
+
+          <hr className="divider" />
+
           {/* Acknowledgement section */}
           <div className="section-title-wrapper">
             <FiGlobe size={14} />
-            <h4>3. Server Acknowledgement endpoint</h4>
+            <h4>4. Server Acknowledgement endpoint</h4>
           </div>
           <div className="form-group">
             <label>Acknowledgement URL</label>

@@ -54,7 +54,7 @@
       "serverUrl": "http://192.168.4.1",
       "fullUrl": "http://192.168.4.1/api/login",
       "collectionId": "9mfnk7qmr",
-      "bodyType": "json",
+      "bodyType": "graphql",
       "bodyParams": {},
       "skipOtp": false,
       "automation": {
@@ -1825,12 +1825,12 @@
     "hardwareRendering": true,
     "memoryOptimization": false
   },
-  "sessionToken": "sess-1782736994230",
-  "sessionTokenExpiry": 1782737594234,
+  "sessionToken": "",
+  "sessionTokenExpiry": null,
   "otpData": {
-    "current": "540657",
-    "cached": "540657",
-    "expiry": 1782737593727,
+    "current": "944302",
+    "cached": "944302",
+    "expiry": 1782802200956,
     "attempts": 0
   },
   "environments": [
