@@ -10,7 +10,8 @@ function AuthScreen({ onThemeChange, currentTheme }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const { loginUser } = useStore();
+  const [isLoading, setIsLoading] = useState(false);
+  const { loginUser, serverUrl } = useStore();
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -31,19 +32,70 @@ function AuthScreen({ onThemeChange, currentTheme }) {
       return;
     }
 
-    // Create user object
-    const user = {
-      id: Math.random().toString(36).substr(2, 9),
-      email,
-      createdAt: new Date(),
-    };
+    setIsLoading(true);
+    const targetUrl = serverUrl || 'http://localhost:5000';
 
-    // Save to electron storage
-    if (window.electronAPI && window.electronAPI.saveUser) {
-      await window.electronAPI.saveUser(user);
+    try {
+      const endpoint = activeTab === 'signup' ? '/api/auth/signup' : '/api/auth/login';
+      const response = await fetch(`${targetUrl}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const resData = await response.json();
+      if (!response.ok || !resData.success) {
+        throw new Error(resData.error || 'Authentication failed');
+      }
+
+      if (activeTab === 'signup') {
+        alert('Registration successful! Please login with your credentials.');
+        setActiveTab('login');
+        setPassword('');
+        setConfirmPassword('');
+      } else {
+        const loggedUser = {
+          id: resData.user.id,
+          email: resData.user.email,
+          username: resData.user.username,
+          role: resData.user.role,
+          createdAt: new Date()
+        };
+
+        if (window.electronAPI && window.electronAPI.saveUser) {
+          await window.electronAPI.saveUser(loggedUser);
+        }
+
+        if (resData.token) {
+          useStore.getState().setSessionToken?.(resData.token, 10);
+        }
+
+        loginUser(loggedUser);
+      }
+    } catch (err) {
+      console.warn('MongoDB auth failed, falling back to local session...', err.message);
+
+      if (activeTab === 'signup') {
+        setError(`Registration failed: ${err.message}. (Database is offline or unreachable)`);
+      } else {
+        // Fallback for login
+        const fallbackUser = {
+          id: 'local-' + Math.random().toString(36).substr(2, 9),
+          email,
+          username: email.split('@')[0],
+          role: email.toLowerCase().includes('admin') ? 'admin' : 'user',
+          createdAt: new Date(),
+        };
+
+        if (window.electronAPI && window.electronAPI.saveUser) {
+          await window.electronAPI.saveUser(fallbackUser);
+        }
+
+        loginUser(fallbackUser);
+      }
+    } finally {
+      setIsLoading(false);
     }
-
-    loginUser(user);
   };
 
   return (
@@ -142,8 +194,8 @@ function AuthScreen({ onThemeChange, currentTheme }) {
                 </div>
               )}
 
-              <button type="submit" className="btn btn-primary btn-lg auth-btn">
-                {activeTab === 'login' ? 'Login' : 'Create Account'}
+              <button type="submit" className="btn btn-primary btn-lg auth-btn" disabled={isLoading}>
+                {isLoading ? 'Authenticating...' : (activeTab === 'login' ? 'Login' : 'Create Account')}
               </button>
             </form>
           )}

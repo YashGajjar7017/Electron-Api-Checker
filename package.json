@@ -21,6 +21,7 @@
   "dependencies": {
     "@monaco-editor/react": "^4.5.0",
     "axios": "^1.6.0",
+    "bcryptjs": "^3.0.3",
     "chart.js": "^4.4.0",
     "clsx": "^2.0.0",
     "cors": "^2.8.6",

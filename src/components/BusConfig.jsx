@@ -465,8 +465,32 @@ function BusConfig() {
 
   // UUID Operations
   const handleAddDefaultUuid = async () => {
+    let currentUuid = '';
+    try {
+      if (uuidData && uuidData.uuid) {
+        currentUuid = uuidData.uuid;
+      } else if (uuidString && uuidString.trim()) {
+        const parsed = JSON.parse(uuidString);
+        if (parsed && parsed.uuid) {
+          currentUuid = parsed.uuid;
+        }
+      }
+    } catch (e) {}
+
+    // If still no UUID, generate a brand new random one
+    if (!currentUuid) {
+      if (typeof window !== 'undefined' && window.crypto && typeof window.crypto.randomUUID === 'function') {
+        currentUuid = window.crypto.randomUUID();
+      } else {
+        currentUuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      }
+    }
+
     const defaultData = {
-      uuid: "d3b07384-d113-4956-a5db-e1c31c19b0c2",
+      uuid: currentUuid,
       version: "1.0.0",
       name: "ESP32 Modbus Monitor Client",
       deviceType: "Gateway",

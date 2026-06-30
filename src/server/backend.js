@@ -16,6 +16,7 @@ const os = require('os');
 const http = require('http');
 const mongoose = require('mongoose');
 const { Server } = require('socket.io');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 let PORT = 5000;
@@ -847,6 +848,61 @@ app.post('/api/maintenance/reset', (req, res) => {
 
 let savedMongoUri = 'mongodb+srv://yashacker:Iamyash@reactdb.d04du.mongodb.net/ReactDB';
 
+// Helper to translate SRV URI to direct URI for Windows node DNS resolution bug bypass
+const getWorkingMongoUri = (uri) => {
+  if (uri && uri.includes('reactdb.d04du.mongodb.net')) {
+    return 'mongodb://yashacker:Iamyash@reactdb-shard-00-00.d04du.mongodb.net:27017/ReactDB?ssl=true&authSource=admin';
+  }
+  return uri;
+};
+
+// Database connection logic for auth endpoints
+const connectToDb = async () => {
+  if (mongoose.connection.readyState === 1) return mongoose.connection;
+  const uri = getWorkingMongoUri(savedMongoUri);
+  try {
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 5000,
+    });
+    console.log('✅ Auth MongoDB Connection established successfully');
+  } catch (err) {
+    console.error('❌ Auth MongoDB Connection failed:', err.message);
+  }
+};
+
+// Define models on connection
+const UserSchema = new mongoose.Schema({
+  username: { type: String, required: true },
+  email: { type: String, required: true },
+  password: { type: String, required: true },
+  role: { type: String, default: 'user' },
+  status: { type: String, default: 'active' }
+}, { timestamps: true, collection: 'users' });
+
+const LoginSchema = new mongoose.Schema({
+  userId: { type: String },
+  success: { type: Boolean, required: true },
+  ipAddress: { type: String },
+  userAgent: { type: String },
+  failureReason: { type: String },
+  timestamp: { type: Date, default: Date.now }
+}, { timestamps: true, collection: 'logins' });
+
+const SignupSchema = new mongoose.Schema({
+  username: { type: String, required: true },
+  email: { type: String, required: true },
+  password: { type: String, required: true },
+  otp: { type: String },
+  otpExpiresAt: { type: Date }
+}, { timestamps: true, collection: 'signups' });
+
+const UserModel = mongoose.models.User || mongoose.model('User', UserSchema);
+const LoginModel = mongoose.models.Login || mongoose.model('Login', LoginSchema);
+const SignupModel = mongoose.models.Signup || mongoose.model('Signup', SignupSchema);
+
+// Connect on start
+connectToDb();
+
 app.get('/api/mongodb/config', (req, res) => {
   res.json({ success: true, uri: savedMongoUri });
 });
@@ -855,9 +911,146 @@ app.post('/api/mongodb/config', (req, res) => {
   const { uri } = req.body;
   if (uri) {
     savedMongoUri = uri;
+    // Reconnect database with the new URI
+    connectToDb();
     res.json({ success: true, message: 'MongoDB connection settings saved to server successfully', uri: savedMongoUri });
   } else {
     res.status(400).json({ success: false, error: 'URI is required' });
+  }
+});
+
+// ── Authentication Endpoints (MongoDB Backed) ──────────────────────────
+
+app.post('/api/auth/signup', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ success: false, error: 'Email and password are required' });
+  }
+
+  try {
+    await connectToDb();
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ success: false, error: 'Database connection offline' });
+    }
+
+    const existingUser = await UserModel.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({ success: false, error: 'User already exists with this email' });
+    }
+
+    // Extract username from email
+    const username = email.split('@')[0];
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Save User
+    const user = new UserModel({
+      username,
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      role: 'user',
+      status: 'active'
+    });
+    await user.save();
+
+    // Create Signup record
+    const signup = new SignupModel({
+      username,
+      email: email.toLowerCase(),
+      password: hashedPassword
+    });
+    await signup.save();
+
+    res.json({
+      success: true,
+      message: 'Signup successful! User registered to MongoDB.',
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (err) {
+    console.error('Signup error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+  const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
+  const userAgent = req.headers['user-agent'] || 'unknown';
+
+  if (!email || !password) {
+    return res.status(400).json({ success: false, error: 'Email and password are required' });
+  }
+
+  try {
+    await connectToDb();
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ success: false, error: 'Database connection offline' });
+    }
+
+    const user = await UserModel.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      // Log failed login: user not found
+      const failedLogin = new LoginModel({
+        success: false,
+        ipAddress,
+        userAgent,
+        failureReason: 'user_not_found'
+      });
+      await failedLogin.save();
+
+      return res.status(400).json({ success: false, error: 'Invalid email or password' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      // Log failed login: invalid credentials
+      const failedLogin = new LoginModel({
+        userId: user._id.toString(),
+        success: false,
+        ipAddress,
+        userAgent,
+        failureReason: 'invalid_credentials'
+      });
+      await failedLogin.save();
+
+      return res.status(400).json({ success: false, error: 'Invalid email or password' });
+    }
+
+    // Log successful login
+    const successfulLogin = new LoginModel({
+      userId: user._id.toString(),
+      success: true,
+      ipAddress,
+      userAgent
+    });
+    await successfulLogin.save();
+
+    // Create session token
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const token = `mock-token-${otp}`;
+
+    res.json({
+      success: true,
+      message: 'Login successful! Session logged in MongoDB.',
+      token,
+      valid_for: 600,
+      user: {
+        id: user._id.toString(),
+        username: user.username,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
