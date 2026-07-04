@@ -6,7 +6,7 @@ function BusConfig() {
   const [activeTab, setActiveTab] = useState('dev'); // dev, req, uuid
   const [devCsvContent, setDevCsvContent] = useState('');
   const [reqCsvContent, setReqCsvContent] = useState('');
-  
+
   // Parsed state
   const [devices, setDevices] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -56,23 +56,31 @@ function BusConfig() {
   const [syncUrlVal, setSyncUrlVal] = useState('http://192.168.4.1:85/write.html?dev.csv');
   const [syncScope, setSyncScope] = useState('all'); // all, single
   const [syncTargetId, setSyncTargetId] = useState('');
+  const [syncToken, setSyncToken] = useState('');
   const [syncLogs, setSyncLogs] = useState([]);
   const syncLogsEndRef = useRef(null);
 
   // Auto-update default URLs when syncFileType or syncActionType changes
   useEffect(() => {
-    const file = syncFileType === 'dev' ? 'dev.csv' : 'req.csv';
+    let file = 'dev.csv';
+    if (syncFileType === 'req') file = 'req.csv';
+    else if (syncFileType === 'uuid') file = 'uuid.json';
+
     const action = syncActionType === 'write' ? 'write.html' : 'delete.html';
     setSyncUrlVal(`http://192.168.4.1:85/${action}?${file}`);
-    
+
     // Auto-select first ID from appropriate dataset
-    const dataset = syncFileType === 'dev' ? devices : requests;
-    if (dataset.length > 0) {
-      setSyncTargetId(dataset[0].id);
+    if (syncFileType !== 'uuid') {
+      const dataset = syncFileType === 'dev' ? devices : requests;
+      if (dataset.length > 0) {
+        setSyncTargetId(dataset[0].id);
+      } else {
+        setSyncTargetId('');
+      }
     } else {
       setSyncTargetId('');
     }
-  }, [syncFileType, syncActionType]);
+  }, [syncFileType, syncActionType, devices, requests]);
 
   // Sync log scroll
   useEffect(() => {
@@ -98,8 +106,8 @@ function BusConfig() {
 
     let payload = '';
     if (syncActionType === 'write') {
-      if (syncScope === 'all') {
-        payload = syncFileType === 'dev' ? devCsvContent : reqCsvContent;
+      if (syncFileType === 'uuid' || syncScope === 'all') {
+        payload = syncFileType === 'dev' ? devCsvContent : (syncFileType === 'req' ? reqCsvContent : uuidString);
         addSyncLog(`Syncing entire file (${payload.length} characters)`, 'info');
       } else {
         const headers = syncFileType === 'dev'
@@ -123,17 +131,25 @@ function BusConfig() {
     try {
       if (window.electronAPI?.sendRequest) {
         let finalUrl = syncUrlVal;
-        // If delete.html and a target ID is set, append ID parameter
         if (syncActionType === 'delete' && syncTargetId) {
           finalUrl += `&id=${syncTargetId}`;
+        }
+
+        const headers = {
+          'Content-Type': syncFileType === 'uuid' ? 'application/json' : 'text/plain'
+        };
+
+        if (syncToken && syncToken.trim()) {
+          const rawToken = syncToken.trim();
+          headers['Authorization'] = rawToken.startsWith('Bearer ') || rawToken.startsWith('Basic ')
+            ? rawToken
+            : `Bearer ${rawToken}`;
         }
 
         const response = await window.electronAPI.sendRequest({
           url: finalUrl,
           method: 'POST',
-          headers: {
-            'Content-Type': 'text/plain'
-          },
+          headers,
           body: syncActionType === 'write' ? payload : undefined
         });
 
@@ -141,6 +157,10 @@ function BusConfig() {
           addSyncLog(`HTTP Response Success! Status: ${response.status}`, 'success');
           if (response.body) {
             addSyncLog(`Response: ${response.body.substring(0, 500)}`, 'success');
+          }
+          if (syncFileType === 'uuid') {
+            addSyncLog('Successfully synced uuid.json! Reverting File Target back to dev.csv.', 'success');
+            setSyncFileType('dev');
           }
         } else {
           addSyncLog(`Sync failed. Status: ${response.status || 'ERROR'}. Info: ${response.error || response.body || 'No response details'}`, 'error');
@@ -202,7 +222,7 @@ function BusConfig() {
         setDevCsvContent(devContent);
         const parsedDevs = parseCSV(devContent);
         setDevices(parsedDevs);
-        
+
         // Auto-select first device values for activation selectors if available
         if (parsedDevs.length > 0) {
           setActivationConfig({
@@ -264,7 +284,7 @@ function BusConfig() {
 
     const headers = ['id', 'busId', 'slaveId', 'active', 'ip', 'port', 'protocol'];
     const newContent = serializeCSV(headers, nextDevices);
-    
+
     try {
       const res = await window.electronAPI.saveDevCsv(newContent);
       if (res.success) {
@@ -475,14 +495,14 @@ function BusConfig() {
           currentUuid = parsed.uuid;
         }
       }
-    } catch (e) {}
+    } catch (e) { }
 
     // If still no UUID, generate a brand new random one
     if (!currentUuid) {
       if (typeof window !== 'undefined' && window.crypto && typeof window.crypto.randomUUID === 'function') {
         currentUuid = window.crypto.randomUUID();
       } else {
-        currentUuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        currentUuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
           var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
           return v.toString(16);
         });
@@ -490,17 +510,231 @@ function BusConfig() {
     }
 
     const defaultData = {
-      uuid: currentUuid,
-      version: "1.0.0",
-      name: "ESP32 Modbus Monitor Client",
-      deviceType: "Gateway",
-      manufacturer: "IOT Monitor System",
-      buildDate: new Date().toISOString().split('T')[0],
-      settings: {
-        timeout_ms: 1000,
-        retry_count: 3,
-        auto_start: true
-      }
+      "vdinterval": 25,
+      "table": 1,
+      "parameters": [
+        {
+          "id": "1",
+          "requestID": 1,
+          "tagName": "IG-1-0----IST",
+          "dataType": 0,
+          "reg": 30050,
+          "mf": 1.0,
+          "Alarm": 1,
+          "High": 0.9,
+          "Low": -1,
+          "add": 3,
+          "vd": 5
+        },
+        {
+          "id": "2",
+          "requestID": 1,
+          "tagName": "IG-1-0----FREQ",
+          "dataType": 1,
+          "reg": 30006,
+          "mf": 0.01,
+          "Alarm": 0,
+          "High": 0.0,
+          "Low": 0,
+          "add": 5,
+          "vd": 5
+        },
+        {
+          "id": "3",
+          "requestID": 1,
+          "tagName": "IG-1-0----DCV1",
+          "dataType": 0,
+          "reg": 30016,
+          "mf": 0.1,
+          "Alarm": 0,
+          "High": 0.0,
+          "Low": 0,
+          "add": 9,
+          "vd": 5
+        },
+        {
+          "id": "4",
+          "requestID": 1,
+          "tagName": "IG-1-0----DCI1",
+          "dataType": 1,
+          "reg": 30017,
+          "mf": 0.1,
+          "Alarm": 0,
+          "High": 0.0,
+          "Low": 0,
+          "add": 11,
+          "vd": 5
+        },
+        {
+          "id": "5",
+          "requestID": 1,
+          "tagName": "IG-1-0----DCKW1",
+          "dataType": 1,
+          "reg": 30018,
+          "mf": 0.001,
+          "Alarm": 0,
+          "High": 0.0,
+          "Low": 0,
+          "add": 13,
+          "vd": 5
+        },
+        {
+          "id": "6",
+          "requestID": 1,
+          "tagName": "IG-1-0----VN",
+          "dataType": 0,
+          "reg": 30004,
+          "mf": 0.1,
+          "Alarm": 0,
+          "High": 0.0,
+          "Low": 0,
+          "add": 15,
+          "vd": 5
+        },
+        {
+          "id": "7",
+          "requestID": 1,
+          "tagName": "IG-1-0----I",
+          "dataType": 1,
+          "reg": 30005,
+          "mf": 0.1,
+          "Alarm": 0,
+          "High": 0.0,
+          "Low": 0,
+          add: 17,
+          "vd": 5
+        },
+        {
+          "id": "8",
+          "requestID": 1,
+          "tagName": "IG-1-0----POW",
+          "dataType": 1,
+          "reg": 30002,
+          "mf": 0.001,
+          "Alarm": 0,
+          "High": 0.0,
+          "Low": 0,
+          "add": 19,
+          "vd": 5
+        },
+        {
+          "id": "9",
+          "requestID": 1,
+          "tagName": "IG-1-0----TEMP",
+          "dataType": 1,
+          "reg": 30029,
+          "mf": 1.0,
+          "Alarm": 0,
+          "High": 0.0,
+          "Low": 0,
+          "add": 25,
+          "vd": 5
+        },
+        {
+          "id": "10",
+          "requestID": 1,
+          "tagName": "IG-1-0----FT1",
+          "dataType": 2,
+          "reg": 30035,
+          "mf": 1.0,
+          "Alarm": 0,
+          "High": 0.0,
+          "Low": 0,
+          "add": 27,
+          "vd": 5
+        },
+        {
+          "id": "11",
+          "requestID": 1,
+          "tagName": "IG-1-0----TKWH",
+          "dataType": 0,
+          "reg": 30031,
+          "mf": 0.1,
+          "Alarm": 0,
+          "High": 0.0,
+          "Low": 0,
+          "add": 33,
+          "vd": 5
+        },
+        {
+          "id": "12",
+          "requestID": 1,
+          "tagName": "IG-1-0----LKWH",
+          "dataType": 2,
+          "reg": 30033,
+          "mf": 0.1,
+          "Alarm": 0,
+          "High": 0.0,
+          "Low": 0,
+          "add": 35,
+          "vd": 5
+        },
+        {
+          "id": "13",
+          "requestID": 1,
+          "tagName": "IG-1-0----FT2",
+          "dataType": 2,
+          "reg": 30037,
+          "mf": 1.0,
+          "Alarm": 0,
+          "High": 0.0,
+          "Low": 0,
+          "add": 37,
+          "vd": 5
+        },
+        {
+          "id": "14",
+          "requestID": 1,
+          "tagName": "IG-1-0----FT3",
+          "dataType": 2,
+          "reg": 30039,
+          "mf": 1.0,
+          "Alarm": 0,
+          "High": 0.0,
+          "Low": 0,
+          "add": 39,
+          "vd": 5
+        },
+        {
+          "id": "15",
+          "requestID": 1,
+          "tagName": "IG-1-0----FT4",
+          "dataType": 2,
+          "reg": 30041,
+          "mf": 1.0,
+          "Alarm": 0,
+          "High": 0.0,
+          "Low": 0,
+          "add": 41,
+          "vd": 5
+        },
+        {
+          "id": "16",
+          "requestID": 1,
+          "tagName": "IG-1-0----FT5",
+          "dataType": 2,
+          "reg": 30043,
+          "mf": 1.0,
+          "Alarm": 0,
+          "High": 0.0,
+          "Low": 0,
+          "add": 43,
+          "vd": 5
+        },
+        {
+          "id": "17",
+          "requestID": 2,
+          "tagName": "IG-1-0----INVCMD",
+          "dataType": 0,
+          "reg": 40001,
+          "mf": 1.0,
+          "Alarm": 0,
+          "High": 0.0,
+          "Low": 0,
+          "add": 53,
+          "vd": 50
+        }
+      ]
     };
     try {
       const res = await window.electronAPI.saveUuidJson(defaultData);
@@ -617,7 +851,7 @@ function BusConfig() {
           url: inverterReadUrl,
           method: 'GET',
         });
-        
+
         if (response.success && response.status >= 200 && response.status < 300) {
           const data = JSON.parse(response.body);
           setInverterForm(data);
@@ -649,7 +883,7 @@ function BusConfig() {
           },
           body: JSON.stringify(inverterForm)
         });
-        
+
         if (response.success && response.status >= 200 && response.status < 300) {
           setInverterLogs((prev) => [...prev, `[${new Date().toLocaleTimeString()}] ✅ Write successful!`]);
         } else {
@@ -675,7 +909,7 @@ function BusConfig() {
               <FiSettings size={15} />
               <span>Serial Port & Communication Parameters</span>
             </div>
-            
+
             <div className="form-grid">
               <div className="form-group">
                 <label>ASN</label>
@@ -947,7 +1181,7 @@ function BusConfig() {
                   let logClass = 'info';
                   if (log.includes('✅') || log.includes('success')) logClass = 'success';
                   if (log.includes('❌') || log.includes('fail') || log.includes('Exception')) logClass = 'error';
-                  
+
                   return (
                     <div key={idx} className={`inverter-log-line ${logClass}`}>
                       {log}
@@ -1307,7 +1541,7 @@ function BusConfig() {
             {/* Request Entry Form - populated with Option Dropdowns for all fields */}
             <form onSubmit={handleSaveReq} className="config-form-card" style={{ marginTop: '24px' }}>
               <h4 className="form-title">{editingReqId ? `Modify Request ID ${editingReqId}` : 'Add Request Map'}</h4>
-              
+
               <div className="form-grid">
                 {/* ID dropdown option */}
                 <div className="form-group">
@@ -1581,7 +1815,7 @@ function BusConfig() {
                 <h3>Device File Sync (HTTP Actions)</h3>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>HTTP Client Interface</span>
               </div>
-              
+
               <div className="config-form-card">
                 <div className="form-grid">
                   <div className="form-group">
@@ -1592,14 +1826,16 @@ function BusConfig() {
                     >
                       <option value="dev">dev.csv (Devices)</option>
                       <option value="req">req.csv (Requests)</option>
+                      <option value="uuid">uuid.json (Identity)</option>
                     </select>
                   </div>
-                  
+
                   <div className="form-group">
                     <label>Action Target</label>
                     <select
                       value={syncActionType}
                       onChange={(e) => setSyncActionType(e.target.value)}
+                      disabled={syncFileType === 'uuid'}
                     >
                       <option value="write">Write File (Upload / Insert)</option>
                       <option value="delete">Delete Specific Entry (Remove ID)</option>
@@ -1619,8 +1855,19 @@ function BusConfig() {
                   />
                 </div>
 
+                <div className="form-group" style={{ marginTop: '12px' }}>
+                  <label>Authorization Token (Optional)</label>
+                  <input
+                    type="password"
+                    value={syncToken}
+                    onChange={(e) => setSyncToken(e.target.value)}
+                    placeholder="Enter Bearer/Authorization token for device..."
+                    style={{ fontFamily: 'monospace' }}
+                  />
+                </div>
+
                 <div className="form-grid" style={{ marginTop: '12px' }}>
-                  {syncActionType === 'write' && (
+                  {syncActionType === 'write' && syncFileType !== 'uuid' && (
                     <div className="form-group">
                       <label>Data Scope</label>
                       <select
@@ -1633,7 +1880,7 @@ function BusConfig() {
                     </div>
                   )}
 
-                  {(syncActionType === 'delete' || (syncActionType === 'write' && syncScope === 'single')) && (
+                  {syncFileType !== 'uuid' && (syncActionType === 'delete' || (syncActionType === 'write' && syncScope === 'single')) && (
                     <div className="form-group">
                       <label>Target Data ID</label>
                       <select
@@ -1682,13 +1929,13 @@ function BusConfig() {
               <p className="activation-description">
                 Monitor HTTP requests, transfer speed latency, responses, and connection exceptions.
               </p>
-              
+
               <div className="activation-log-terminal" style={{ height: '360px', color: '#6ee7b7' }}>
                 {syncLogs.map((log, idx) => <div key={idx} style={{ marginBottom: '4px' }}>{log}</div>)}
                 {syncLogs.length === 0 && <div style={{ color: 'var(--text-muted)' }}>Console ready. Select a file/action and click Execute to view connection diagnostics.</div>}
                 <div ref={syncLogsEndRef} />
               </div>
-              
+
               <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
                 <button
                   className="btn btn-secondary btn-sm"
