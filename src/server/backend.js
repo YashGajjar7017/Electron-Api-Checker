@@ -3,7 +3,7 @@
  * Runs alongside the Electron app and provides:
  * - API proxy/forwarding
  * - Data caching
- * - Authentication
+ * - Authentication (local + GitHub OAuth via passport-github2)
  * - Request history
  */
 
@@ -17,14 +17,253 @@ const http = require('http');
 const mongoose = require('mongoose');
 const { Server } = require('socket.io');
 const bcrypt = require('bcryptjs');
+const passport = require('passport');
+const { Strategy: GitHubStrategy } = require('passport-github2');
+const session = require('express-session');
+
+// ── Load env vars (dotenv is optional — Electron injects them via main process) ──
+try { require('dotenv').config(); } catch (_) { /* dotenv not available in packaged build */ }
+
+// ── GitHub OAuth env vars ────────────────────────────────────────────────────
+const GITHUB_CLIENT_ID     = process.env.GITHUB_CLIENT_ID     || process.env.REACT_APP_GITHUB_CLIENT_ID     || '';
+const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || process.env.REACT_APP_GITHUB_CLIENT_SECRET || '';
+const GITHUB_CALLBACK_URL  = process.env.GITHUB_CALLBACK_URL  || process.env.REACT_APP_GITHUB_REDIRECT_URI  || 'http://localhost:5000/auth/github/callback';
+const SESSION_SECRET       = process.env.SESSION_SECRET        || 'change-me-in-production';
+const BACKEND_URL          = process.env.BACKEND_URL           || 'http://localhost:5000';
 
 const app = express();
 let PORT = 5000;
 
-// Middleware
-app.use(cors());
+// ── Middleware ───────────────────────────────────────────────────────────────
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Session middleware — required by passport for OAuth state
+app.use(session({
+  secret: SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }, // 24 h
+}));
+
+// ── Passport GitHub OAuth Strategy ──────────────────────────────────────────
+if (GITHUB_CLIENT_ID && GITHUB_CLIENT_SECRET) {
+  passport.use(new GitHubStrategy(
+    {
+      clientID:     GITHUB_CLIENT_ID,
+      clientSecret: GITHUB_CLIENT_SECRET,
+      callbackURL:  GITHUB_CALLBACK_URL,
+      scope:        ['user:email', 'read:user'],
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        // Normalise the GitHub profile to a consistent shape
+        const emails = profile.emails || [];
+        const primaryEmail =
+          (emails.find(e => e.primary) || emails[0] || {}).value ||
+          profile._json.email || '';
+
+        const user = {
+          id:          profile.id,
+          login:       profile.username,
+          name:        profile.displayName || profile.username,
+          email:       primaryEmail,
+          avatar:      profile.photos?.[0]?.value || profile._json.avatar_url,
+          bio:         profile._json.bio,
+          company:     profile._json.company,
+          location:    profile._json.location,
+          blog:        profile._json.blog,
+          publicRepos: profile._json.public_repos,
+          followers:   profile._json.followers,
+          following:   profile._json.following,
+          provider:    'github',
+          accessToken,
+          refreshToken: refreshToken || null,
+          loginTime:   new Date().toISOString(),
+        };
+        return done(null, user);
+      } catch (err) {
+        return done(err);
+      }
+    }
+  ));
+
+  passport.serializeUser((user, done) => done(null, user));
+  passport.deserializeUser((user, done) => done(null, user));
+
+  app.use(passport.initialize());
+  app.use(passport.session());
+
+  console.log('✅ GitHub OAuth Strategy configured (Client ID:', GITHUB_CLIENT_ID, ')');
+} else {
+  // Passport still initialized so routes don't crash — will return config error
+  app.use(passport.initialize());
+  console.warn('⚠️  GitHub OAuth NOT configured — set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in .env');
+}
+
+// ── GitHub OAuth Routes ──────────────────────────────────────────────────────
+
+/**
+ * GET /auth/github
+ * Initiates the OAuth flow — redirects the user's browser to GitHub.
+ * Used when the backend is running as a proper web server.
+ */
+app.get('/auth/github', (req, res, next) => {
+  if (!GITHUB_CLIENT_ID) {
+    return res.status(503).json({
+      error: 'GitHub OAuth is not configured on the server.',
+      hint: 'Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in your .env file and restart the backend.',
+    });
+  }
+  passport.authenticate('github', { scope: ['user:email', 'read:user'] })(req, res, next);
+});
+
+/**
+ * GET /auth/github/callback
+ * GitHub redirects here after the user authorises the app.
+ * On success the user object (with accessToken) is in req.user.
+ */
+app.get(
+  '/auth/github/callback',
+  (req, res, next) => {
+    if (!GITHUB_CLIENT_ID) {
+      return res.status(503).json({ error: 'GitHub OAuth is not configured.' });
+    }
+    passport.authenticate('github', { failureRedirect: '/?github_error=1' })(req, res, next);
+  },
+  (req, res) => {
+    // Successful authentication — render a landing page that handles redirection
+    // back to the desktop application or communicates with the browser popup.
+    const user = req.user || {};
+    const token = user.accessToken || '';
+
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>GitHub Authentication Successful</title>
+        <style>
+          :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --primary: #8b5cf6;
+            --primary-hover: #7c3aed;
+            --success: #10b981;
+          }
+          body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+          }
+          .container {
+            text-align: center;
+            background-color: var(--card);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 2.5rem;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+          }
+          .icon-container {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+          }
+          .icon {
+            font-size: 32px;
+            font-weight: bold;
+          }
+          h1 {
+            font-size: 1.5rem;
+            margin: 0 0 0.5rem;
+            font-weight: 700;
+          }
+          p {
+            color: var(--text-muted);
+            margin: 0 0 2rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
+          }
+          .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            margin: 0 auto;
+            animation: spin 1s linear infinite;
+          }
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="icon-container">
+            <span class="icon">✓</span>
+          </div>
+          <h1>Authentication Successful</h1>
+          <p>You have successfully logged in with GitHub. Connecting back to the application...</p>
+          <div class="spinner"></div>
+        </div>
+
+        <script>
+          const token = ${JSON.stringify(token)};
+          const user = ${JSON.stringify(user)};
+
+          // 1. Try deep linking back to Electron custom protocol client (if installed/running)
+          const deepLink = "myapp://github-auth?token=" + encodeURIComponent(token) +
+                           "&code=" + encodeURIComponent(user.accessToken || '') +
+                           "&state=" + encodeURIComponent(window.location.search ? new URLSearchParams(window.location.search).get('state') || '' : '');
+          window.location.href = deepLink;
+
+          // 2. Try window.opener message passing (if opened as browser popup)
+          if (window.opener) {
+            try {
+              window.opener.postMessage({
+                type: 'github-oauth-success',
+                token: token,
+                user: user
+              }, '*');
+            } catch (err) {
+              console.error("Failed to post message to opener:", err);
+            }
+            
+            // Auto close the popup after a brief moment
+            setTimeout(() => {
+              window.close();
+            }, 800);
+          } else {
+            // 3. Fallback for direct browser tab logins: redirect back to web frontend
+            setTimeout(() => {
+              window.location.href = "http://localhost:3000/";
+            }, 2000);
+          }
+        </script>
+      </body>
+      </html>
+    `);
+  }
+);
 
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, {
@@ -476,8 +715,14 @@ app.delete('/api/presets/:id', (req, res) => {
   }
 });
 
-// GitHub OAuth callback endpoint
-app.post('/api/auth/github/callback', (req, res) => {
+// ── GitHub OAuth API Endpoints (called by the React GitHubAuth.jsx component) ──
+
+/**
+ * POST /api/auth/github/callback
+ * The React component sends the OAuth `code` here.
+ * The server exchanges it for a real access token via GitHub's token API.
+ */
+app.post('/api/auth/github/callback', async (req, res) => {
   try {
     const { code } = req.body;
 
@@ -485,24 +730,124 @@ app.post('/api/auth/github/callback', (req, res) => {
       return res.status(400).json({ error: 'Authorization code is required' });
     }
 
-    // Mock GitHub token exchange (in production, exchange with GitHub API)
-    // This is a simplified version for demonstration
-    const mockAccessToken = `ghu_mock_${Math.random().toString(36).substr(2, 20)}`;
-    const mockUser = {
-      id: Math.floor(Math.random() * 1000000),
-      login: 'github-user',
-      email: 'user@github.com',
-      name: 'GitHub User',
-      avatar_url: 'https://avatars.githubusercontent.com/u/1?v=4',
-    };
+    if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
+      // Developer mode — return a mock token so the UI still works without credentials
+      console.warn('⚠️  GitHub OAuth not configured — returning mock token for development.');
+      return res.json({
+        accessToken:  `ghu_mock_${Math.random().toString(36).substr(2, 20)}`,
+        refreshToken: null,
+        expiresIn:    3600,
+        tokenType:    'bearer',
+        scope:        'user:email read:user',
+        _mock:        true,
+      });
+    }
+
+    // Real token exchange with GitHub
+    const tokenResponse = await axios.post(
+      'https://github.com/login/oauth/access_token',
+      {
+        client_id:     GITHUB_CLIENT_ID,
+        client_secret: GITHUB_CLIENT_SECRET,
+        code,
+        redirect_uri:  GITHUB_CALLBACK_URL,
+      },
+      { headers: { Accept: 'application/json' } }
+    );
+
+    const tokenData = tokenResponse.data;
+
+    if (tokenData.error) {
+      console.error('GitHub token exchange error:', tokenData);
+      return res.status(400).json({
+        error:             tokenData.error,
+        error_description: tokenData.error_description || 'Token exchange failed',
+      });
+    }
+
+    console.log('✅ GitHub token exchange successful — scope:', tokenData.scope);
 
     res.json({
-      accessToken: mockAccessToken,
-      user: mockUser,
-      expiresIn: 3600,
+      accessToken:  tokenData.access_token,
+      refreshToken: tokenData.refresh_token || null,
+      expiresIn:    tokenData.expires_in    || 3600,
+      tokenType:    tokenData.token_type    || 'bearer',
+      scope:        tokenData.scope,
     });
   } catch (error) {
+    console.error('GitHub callback error:', error.message);
     res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/auth/github/session
+ * Called by GitHubAuth.jsx after a successful login to persist the session
+ * profile on the backend (useful for server-side features / analytics).
+ */
+app.post('/api/auth/github/session', async (req, res) => {
+  try {
+    const { profile, accessToken } = req.body;
+    if (!profile || !accessToken) {
+      return res.status(400).json({ success: false, error: 'profile and accessToken are required' });
+    }
+
+    // Store in req.session if available
+    if (req.session) {
+      req.session.githubUser  = profile;
+      req.session.githubToken = accessToken;
+    }
+
+    console.log(`✅ GitHub session persisted for user: ${profile.login || profile.id}`);
+    res.json({ success: true, message: 'Session persisted' });
+  } catch (error) {
+    console.error('GitHub session error:', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/auth/github/refresh
+ * Refresh the GitHub access token using a refresh token.
+ * Note: Only GitHub Apps (not OAuth Apps) issue refresh tokens.
+ */
+app.post('/api/auth/github/refresh', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(400).json({ success: false, error: 'refreshToken is required' });
+    }
+
+    if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
+      return res.status(503).json({ success: false, error: 'GitHub OAuth not configured on server' });
+    }
+
+    // Exchange the refresh token for a new access token
+    const response = await axios.post(
+      'https://github.com/login/oauth/access_token',
+      {
+        client_id:     GITHUB_CLIENT_ID,
+        client_secret: GITHUB_CLIENT_SECRET,
+        grant_type:    'refresh_token',
+        refresh_token: refreshToken,
+      },
+      { headers: { Accept: 'application/json' } }
+    );
+
+    const data = response.data;
+    if (data.error) {
+      return res.status(400).json({ success: false, error: data.error_description || data.error });
+    }
+
+    res.json({
+      success:      true,
+      accessToken:  data.access_token,
+      refreshToken: data.refresh_token || refreshToken,
+      expiresIn:    data.expires_in || 3600,
+    });
+  } catch (error) {
+    console.error('GitHub refresh error:', error.message);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

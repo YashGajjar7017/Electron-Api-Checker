@@ -1,8 +1,22 @@
 {
   "user": {
-    "id": "s5ngv0wa7",
-    "email": "admin@example.com",
-    "createdAt": "2026-06-30T10:15:10.192Z"
+    "id": 226071208,
+    "email": "iamyashacker@gmail.com",
+    "createdAt": "2026-06-30T10:15:10.192Z",
+    "login": "Quantum-Physics-065",
+    "avatar": "https://avatars.githubusercontent.com/u/226071208?v=4",
+    "name": "Sea Of Thieves",
+    "bio": "This is Private Profile of Sea of Thieves company & only repost repo when it was fully Developed",
+    "company": "LDRP_2025",
+    "location": "India",
+    "blog": "https://www.youtube.com/codingwithyashacker",
+    "publicRepos": 7,
+    "followers": 1,
+    "following": 2,
+    "provider": "github",
+    "token": "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",
+    "loginTime": "2026-07-06T10:55:39.763Z",
+    "savedAt": "2026-07-06T10:55:39.805Z"
   },
   "apis": [
     {
@@ -1843,9 +1857,9 @@
   "sessionToken": "",
   "sessionTokenExpiry": null,
   "otpData": {
-    "current": "491289",
-    "cached": "491289",
-    "expiry": 1782822380080,
+    "current": "118574",
+    "cached": "118574",
+    "expiry": 1783332045703,
     "attempts": 0
   },
   "environments": [

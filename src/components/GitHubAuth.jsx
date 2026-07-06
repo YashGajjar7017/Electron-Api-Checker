@@ -79,20 +79,9 @@ GitHubAuth.propTypes = (API, URL) => ({
 
 /** Build the redirect URI that the provider calls back to (already registered at GitHub App settings). */
 const buildRedirectURL = () => {
-  if (typeof window === 'undefined') {
-    return GITHUB_REDIRECT_URI || '';
-  }
-
-  const origin = window.location.origin;
-  const isSameOriginRedirect = GITHUB_REDIRECT_URI && GITHUB_REDIRECT_URI.startsWith(origin);
-  const isCustomSchemeRedirect = GITHUB_REDIRECT_URI && GITHUB_REDIRECT_URI.startsWith('myapp://');
-
-  if (isSameOriginRedirect || isCustomSchemeRedirect) {
-    return GITHUB_REDIRECT_URI;
-  }
-
-  return `${origin}/`;
+  return GITHUB_REDIRECT_URI || (typeof window !== 'undefined' ? `${window.location.origin}/` : '');
 };
+
 
 const buildAuthUrl = (params) => {
   const url = new URL(GITHUB_AUTH_URL);
@@ -329,6 +318,52 @@ function GitHubAuth() {
         setIsLoading(false);
       }
     );
+  }, [loginUser]);
+
+  // ── 1b. Handle token message from popup ───────────────────────────────────────
+  useEffect(() => {
+    const handleOAuthMessage = async (event) => {
+      if (event.data?.type === 'github-oauth-success') {
+        const { token, user: userData } = event.data;
+        if (!token || !userData) return;
+
+        const completeUser = {
+          ...userData,
+          provider: 'github',
+          token,
+          loginTime: new Date().toISOString(),
+        };
+
+        loginUser(completeUser);
+
+        if (window.electronAPI?.saveUser) {
+          await window.electronAPI.saveUser(completeUser);
+        }
+        if (window.electronAPI?.storeToken) {
+          await window.electronAPI.storeToken('github', token);
+        } else {
+          localStorage.setItem('github_token', token);
+        }
+
+        try {
+          window.dispatchEvent(
+            new CustomEvent('app:toast', {
+              detail: {
+                message: 'Successfully Signed In with GitHub',
+                detail: `Logged in as ${completeUser.name || completeUser.login}`,
+              },
+            })
+          );
+        } catch (e) {
+          console.warn('dispatch app:toast failed', e);
+        }
+      }
+    };
+
+    window.addEventListener('message', handleOAuthMessage);
+    return () => {
+      window.removeEventListener('message', handleOAuthMessage);
+    };
   }, [loginUser]);
 
   // ── 2. Initiate OAuth flow ───────────────────────────────────────────────────

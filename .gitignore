@@ -16,6 +16,7 @@ C:/Users/Administrator/AppData/Local/Yarn/Data/global/node_modules/
 /build_temp
 /dist
 /out
+/Older_Builds
 
 # Testing
 /coverage
@@ -23,6 +24,7 @@ C:/Users/Administrator/AppData/Local/Yarn/Data/global/node_modules/
 # Misc
 .DS_Store
 *.pem
+.env
 .env.local
 .env.development.local
 .env.test.local
