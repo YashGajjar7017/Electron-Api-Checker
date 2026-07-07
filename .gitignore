@@ -13,10 +13,12 @@ C:/Users/Administrator/AppData/Local/Yarn/Data/global/node_modules/
 /build_stale_temp
 /build_stale_temp_3
 /build_stale_temp_4
+/build_stale_temp_5
 /build_temp
 /dist
 /out
 /Older_Builds
+/data
 
 # Testing
 /coverage

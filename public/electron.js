@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, screen } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, screen, utilityProcess } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -92,22 +92,41 @@ function launchBackendServer() {
       }
 
       console.log('Launching backend server...');
-      backendServer = spawn('node', [backendPath], {
-        stdio: ['ignore', 'pipe', 'pipe'],
-        detached: false,
-      });
+      if (app.isPackaged) {
+        console.log('Using Electron utilityProcess for packaged build...');
+        backendServer = utilityProcess.fork(backendPath, [], {
+          stdio: 'pipe'
+        });
+      } else {
+        console.log('Using standard child_process.spawn for development...');
+        backendServer = spawn('node', [backendPath], {
+          stdio: ['ignore', 'pipe', 'pipe'],
+          detached: false,
+        });
+      }
 
       let output = '';
+
+      // IPC Message Channel Listener (Preferred for utilityProcess / child_process.fork)
+      if (backendServer.on) {
+        backendServer.on('message', (msg) => {
+          if (msg && msg.type === 'server-started') {
+            backendPort = msg.port;
+            console.log(`Backend server started on port ${backendPort} (via IPC message)`);
+            resolve(backendPort);
+          }
+        });
+      }
 
       backendServer.stdout.on('data', (data) => {
         output += data.toString();
         console.log('[Backend]', data.toString());
 
-        // Extract port from server output
+        // Extract port from server output (fallback)
         const portMatch = output.match(/Port: (\d+)/);
         if (portMatch && !backendPort) {
           backendPort = parseInt(portMatch[1]);
-          console.log(`Backend server started on port ${backendPort}`);
+          console.log(`Backend server started on port ${backendPort} (via stdout match)`);
           resolve(backendPort);
         }
       });
@@ -139,15 +158,11 @@ function stopBackendServer() {
   if (backendServer) {
     console.log('Stopping backend server...');
     try {
-      // Prefer graceful termination then force kill if needed
-      try {
-        backendServer.kill('SIGTERM');
-      } catch (e) {
-        try {
-          process.kill(backendServer.pid);
-        } catch (err) {
-          console.error('Force kill failed:', err);
-        }
+      // Terminate gracefully using the appropriate API
+      if (typeof backendServer.kill === 'function') {
+        backendServer.kill();
+      } else if (backendServer.pid) {
+        process.kill(backendServer.pid);
       }
     } catch (error) {
       console.error('Error killing backend:', error);

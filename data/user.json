@@ -1,23 +1,5 @@
 {
-  "user": {
-    "id": 226071208,
-    "email": "iamyashacker@gmail.com",
-    "createdAt": "2026-06-30T10:15:10.192Z",
-    "login": "Quantum-Physics-065",
-    "avatar": "https://avatars.githubusercontent.com/u/226071208?v=4",
-    "name": "Sea Of Thieves",
-    "bio": "This is Private Profile of Sea of Thieves company & only repost repo when it was fully Developed",
-    "company": "LDRP_2025",
-    "location": "India",
-    "blog": "https://www.youtube.com/codingwithyashacker",
-    "publicRepos": 7,
-    "followers": 1,
-    "following": 2,
-    "provider": "github",
-    "token": "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",
-    "loginTime": "2026-07-06T10:55:39.763Z",
-    "savedAt": "2026-07-06T10:55:39.805Z"
-  },
+  "user": null,
   "apis": [
     {
       "id": "bdleb8ou6",
@@ -1852,7 +1834,8 @@
     "autoUpdate": true,
     "gpuAcceleration": true,
     "hardwareRendering": true,
-    "memoryOptimization": false
+    "memoryOptimization": false,
+    "githubGistId": ""
   },
   "sessionToken": "",
   "sessionTokenExpiry": null,

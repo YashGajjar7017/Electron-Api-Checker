@@ -13,5 +13,6 @@
   "autoUpdate": true,
   "gpuAcceleration": true,
   "hardwareRendering": true,
-  "memoryOptimization": false
+  "memoryOptimization": false,
+  "githubGistId": ""
 }

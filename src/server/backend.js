@@ -54,7 +54,7 @@ if (GITHUB_CLIENT_ID && GITHUB_CLIENT_SECRET) {
       clientID:     GITHUB_CLIENT_ID,
       clientSecret: GITHUB_CLIENT_SECRET,
       callbackURL:  GITHUB_CALLBACK_URL,
-      scope:        ['user:email', 'read:user'],
+      scope:        ['user:email', 'read:user', 'gist'],
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -116,7 +116,7 @@ app.get('/auth/github', (req, res, next) => {
       hint: 'Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in your .env file and restart the backend.',
     });
   }
-  passport.authenticate('github', { scope: ['user:email', 'read:user'] })(req, res, next);
+  passport.authenticate('github', { scope: ['user:email', 'read:user', 'gist'] })(req, res, next);
 });
 
 /**
@@ -738,7 +738,7 @@ app.post('/api/auth/github/callback', async (req, res) => {
         refreshToken: null,
         expiresIn:    3600,
         tokenType:    'bearer',
-        scope:        'user:email read:user',
+        scope:        'user:email read:user gist',
         _mock:        true,
       });
     }
