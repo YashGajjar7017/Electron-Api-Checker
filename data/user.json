@@ -1,5 +1,11 @@
 {
-  "user": null,
+  "user": {
+    "id": "local-7oeyikrnj",
+    "email": "yash@gmail.com",
+    "username": "yash",
+    "role": "user",
+    "createdAt": "2026-07-08T06:50:44.703Z"
+  },
   "apis": [
     {
       "id": "bdleb8ou6",
@@ -39,7 +45,7 @@
       "endpoint": "/api/login",
       "headers": {},
       "params": {},
-      "body": "{ \n\"username\": \"RMS-2094\", \n\"password\": \"Admin@123\" \n}",
+      "body": "{ \n    \"username\": \"RMS-3E0C\",\n    \"password\": \"operator_001\" \n}",
       "auth": {
         "type": "none",
         "token": "",
@@ -1828,7 +1834,7 @@
     "cardRadius": "medium",
     "animationSpeed": "normal",
     "transparency": 0.95,
-    "accentColor": "#7c3aed",
+    "accentColor": "#3b82f6",
     "backgroundColor": "#0f172a",
     "showNotifications": true,
     "autoUpdate": true,
@@ -1840,9 +1846,9 @@
   "sessionToken": "",
   "sessionTokenExpiry": null,
   "otpData": {
-    "current": "118574",
-    "cached": "118574",
-    "expiry": 1783332045703,
+    "current": "681512",
+    "cached": "681512",
+    "expiry": 1785843080035,
     "attempts": 0
   },
   "environments": [

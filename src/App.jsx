@@ -6,15 +6,17 @@ import AuthScreen from './components/AuthScreen';
 import MainLayout from './components/MainLayout';
 import ToastManager from './components/ToastManager';
 import { loadUserWithFallback, saveSessionState, restoreSessionState } from './utils/sessionManager';
+import { ROLE_PASSWORDS } from './store';
 
 
 function App() {
-  const { isAuthenticated, loginUser, settings, updateSettings } = useStore(
+  const { isAuthenticated, loginUser, settings, updateSettings, setSecurityRole } = useStore(
     (state) => ({
       isAuthenticated: state.isAuthenticated,
       loginUser: state.loginUser,
       settings: state.settings,
       updateSettings: state.updateSettings,
+      setSecurityRole: state.setSecurityRole,
     })
   );
   const [initialized, setInitialized] = useState(false);
@@ -56,6 +58,17 @@ function App() {
           }
         } catch (e) {
           // ignore; will fall back to other persistence sources
+        }
+
+        // Restore security role from cookie (cookie-based session auth)
+        try {
+          const match = document.cookie.match(/(?:^|;\s*)securityRole=([^;]*)/);
+          if (match && ROLE_PASSWORDS[match[1]]) {
+            setSecurityRole(match[1]);
+            console.log('[Auth] Restored security role from cookie:', match[1]);
+          }
+        } catch (e) {
+          console.warn('[Auth] Could not read role cookie:', e.message);
         }
 
         // Load unified Electron app state first if available

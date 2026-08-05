@@ -166,11 +166,59 @@ const applyGlobalSettings = (settings) => {
 };
 
 
+// Security role definitions
+export const SECURITY_ROLES = {
+  VIEWER:   'viewer',
+  OPERATOR: 'operator',
+  SYSADMIN: 'sysadmin',
+  SECADMIN: 'secadmin',
+};
+
+export const ROLE_META = {
+  viewer:   { label: 'Viewer',         color: '#3b82f6', icon: '👁️',  description: 'Read-only access to monitoring data' },
+  operator: { label: 'Operator',       color: '#f59e0b', icon: '⚙️',  description: 'Read and write operational configs' },
+  sysadmin: { label: 'System Admin',   color: '#10b981', icon: '🖥️', description: 'Full system configuration access' },
+  secadmin: { label: 'Security Admin', color: '#8b5cf6', icon: '🔐', description: 'Security, certificates & broker control' },
+};
+
+export const ROLE_PERMISSIONS = {
+  viewer:   { read: true,  write: false, system: false, security: false },
+  operator: { read: true,  write: true,  system: false, security: false },
+  sysadmin: { read: true,  write: true,  system: true,  security: false },
+  secadmin: { read: true,  write: true,  system: true,  security: true  },
+};
+
+// Role password map — local auth only
+export const ROLE_PASSWORDS = {
+  viewer:   'viewer_001',
+  operator: 'operator_001',
+  sysadmin: 'sysadmin_001',
+  secadmin: 'secadmin_001',
+};
+
 const useStore = create(
   subscribeWithSelector((set, get) => ({
     // Auth state
     user: null,
     isAuthenticated: false,
+
+    // Security role — one of: viewer | operator | sysadmin | secadmin
+    securityRole: null,
+    setSecurityRole: (role) => {
+      set({ securityRole: role });
+      // Persist role to cookie
+      try {
+        const expiry = new Date(Date.now() + 8 * 60 * 60 * 1000).toUTCString(); // 8 hr
+        document.cookie = `securityRole=${role}; expires=${expiry}; path=/; SameSite=Strict`;
+      } catch (e) {}
+    },
+    getSecurityRole: () => get().securityRole,
+    hasPermission: (permission) => {
+      const role = get().securityRole;
+      if (!role) return false;
+      return ROLE_PERMISSIONS[role]?.[permission] ?? false;
+    },
+
     loginUser: async (user) => {
       if (window.electronAPI && window.electronAPI.saveUser) {
         await window.electronAPI.saveUser(user);
@@ -181,7 +229,9 @@ const useStore = create(
       if (window.electronAPI && window.electronAPI.saveUser) {
         await window.electronAPI.saveUser(null);
       }
-      set({ user: null, isAuthenticated: false });
+      // Clear role cookie
+      try { document.cookie = 'securityRole=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'; } catch (e) {}
+      set({ user: null, isAuthenticated: false, securityRole: null });
     },
 
     // Collections state

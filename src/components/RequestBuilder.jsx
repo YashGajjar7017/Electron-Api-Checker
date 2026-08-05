@@ -1376,74 +1376,120 @@ function RequestBuilder() {
 
         {activeTab === 'headers' && (
           <div className="key-value-editor">
+            {/* Column headers */}
+            <div className="kv-table-header">
+              <span />
+              <span>Key</span>
+              <span>Value</span>
+              <span>Description</span>
+              <span />
+            </div>
+            <div className="rows-list">
+              {Object.keys(headers).length === 0 ? (
+                <div style={{ padding: '16px', color: 'var(--text-tertiary)', fontSize: '12px', textAlign: 'center' }}>
+                  No headers. Add one below.
+                </div>
+              ) : (
+                Object.entries(headers).map(([key, value]) => (
+                  <div key={key} className="row">
+                    <span style={{ display: 'grid', placeItems: 'center' }}>
+                      <input type="checkbox" defaultChecked style={{ accentColor: 'var(--primary)', width: 13, height: 13 }} />
+                    </span>
+                    <span className="key">{key}</span>
+                    <span className="value">{value}</span>
+                    <span />
+                    <button
+                      className="btn-delete"
+                      onClick={() => removeHeader(key)}
+                      style={{ display: 'grid', placeItems: 'center' }}
+                    >
+                      <FiX size={14} />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            {/* Add-row at bottom */}
             <div className="add-row">
+              <span />
               <input
                 type="text"
                 placeholder="Header name"
                 value={newHeaderKey}
                 onChange={(e) => setNewHeaderKey(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addHeader()}
               />
               <input
                 type="text"
-                placeholder="Header value"
+                placeholder="Value"
                 value={newHeaderValue}
                 onChange={(e) => setNewHeaderValue(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addHeader()}
               />
-              <button className="btn btn-primary btn-sm" onClick={addHeader}>
-                <FiPlus size={16} />
+              <span />
+              <button className="btn btn-primary btn-sm" onClick={addHeader} style={{ display: 'grid', placeItems: 'center', height: 28, width: 28, padding: 0 }}>
+                <FiPlus size={14} />
               </button>
-            </div>
-
-            <div className="rows-list">
-              {Object.entries(headers).map(([key, value]) => (
-                <div key={key} className="row">
-                  <span className="key">{key}</span>
-                  <span className="value">{value}</span>
-                  <button
-                    className="btn-delete"
-                    onClick={() => removeHeader(key)}
-                  >
-                    <FiX size={16} />
-                  </button>
-                </div>
-              ))}
             </div>
           </div>
         )}
 
         {activeTab === 'params' && (
           <div className="key-value-editor">
+            {/* Column headers */}
+            <div className="kv-table-header">
+              <span />
+              <span>Key</span>
+              <span>Value</span>
+              <span>Description</span>
+              <span />
+            </div>
+            <div className="rows-list">
+              {Object.keys(params).length === 0 ? (
+                <div style={{ padding: '16px', color: 'var(--text-tertiary)', fontSize: '12px', textAlign: 'center' }}>
+                  No query parameters. Add one below.
+                </div>
+              ) : (
+                Object.entries(params).map(([key, value]) => (
+                  <div key={key} className="row">
+                    <span style={{ display: 'grid', placeItems: 'center' }}>
+                      <input type="checkbox" defaultChecked style={{ accentColor: 'var(--primary)', width: 13, height: 13 }} />
+                    </span>
+                    <span className="key">{key}</span>
+                    <span className="value">{value}</span>
+                    <span />
+                    <button
+                      className="btn-delete"
+                      onClick={() => removeParam(key)}
+                      style={{ display: 'grid', placeItems: 'center' }}
+                    >
+                      <FiX size={14} />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            {/* Add-row at bottom */}
             <div className="add-row">
+              <span />
               <input
                 type="text"
-                placeholder="Param name"
+                placeholder="Key"
                 value={newParamKey}
                 onChange={(e) => setNewParamKey(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addParam()}
               />
               <input
                 type="text"
-                placeholder="Param value"
+                placeholder="Value"
                 value={newParamValue}
                 onChange={(e) => setNewParamValue(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addParam()}
               />
-              <button className="btn btn-primary btn-sm" onClick={addParam}>
-                <FiPlus size={16} />
+              <span />
+              <button className="btn btn-primary btn-sm" onClick={addParam} style={{ display: 'grid', placeItems: 'center', height: 28, width: 28, padding: 0 }}>
+                <FiPlus size={14} />
               </button>
-            </div>
-
-            <div className="rows-list">
-              {Object.entries(params).map(([key, value]) => (
-                <div key={key} className="row">
-                  <span className="key">{key}</span>
-                  <span className="value">{value}</span>
-                  <button
-                    className="btn-delete"
-                    onClick={() => removeParam(key)}
-                  >
-                    <FiX size={16} />
-                  </button>
-                </div>
-              ))}
             </div>
           </div>
         )}

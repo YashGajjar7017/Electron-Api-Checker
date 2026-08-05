@@ -2,8 +2,11 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04);
 }
 
 .request-builder.empty-state {
@@ -63,7 +66,7 @@
   align-items: stretch;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: var(--bg-tertiary);
+  background: var(--bg-primary);
   overflow: hidden;
   transition: var(--transition);
 }
@@ -348,72 +351,57 @@
 .tabs {
   display: flex;
   gap: 0;
-  padding: 0 1rem;
+  padding: 0 0.75rem;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   background: var(--bg-secondary);
+  overflow-x: auto;
 }
 
+.tabs::-webkit-scrollbar { display: none; }
+
 .tab {
-  padding: 0.75rem 1rem;
+  padding: 8px 13px;
   border: none;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 12px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: color 0.18s ease, border-color 0.18s ease;
   border-bottom: 2px solid transparent;
   position: relative;
+  white-space: nowrap;
+  margin-bottom: -1px;
 }
 
 .tab:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.03);
 }
 
 .tab.active {
-  background: rgba(255, 255, 255, 0.05);
+  background: transparent;
 }
 
-.tab[data-tab="params"].active {
-  color: #3b82f6;
-  border-bottom-color: #3b82f6;
-}
+.tab[data-tab="params"].active    { color: #3b82f6; border-bottom-color: #3b82f6; }
+.tab[data-tab="auth"].active      { color: #10b981; border-bottom-color: #10b981; }
+.tab[data-tab="headers"].active   { color: #8b5cf6; border-bottom-color: #8b5cf6; }
+.tab[data-tab="body"].active      { color: #f97316; border-bottom-color: #f97316; }
+.tab[data-tab="scripts"].active   { color: #ec4899; border-bottom-color: #ec4899; }
+.tab[data-tab="docs"].active      { color: #14b8a6; border-bottom-color: #14b8a6; }
+.tab[data-tab="settings"].active  { color: #ef4444; border-bottom-color: #ef4444; }
+.tab[data-tab="automation"].active{ color: #a855f7; border-bottom-color: #a855f7; }
 
-.tab[data-tab="auth"].active, .tab[data-tab="authorization"].active {
-  color: #10b981;
-  border-bottom-color: #10b981;
-}
-
-.tab[data-tab="headers"].active {
-  color: #8b5cf6;
-  border-bottom-color: #8b5cf6;
-}
-
-.tab[data-tab="body"].active {
-  color: #f97316;
-  border-bottom-color: #f97316;
-}
-
-.tab[data-tab="scripts"].active {
-  color: #ec4899;
-  border-bottom-color: #ec4899;
-}
-
-.tab[data-tab="docs"].active {
-  color: #14b8a6;
-  border-bottom-color: #14b8a6;
-}
-
-.tab[data-tab="settings"].active {
-  color: #ef4444;
-  border-bottom-color: #ef4444;
-}
-
-.tab[data-tab="automation"].active {
-  color: #a855f7;
-  border-bottom-color: #a855f7;
+/* Active dot on Body tab when body type is set */
+.active-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: #22c55e;
+  border-radius: 50%;
+  margin-left: 4px;
+  vertical-align: middle;
+  box-shadow: 0 0 5px #22c55e;
 }
 
 .tab-content {
@@ -443,68 +431,109 @@
   overflow: hidden;
 }
 
+/* ── Params / Key-value table — Postman style ── */
 .key-value-editor {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 1rem;
-  gap: 1rem;
+  overflow: hidden;
 }
 
-.add-row {
-  display: flex;
-  gap: 0.5rem;
+.kv-table-header {
+  display: grid;
+  grid-template-columns: 32px 1fr 1fr 100px 36px;
+  gap: 0;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border);
+  padding: 0 12px;
+  flex-shrink: 0;
 }
 
-.add-row input {
-  flex: 1;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-  padding: 0.5rem;
-  border-radius: 6px;
-  font-size: 0.9rem;
-}
-
-.add-row input:focus {
-  outline: none;
-  border-color: var(--primary);
+.kv-table-header span {
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
 }
 
 .rows-list {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
 }
 
+.rows-list::-webkit-scrollbar { width: 5px; }
+.rows-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+
 .row {
-  display: flex;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  display: grid;
+  grid-template-columns: 32px 1fr 1fr 100px 36px;
+  gap: 0;
+  padding: 0 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
   align-items: center;
+  min-height: 36px;
+  transition: background 0.15s;
+}
+
+.row:hover {
+  background: rgba(255,255,255,0.03);
 }
 
 .row .key {
   font-weight: 600;
   color: var(--primary);
-  min-width: 120px;
   font-family: 'Monaco', 'Courier', monospace;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+  padding: 6px 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .row .value {
   flex: 1;
   color: var(--text-secondary);
   font-family: 'Monaco', 'Courier', monospace;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+  padding: 6px 8px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Add-row form — inline at bottom */
+.add-row {
+  display: grid;
+  grid-template-columns: 32px 1fr 1fr 100px 36px;
+  gap: 0;
+  padding: 6px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-secondary);
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.add-row input {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  margin: 0 4px;
+  font-family: 'Monaco', monospace;
+  transition: border-color 0.2s;
+}
+
+.add-row input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: rgba(99,102,241,0.06);
 }
 
 .btn-delete {

@@ -259,30 +259,37 @@ function RemotePage() {
 
         const latency = Math.round(performance.now() - startTime);
 
-        if (res.success) {
-          // Parse response body to check for 401 unauthorized shape
-          let responseData = {};
-          try {
-            responseData = JSON.parse(res.body);
-          } catch (e) {
-            responseData = res.body;
-          }
+        // Parse response body regardless of success flag
+        let responseData = {};
+        try {
+          responseData = typeof res.body === 'string' ? JSON.parse(res.body) : res.body;
+        } catch (e) {
+          responseData = { raw: res.body };
+        }
 
-          const isUnauth = res.status === 401 || (responseData && typeof responseData === 'object' && responseData.Flag === false && responseData.Message === 'UNAUTHORIZED');
-          if (isUnauth) {
-            clearSessionToken();
-            setAuthToken('');
-            setPostError('Session unauthorized (401). Active tokens cleared.');
-          } else {
-            setPostResponse({
-              status: res.status,
-              statusText: res.statusText || 'OK',
-              latency,
-              body: res.body
-            });
-            // Cache successful options
-            await handleSaveCredentials();
-          }
+        // Detect 401 / Unauthorized: check HTTP status AND body flag
+        const httpStatus = res.status || 0;
+        const isUnauth = httpStatus === 401
+          || (responseData && typeof responseData === 'object' && responseData.Flag === false && responseData.Message === 'UNAUTHORIZED');
+
+        // Treat any non-2xx as an error (including when Electron marks success=true but status is bad)
+        const isHttpError = httpStatus !== 0 && (httpStatus < 200 || httpStatus >= 300);
+
+        if (isUnauth) {
+          clearSessionToken();
+          setAuthToken('');
+          setPostError(`❌ Unauthorized (HTTP ${httpStatus}): Session token rejected by device. Please re-authenticate.\n\nDevice response: ${JSON.stringify(responseData, null, 2)}`);
+        } else if (isHttpError) {
+          setPostError(`❌ HTTP ${httpStatus} Error: Device rejected the config.\n\nDevice response: ${JSON.stringify(responseData, null, 2)}`);
+        } else if (res.success || httpStatus === 200) {
+          setPostResponse({
+            status: httpStatus || 200,
+            statusText: res.statusText || 'OK',
+            latency,
+            body: res.body
+          });
+          // Cache successful options
+          await handleSaveCredentials();
         } else {
           setPostError(res.error || 'Server rejected synchronization request.');
         }

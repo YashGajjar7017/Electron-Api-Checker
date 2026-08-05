@@ -43,6 +43,10 @@ function SystemMonitor({ isOpen, onClose }) {
     automationTasks: 0,
   });
 
+  // Safe number helpers
+  const safeNum = (v, fallback = 0) => (typeof v === 'number' && !isNaN(v) ? v : fallback);
+  const safeFixed = (v, digits = 1) => safeNum(v).toFixed(digits);
+
   const [history, setHistory] = useState({
     cpu: [],
     ram: [],
@@ -193,33 +197,33 @@ function SystemMonitor({ isOpen, onClose }) {
           <div className="metrics-grid">
             <div className="metric-box">
               <span className="metric-label">CPU</span>
-              <div className="metric-value">{systemMetrics.cpu}%</div>
+              <div className="metric-value">{safeNum(systemMetrics.cpu)}%</div>
               <div className="metric-bar">
                 <div
-                  className={`metric-fill ${systemMetrics.cpu > 80 ? 'critical' : systemMetrics.cpu > 60 ? 'warning' : 'ok'}`}
-                  style={{ width: `${systemMetrics.cpu}%` }}
+                  className={`metric-fill ${safeNum(systemMetrics.cpu) > 80 ? 'critical' : safeNum(systemMetrics.cpu) > 60 ? 'warning' : 'ok'}`}
+                  style={{ width: `${Math.min(100, safeNum(systemMetrics.cpu))}%` }}
                 />
               </div>
             </div>
 
             <div className="metric-box">
               <span className="metric-label">RAM</span>
-              <div className="metric-value">{systemMetrics.ram}%</div>
+              <div className="metric-value">{safeNum(systemMetrics.ram)}%</div>
               <div className="metric-bar">
                 <div
-                  className={`metric-fill ${systemMetrics.ram > 80 ? 'critical' : systemMetrics.ram > 60 ? 'warning' : 'ok'}`}
-                  style={{ width: `${systemMetrics.ram}%` }}
+                  className={`metric-fill ${safeNum(systemMetrics.ram) > 80 ? 'critical' : safeNum(systemMetrics.ram) > 60 ? 'warning' : 'ok'}`}
+                  style={{ width: `${Math.min(100, safeNum(systemMetrics.ram))}%` }}
                 />
               </div>
             </div>
 
             <div className="metric-box">
               <span className="metric-label">Disk</span>
-              <div className="metric-value">{systemMetrics.disk}%</div>
+              <div className="metric-value">{safeNum(systemMetrics.disk)}%</div>
               <div className="metric-bar">
                 <div
-                  className={`metric-fill ${systemMetrics.disk > 80 ? 'critical' : systemMetrics.disk > 60 ? 'warning' : 'ok'}`}
-                  style={{ width: `${systemMetrics.disk}%` }}
+                  className={`metric-fill ${safeNum(systemMetrics.disk) > 80 ? 'critical' : safeNum(systemMetrics.disk) > 60 ? 'warning' : 'ok'}`}
+                  style={{ width: `${Math.min(100, safeNum(systemMetrics.disk))}%` }}
                 />
               </div>
             </div>
@@ -232,20 +236,20 @@ function SystemMonitor({ isOpen, onClose }) {
             <div className="metric-box">
               <span className="metric-label">Active Requests</span>
               <div className="metric-value" style={{ color: '#22c55e' }}>
-                {systemMetrics.activeRequests}
+                {safeNum(systemMetrics.activeRequests)}
               </div>
             </div>
 
             <div className="metric-box">
               <span className="metric-label">Failed</span>
               <div className="metric-value" style={{ color: '#f87171' }}>
-                {systemMetrics.failedRequests}
+                {safeNum(systemMetrics.failedRequests)}
               </div>
             </div>
 
             <div className="metric-box">
               <span className="metric-label">Req/sec</span>
-              <div className="metric-value">{systemMetrics.requestsPerSec.toFixed(1)}</div>
+              <div className="metric-value">{safeFixed(systemMetrics.requestsPerSec)}</div>
             </div>
 
             <div className="metric-box">
@@ -264,7 +268,7 @@ function SystemMonitor({ isOpen, onClose }) {
 
             <div className="metric-box">
               <span className="metric-label">Automation Tasks</span>
-              <div className="metric-value">{systemMetrics.automationTasks}</div>
+              <div className="metric-value">{safeNum(systemMetrics.automationTasks)}</div>
             </div>
           </div>
 

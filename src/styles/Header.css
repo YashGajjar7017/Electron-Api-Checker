@@ -80,6 +80,38 @@
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
+/* Security Role Dropdown in header */
+.security-role-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 24px !important;
+  background: rgba(13, 18, 34, 0.8) !important;
+  font-weight: 700 !important;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, color 0.3s ease !important;
+  cursor: pointer;
+}
+
+.security-role-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px currentColor;
+  opacity: 0.8;
+}
+
+.security-role-select option {
+  background: #0d1222;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Thin vertical divider between URL and Auth dropdown */
+.header-auth-divider {
+  width: 1px;
+  height: 22px;
+  background: var(--border);
+  flex-shrink: 0;
+  margin: 0 2px;
+}
+
 .url-input {
   flex: 1;
   background: var(--bg-secondary);

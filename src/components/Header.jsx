@@ -1,12 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useStore from '../store';
-import { FiLogOut, FiWifi, FiGithub, FiCloud, FiRefreshCcw, FiPower, FiShuffle, FiLayers, FiSettings, FiZap, FiPlay, FiTrash2, FiActivity, FiKey } from 'react-icons/fi';
+import { ROLE_META, ROLE_PERMISSIONS } from '../store';
+import { FiLogOut, FiWifi, FiGithub, FiCloud, FiRefreshCcw, FiPower, FiShuffle, FiLayers, FiSettings, FiZap, FiPlay, FiTrash2, FiActivity, FiKey, FiShield } from 'react-icons/fi';
 import BackendStatus from './BackendStatus';
 import SystemMonitor from './SystemMonitor';
 import SettingsPanel from './SettingsPanel';
 import GitHubAuth from './GitHubAuth';
 import GitHubSignup from './GitHubSignup';
 import '../styles/Header.css';
+
+const ROLE_SELECT_OPTIONS = [
+  { id: 'viewer',   label: 'Viewer' },
+  { id: 'operator', label: 'Operator' },
+  { id: 'sysadmin', label: 'Sys Admin' },
+  { id: 'secadmin', label: 'Sec Admin' },
+];
 
 function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonitor }) {
   const [pinging, setPinging] = useState(false);
@@ -34,7 +42,9 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
     sessionToken,
     setSessionToken,
     clearSessionToken,
-    sessionTokenExpiry
+    sessionTokenExpiry,
+    securityRole,
+    setSecurityRole,
   } = useStore(
     (state) => ({
       user: state.user,
@@ -55,8 +65,19 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
       setSessionToken: state.setSessionToken,
       clearSessionToken: state.clearSessionToken,
       sessionTokenExpiry: state.sessionTokenExpiry,
+      securityRole: state.securityRole,
+      setSecurityRole: state.setSecurityRole,
     })
   );
+
+  const roleMeta = securityRole ? ROLE_META[securityRole] : null;
+  const roleColors = {
+    viewer:   '#3b82f6',
+    operator: '#f59e0b',
+    sysadmin: '#10b981',
+    secadmin: '#8b5cf6',
+  };
+  const roleColor = securityRole ? roleColors[securityRole] : 'var(--primary)';
 
   useEffect(() => {
     const updateTimeLeft = () => {
@@ -222,6 +243,7 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
 
       <div className="header-center">
         <div className="server-url-input">
+          {/* 1. Environment selector */}
           <label htmlFor="env-select">Env:</label>
           <select
             id="env-select"
@@ -235,6 +257,8 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
               </option>
             ))}
           </select>
+
+          {/* 2. Base URL — right after env */}
           <label htmlFor="base-url-input">Base URL:</label>
           <input
             id="base-url-input"
@@ -244,7 +268,45 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
             placeholder="http://localhost:3000"
             className="url-input"
           />
+
+          {/* 3. Security Auth Role — AFTER URL */}
+          <div className="header-auth-divider" />
+          <label htmlFor="security-role-select" style={{ display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+            <FiShield size={12} style={{ color: roleColor }} /> Auth:
+          </label>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <select
+              id="security-role-select"
+              className="env-select security-role-select"
+              value={securityRole || ''}
+              onChange={(e) => setSecurityRole(e.target.value)}
+              style={{
+                borderColor: roleColor,
+                color: roleColor,
+                fontWeight: '700',
+                paddingLeft: '10px',
+                minWidth: '118px',
+              }}
+            >
+              {ROLE_SELECT_OPTIONS.map(r => (
+                <option key={r.id} value={r.id}>
+                  {ROLE_META[r.id]?.icon} {r.label}
+                </option>
+              ))}
+            </select>
+            <span style={{
+              position: 'absolute',
+              right: '6px',
+              width: '7px',
+              height: '7px',
+              borderRadius: '50%',
+              background: roleColor,
+              boxShadow: `0 0 6px ${roleColor}`,
+              pointerEvents: 'none'
+            }} />
+          </div>
         </div>
+
         {/* <div className="header-actions">
           <button className="header-action-btn" onClick={handleRunAutomation} title="Run automation workflows">
             <FiPlay size={16} />
@@ -379,7 +441,7 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
                 </button>
               ) : (
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
-                  No token set. Paste a token or verify OTP to generate one.
+                  No active session token. Paste a bearer token manually.
                 </span>
               )}
             </div>
@@ -425,8 +487,23 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
           {currentTheme === 'dark' ? '☀️' : '🌙'}
         </button>
 
-        <div className="user-info">
-          <span className="user-email">{user?.email}</span>
+        <div className="user-info" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+          <span className="user-email">{user?.username || user?.email}</span>
+          {roleMeta && (
+            <span style={{
+              fontSize: '9px',
+              fontWeight: '700',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              color: roleColor,
+              background: `${roleColor}20`,
+              padding: '1px 7px',
+              borderRadius: '4px',
+              border: `1px solid ${roleColor}44`,
+            }}>
+              {roleMeta.icon} {roleMeta.label}
+            </span>
+          )}
         </div>
 
         <button
