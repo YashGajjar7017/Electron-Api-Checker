@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import useStore from '../store';
+import { ROLE_PERMISSIONS } from '../store';
 import { FiPlus, FiTrash2, FiEdit2, FiChevronDown, FiUpload, FiCopy, FiDownload, FiMoreVertical, FiChevronUp } from 'react-icons/fi';
 import parsePostmanCollection from '../utils/postmanParser';
 import '../styles/Sidebar.css';
@@ -15,6 +16,7 @@ function Sidebar() {
     deleteAPI,
     setCurrentAPI,
     currentAPI,
+    securityRole,
   } = useStore();
 
   const [expandedFolders, setExpandedFolders] = useState(new Set());
@@ -25,6 +27,58 @@ function Sidebar() {
   const [activeCollectionMenu, setActiveCollectionMenu] = useState(null);
   const [activeApiMenu, setActiveApiMenu] = useState(null);
 
+  const rolePerms = ROLE_PERMISSIONS[securityRole] || ROLE_PERMISSIONS['viewer'];
+
+  // Determine if a given API is restricted for the current role.
+  // Patterns are derived from the firmware permission spreadsheet.
+  const isApiRestricted = (api) => {
+    const ep = (api.endpoint || '').toLowerCase();
+    const method = (api.method || 'GET').toUpperCase();
+
+    // Firmware Update (/update) — requires write + system
+    if (ep.includes('/update')) {
+      return !rolePerms.write || !rolePerms.system;
+    }
+    // Security/Certificate APIs — require security role
+    if (
+      ep.includes('/write') ||
+      ep.includes('filename=') ||
+      ep.includes('rootca') ||
+      ep.includes('client.pem') ||
+      ep.includes('key.pem')
+    ) {
+      return !rolePerms.security;
+    }
+    // Broker/MQTT write APIs — require system
+    if (
+      (ep.includes('/broker') || ep.includes('/mqtt-server')) &&
+      method === 'POST'
+    ) {
+      return !rolePerms.system;
+    }
+    // ISP Configuration write — requires system
+    if (ep.includes('/config/isp') && method === 'POST') {
+      return !rolePerms.system;
+    }
+    // Remote server write — requires system
+    if (ep.includes('/config/remote-server') && method === 'POST') {
+      return !rolePerms.system;
+    }
+    // UUID config POST — requires write
+    if (ep.includes('/config/parameters') && method === 'POST') {
+      return !rolePerms.write;
+    }
+    // Inverter communication write — requires write
+    if (ep.includes('/inverter-communication') && method === 'POST') {
+      return !rolePerms.write;
+    }
+    // Restart — requires system
+    if (ep.includes('/restart')) {
+      return !rolePerms.system;
+    }
+
+    return false;
+  };
 
   const toggleFolder = (collectionId) => {
     const newExpanded = new Set(expandedFolders);
@@ -461,8 +515,9 @@ function Sidebar() {
                         return (
                           <div
                             key={api.id}
-                            className={`api-item method-${(api.method || 'GET').toLowerCase()} ${currentAPI?.id === api.id ? 'active' : ''}`}
-                            onClick={() => setCurrentAPI(api)}
+                            className={`api-item method-${(api.method || 'GET').toLowerCase()} ${currentAPI?.id === api.id ? 'active' : ''} ${isApiRestricted(api) ? 'api-item--restricted' : ''}`}
+                            onClick={() => !isApiRestricted(api) && setCurrentAPI(api)}
+                            title={isApiRestricted(api) ? `Restricted — ${securityRole || 'viewer'} role does not have access` : undefined}
                           >
                             <div className="api-item-header">
                               <span className={`method-badge method-${api.method.toLowerCase()}`}>

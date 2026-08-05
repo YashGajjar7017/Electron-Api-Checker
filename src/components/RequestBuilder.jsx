@@ -901,12 +901,28 @@ function RequestBuilder() {
         responseData = result.body;
       }
 
-      // Auto-extract token from successful response
+      // Auto-extract token from successful response and store as sessionToken
       if (result.status >= 200 && result.status < 300 && responseData && typeof responseData === 'object') {
         const extractedToken = findTokenInObject(responseData);
         if (extractedToken) {
-          console.log('🔑 Auto-detected token in response, storing for 10 minutes');
-          useStore.getState().setAPIResponseToken(extractedToken, 10);
+          const authKeywords = ['login', 'auth', 'signin', 'authenticate'];
+          const isLoginEndpoint = authKeywords.some(kw => endpoint.toLowerCase().includes(kw));
+
+          if (isLoginEndpoint) {
+            // For login responses: store as the primary session token
+            const validForMinutes = responseData?.Data?.valid_for
+              ? Math.ceil(responseData.Data.valid_for / 60)
+              : responseData?.valid_for
+              ? Math.ceil(responseData.valid_for / 60)
+              : 60;
+            useStore.getState().setSessionToken(extractedToken, validForMinutes);
+            showActionMessage(`✅ Session token captured — auto-injected into all requests (${validForMinutes} min)`, 5000);
+            console.log(`🔑 Session token stored from login response for ${validForMinutes} min`);
+          } else {
+            // For non-login responses: store as API response token fallback
+            useStore.getState().setAPIResponseToken(extractedToken, 10);
+            console.log('🔑 Auto-detected token in response, storing as API response token for 10 min');
+          }
         }
       }
 
@@ -926,19 +942,8 @@ function RequestBuilder() {
       if (isUnauthorized) {
         clearSessionToken();
         useStore.getState().clearAPIResponseToken();
-        pendingSendRef.current = true;
-        setShowOtpModal(true);
-        showActionMessage('Session expired. Please enter new OTP.');
-        console.log('🔒 Stored tokens cleared and OTP modal prompted due to 401 Unauthorized response');
-        return;
-      }
-
-      // Check if response contains a token (from login API)
-      if (responseData && typeof responseData === 'object' && responseData.Data && responseData.Data.token) {
-        const token = responseData.Data.token;
-        const validForMinutes = responseData.Data.valid_for ? Math.ceil(responseData.Data.valid_for / 60) : 10;
-        useStore.getState().setAPIResponseToken(token, validForMinutes);
-        console.log(`Token captured: ${token.substring(0, 10)}... (expires in ${validForMinutes} min)`);
+        showActionMessage('⚠️ Session expired or unauthorized. Please log in again.');
+        console.log('🔒 Stored tokens cleared due to 401 Unauthorized response');
       }
 
       // Detect response format from content-type header

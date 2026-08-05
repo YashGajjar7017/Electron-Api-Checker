@@ -1,11 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import useStore from '../store';
-import { ROLE_META, ROLE_PERMISSIONS } from '../store';
-import { FiLogOut, FiWifi, FiGithub, FiCloud, FiRefreshCcw, FiPower, FiShuffle, FiLayers, FiSettings, FiZap, FiPlay, FiTrash2, FiActivity, FiKey, FiShield } from 'react-icons/fi';
+import { FiLogOut, FiWifi, FiGithub, FiSettings, FiActivity, FiShield } from 'react-icons/fi';
 import BackendStatus from './BackendStatus';
-import SystemMonitor from './SystemMonitor';
-import SettingsPanel from './SettingsPanel';
-import GitHubAuth from './GitHubAuth';
 import GitHubSignup from './GitHubSignup';
 import '../styles/Header.css';
 
@@ -19,58 +15,40 @@ const ROLE_SELECT_OPTIONS = [
 function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonitor }) {
   const [pinging, setPinging] = useState(false);
   const [pingStatus, setPingStatus] = useState(null);
-  const [token, setToken] = useState(null);
   const [timeLeft, setTimeLeft] = useState('');
-  const [showTokenPopup, setShowTokenPopup] = useState(false);
-  const tokenPopupRef = useRef(null);
   
   const { 
     user, 
     logoutUser, 
     serverUrl, 
     setServerUrl, 
-    clearResponseHistory, 
-    shuffleAPIs, 
-    toggleComparisonMode, 
-    comparisonMode,
     environments,
     activeEnvironment,
     setActiveEnvironment,
     updateEnvironment,
-    authToken,
-    setAuthToken,
     sessionToken,
-    setSessionToken,
-    clearSessionToken,
     sessionTokenExpiry,
     securityRole,
     setSecurityRole,
+    clearResponseHistory,
   } = useStore(
     (state) => ({
       user: state.user,
       logoutUser: state.logoutUser,
       serverUrl: state.serverUrl,
       setServerUrl: state.setServerUrl,
-      clearResponseHistory: state.clearResponseHistory,
-      shuffleAPIs: state.shuffleAPIs,
-      toggleComparisonMode: state.toggleComparisonMode,
-      comparisonMode: state.comparisonMode,
       environments: state.environments,
       activeEnvironment: state.activeEnvironment,
       setActiveEnvironment: state.setActiveEnvironment,
       updateEnvironment: state.updateEnvironment,
-      authToken: state.authToken,
-      setAuthToken: state.setAuthToken,
       sessionToken: state.sessionToken,
-      setSessionToken: state.setSessionToken,
-      clearSessionToken: state.clearSessionToken,
       sessionTokenExpiry: state.sessionTokenExpiry,
       securityRole: state.securityRole,
       setSecurityRole: state.setSecurityRole,
+      clearResponseHistory: state.clearResponseHistory,
     })
   );
 
-  const roleMeta = securityRole ? ROLE_META[securityRole] : null;
   const roleColors = {
     viewer:   '#3b82f6',
     operator: '#f59e0b',
@@ -98,39 +76,10 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
     return () => clearInterval(interval);
   }, [sessionToken, sessionTokenExpiry]);
 
-  useEffect(() => {
-    const handleOutsideClick = (e) => {
-      if (tokenPopupRef.current && !tokenPopupRef.current.contains(e.target)) {
-        setShowTokenPopup(false);
-      }
-    };
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, []);
-
-  const handleGlobalTokenChange = (e) => {
-    const val = e.target.value;
-    setAuthToken(val);
-    if (val) {
-      setSessionToken(val, 10);
-    } else {
-      clearSessionToken();
-    }
-  };
-
   const activeEnvObj = environments?.find((env) => env.id === activeEnvironment) || environments?.[0];
   const currentBaseUrl = activeEnvObj ? activeEnvObj.baseUrl : serverUrl;
   
-  // GitHub JWT token handler
-  useEffect(() => {
-    if (window.electronAPI?.onGithubToken) {
-      window.electronAPI.onGithubToken((jwtToken) => {
-        console.log('JWT Token received:', jwtToken);
-        localStorage.setItem('github_jwt', jwtToken);
-        setToken(jwtToken);
-      });
-    }
-  }, []);
+
   
   const handleLogout = async () => {
   if (window.electronAPI && window.electronAPI.saveUser) {
@@ -274,37 +223,19 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
           <label htmlFor="security-role-select" style={{ display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
             <FiShield size={12} style={{ color: roleColor }} /> Auth:
           </label>
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <select
-              id="security-role-select"
-              className="env-select security-role-select"
-              value={securityRole || ''}
-              onChange={(e) => setSecurityRole(e.target.value)}
-              style={{
-                borderColor: roleColor,
-                color: roleColor,
-                fontWeight: '700',
-                paddingLeft: '10px',
-                minWidth: '118px',
-              }}
-            >
-              {ROLE_SELECT_OPTIONS.map(r => (
-                <option key={r.id} value={r.id}>
-                  {ROLE_META[r.id]?.icon} {r.label}
-                </option>
-              ))}
-            </select>
-            <span style={{
-              position: 'absolute',
-              right: '6px',
-              width: '7px',
-              height: '7px',
-              borderRadius: '50%',
-              background: roleColor,
-              boxShadow: `0 0 6px ${roleColor}`,
-              pointerEvents: 'none'
-            }} />
-          </div>
+          <select
+            id="security-role-select"
+            className="env-select"
+            value={securityRole || ''}
+            onChange={(e) => setSecurityRole(e.target.value)}
+            style={{ borderColor: roleColor, color: roleColor, fontWeight: '600' }}
+          >
+            {ROLE_SELECT_OPTIONS.map(r => (
+              <option key={r.id} value={r.id}>
+                {r.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* <div className="header-actions">
@@ -338,6 +269,26 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
       <div className="header-right">
         <BackendStatus />
 
+        {/* Session token indicator — shown when a session token is active */}
+        {sessionToken && timeLeft && (
+          <div title={`Session active — expires in ${timeLeft}`} style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px',
+            padding: '4px 10px',
+            borderRadius: '8px',
+            background: 'rgba(16,185,129,0.12)',
+            border: '1px solid rgba(16,185,129,0.3)',
+            fontSize: '11px',
+            fontWeight: '600',
+            color: '#10b981',
+            whiteSpace: 'nowrap',
+          }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 6px #10b981', display: 'inline-block' }} />
+            {timeLeft}
+          </div>
+        )}
+
         <button
           className="header-btn system-monitor-btn"
           onClick={() => onOpenSystemMonitor?.()}
@@ -346,107 +297,6 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
           <FiActivity size={18} />
           <span className="status-pulse" />
         </button>
-
-        <div style={{ position: 'relative' }} ref={tokenPopupRef}>
-          <button
-            className={`header-btn token-menu-btn ${sessionToken ? 'active-token' : ''}`}
-            onClick={() => setShowTokenPopup(!showTokenPopup)}
-            title="Manage Session Token"
-            style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <FiKey size={18} style={{ color: sessionToken ? '#10b981' : 'inherit' }} />
-            {timeLeft && (
-              <span style={{ 
-                position: 'absolute', 
-                top: '-5px', 
-                right: '-5px', 
-                background: '#ef4444', 
-                color: '#fff', 
-                fontSize: '8px', 
-                padding: '1px 3px', 
-                borderRadius: '6px',
-                fontWeight: 'bold',
-                lineHeight: '1'
-              }}>
-                {timeLeft.split(':')[0]}m
-              </span>
-            )}
-          </button>
-
-          {showTokenPopup && (
-            <div className="token-popup-dropdown glass-lg" style={{
-              position: 'absolute',
-              top: '40px',
-              right: '0',
-              width: '280px',
-              padding: '16px',
-              borderRadius: '12px',
-              border: '1px solid var(--border)',
-              background: 'rgba(15, 23, 42, 0.95)',
-              backdropFilter: 'blur(20px)',
-              boxShadow: 'var(--shadow-xl)',
-              zIndex: 9999,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-              animation: 'fadeIn 0.2s ease',
-              textAlign: 'left'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-light)' }}>
-                  Manage Session Token
-                </span>
-                {sessionToken && (
-                  <span style={{ fontSize: '10px', color: '#10b981', background: 'rgba(16, 185, 129, 0.15)', padding: '2px 6px', borderRadius: '4px', fontWeight: '600' }}>
-                    Active ({timeLeft})
-                  </span>
-                )}
-              </div>
-
-              <input
-                type="text"
-                value={sessionToken || authToken || ''}
-                onChange={handleGlobalTokenChange}
-                placeholder="Enter Bearer Token"
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border)',
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  color: 'var(--text-light)',
-                  fontSize: '13px',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
-
-              {sessionToken ? (
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => {
-                    clearSessionToken();
-                    setAuthToken('');
-                  }}
-                  style={{
-                    borderColor: '#ef4444',
-                    color: '#ef4444',
-                    width: '100%',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    background: 'transparent'
-                  }}
-                >
-                  Clear Token
-                </button>
-              ) : (
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
-                  No active session token. Paste a bearer token manually.
-                </span>
-              )}
-            </div>
-          )}
-        </div>
         
         <button
           className="header-btn"
@@ -487,23 +337,8 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
           {currentTheme === 'dark' ? '☀️' : '🌙'}
         </button>
 
-        <div className="user-info" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+        <div className="user-info">
           <span className="user-email">{user?.username || user?.email}</span>
-          {roleMeta && (
-            <span style={{
-              fontSize: '9px',
-              fontWeight: '700',
-              textTransform: 'uppercase',
-              letterSpacing: '1px',
-              color: roleColor,
-              background: `${roleColor}20`,
-              padding: '1px 7px',
-              borderRadius: '4px',
-              border: `1px solid ${roleColor}44`,
-            }}>
-              {roleMeta.icon} {roleMeta.label}
-            </span>
-          )}
         </div>
 
         <button

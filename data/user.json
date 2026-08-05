@@ -1,10 +1,11 @@
 {
   "user": {
-    "id": "local-7oeyikrnj",
-    "email": "yash@gmail.com",
-    "username": "yash",
-    "role": "user",
-    "createdAt": "2026-07-08T06:50:44.703Z"
+    "id": "session-1785924028269",
+    "username": "tihey75421@3dkai.com",
+    "email": "tihey75421@3dkai.com@device.local",
+    "role": "operator",
+    "displayName": "tihey75421@3dkai.com",
+    "loginTime": "2026-08-05T10:00:28.269Z"
   },
   "apis": [
     {
@@ -1834,7 +1835,7 @@
     "cardRadius": "medium",
     "animationSpeed": "normal",
     "transparency": 0.95,
-    "accentColor": "#3b82f6",
+    "accentColor": "#7c3aed",
     "backgroundColor": "#0f172a",
     "showNotifications": true,
     "autoUpdate": true,
@@ -1846,9 +1847,9 @@
   "sessionToken": "",
   "sessionTokenExpiry": null,
   "otpData": {
-    "current": "681512",
-    "cached": "681512",
-    "expiry": 1785843080035,
+    "current": "451574",
+    "cached": "451574",
+    "expiry": 1785922732189,
     "attempts": 0
   },
   "environments": [

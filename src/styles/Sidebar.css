@@ -325,6 +325,27 @@
   z-index: 9999;
 }
 
+/* Restricted API item — faded & blurred for roles without access */
+.api-item--restricted {
+  opacity: 0.32;
+  filter: blur(1.2px);
+  pointer-events: none;
+  user-select: none;
+  position: relative;
+  cursor: not-allowed !important;
+}
+
+.api-item--restricted::after {
+  content: '🔒';
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  font-size: 12px;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
 .api-item:hover {
   background: var(--bg-secondary);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
