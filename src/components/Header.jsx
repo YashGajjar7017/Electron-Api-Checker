@@ -228,7 +228,6 @@ function Header({ onThemeChange, currentTheme, onOpenSettings, onOpenSystemMonit
             className="env-select"
             value={securityRole || ''}
             onChange={(e) => setSecurityRole(e.target.value)}
-            style={{ borderColor: roleColor, color: roleColor, fontWeight: '600' }}
           >
             {ROLE_SELECT_OPTIONS.map(r => (
               <option key={r.id} value={r.id}>

@@ -1235,7 +1235,7 @@ function RequestBuilder() {
               </div>
             )}
             {bodyType === 'json' && (
-              <div className="response-panel-body" style={{ height: '300px', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
+              <div className="response-panel-body" style={{ flex: 1, minHeight: 0, border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 <Editor
                   height="100%"
                   language="json"
@@ -1257,12 +1257,12 @@ function RequestBuilder() {
                       Loading Editor...
                     </div>
                   }
-                  options={{ minimap: { enabled: false }, wordWrap: 'on', theme: 'vs-dark' }}
+                  options={{ minimap: { enabled: false }, wordWrap: 'on', theme: 'vs-dark', scrollBeyondLastLine: false }}
                 />
               </div>
             )}
             {(bodyType === 'raw' || bodyType === 'graphql') && (
-              <div className="response-panel-body" style={{ height: '300px', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
+              <div className="response-panel-body" style={{ flex: 1, minHeight: 0, border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 <Editor
                   height="100%"
                   language={bodyType === 'graphql' ? 'graphql' : 'plaintext'}
@@ -1284,7 +1284,7 @@ function RequestBuilder() {
                       Loading Editor...
                     </div>
                   }
-                  options={{ minimap: { enabled: false }, wordWrap: 'on', theme: 'vs-dark' }}
+                  options={{ minimap: { enabled: false }, wordWrap: 'on', theme: 'vs-dark', scrollBeyondLastLine: false }}
                 />
               </div>
             )}

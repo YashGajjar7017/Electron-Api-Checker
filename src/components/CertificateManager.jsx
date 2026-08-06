@@ -20,11 +20,61 @@ import {
 } from 'react-icons/fi';
 import '../styles/CertificateManager.css';
 
+/** Shows current session token status inline */
+function SessionTokenStatus() {
+  const sessionToken = useStore((s) => s.sessionToken);
+  const sessionTokenExpiry = useStore((s) => s.sessionTokenExpiry);
+  const [timeLeft, setTimeLeft] = React.useState('');
+
+  React.useEffect(() => {
+    const tick = () => {
+      if (sessionToken && sessionTokenExpiry) {
+        const rem = sessionTokenExpiry - Date.now();
+        if (rem > 0) {
+          const m = Math.floor(rem / 60000);
+          const s = Math.floor((rem % 60000) / 1000);
+          setTimeLeft(`${m}:${s.toString().padStart(2, '0')}`);
+          return;
+        }
+      }
+      setTimeLeft('');
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [sessionToken, sessionTokenExpiry]);
+
+  if (sessionToken && timeLeft) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '8px',
+        padding: '8px 12px', borderRadius: '8px',
+        background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.35)',
+        fontSize: '12px', fontWeight: '600', color: '#10b981',
+      }}>
+        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 6px #10b981', display: 'inline-block', flexShrink: 0 }} />
+        Session Active — expires in {timeLeft}
+      </div>
+    );
+  }
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '8px',
+      padding: '8px 12px', borderRadius: '8px',
+      background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)',
+      fontSize: '12px', fontWeight: '600', color: '#ef4444',
+    }}>
+      <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#ef4444', display: 'inline-block', flexShrink: 0 }} />
+      No active session — please log in first
+    </div>
+  );
+}
+
+
 function CertificateManager() {
   const imei = useStore((state) => state.globalImei) || '869742085795508';
   const setImei = useStore((state) => state.setGlobalImei);
   const [password, setPassword] = useState(() => localStorage.getItem('cert_password') || '3376b22');
-  const [bearerToken, setBearerToken] = useState(() => localStorage.getItem('cert_bearerToken') || '02453');
   const [payloadType, setPayloadType] = useState(() => localStorage.getItem('cert_payloadType') || 'json');
 
   // Download URLs (with placeholders)
@@ -90,9 +140,6 @@ function CertificateManager() {
     localStorage.setItem('cert_password', password);
   }, [password]);
 
-  useEffect(() => {
-    localStorage.setItem('cert_bearerToken', bearerToken);
-  }, [bearerToken]);
 
   useEffect(() => {
     localStorage.setItem('cert_payloadType', payloadType);
@@ -300,7 +347,7 @@ function CertificateManager() {
         const result = await window.electronAPI.provisionCertificates({
           imei: imei.trim(),
           password: password.trim(),
-          bearerToken: bearerToken.trim(),
+          bearerToken: (useStore.getState().sessionToken || useStore.getState().apiResponseToken || '').trim(),
           downloadUrls,
           postUrls,
           ackUrl: ackUrl.trim(),
@@ -486,18 +533,8 @@ function CertificateManager() {
               </select>
             </div>
             <div className="form-group flex-1">
-              <label>Bearer Token</label>
-              <div className="input-with-icon">
-                <FiLock className="input-icon" />
-                <input
-                  type="password"
-                  placeholder="Insert Bearer Provisioning Token..."
-                  value={bearerToken}
-                  onChange={(e) => setBearerToken(e.target.value)}
-                  disabled={provisioning}
-                  style={{ paddingLeft: '36px' }}
-                />
-              </div>
+              <label>Session Auth</label>
+              <SessionTokenStatus />
             </div>
           </div>
 
