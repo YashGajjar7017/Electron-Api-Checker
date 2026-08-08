@@ -74,6 +74,8 @@ function SessionTokenStatus() {
 function CertificateManager() {
   const imei = useStore((state) => state.globalImei) || '869742085795508';
   const setImei = useStore((state) => state.setGlobalImei);
+  const sessionToken = useStore((state) => state.sessionToken);
+  const setSessionToken = useStore((state) => state.setSessionToken);
   const [password, setPassword] = useState(() => localStorage.getItem('cert_password') || '3376b22');
   const [payloadType, setPayloadType] = useState(() => localStorage.getItem('cert_payloadType') || 'json');
 
@@ -533,8 +535,18 @@ function CertificateManager() {
               </select>
             </div>
             <div className="form-group flex-1">
-              <label>Session Auth</label>
-              <SessionTokenStatus />
+              <label>Session / Authorization Token (Manual Input)</label>
+              <input
+                type="text"
+                placeholder="Paste or enter session token..."
+                value={sessionToken || ''}
+                onChange={(e) => setSessionToken(e.target.value, 60)}
+                style={{ fontFamily: 'monospace', fontSize: '12px' }}
+                disabled={provisioning}
+              />
+              <div style={{ marginTop: '6px' }}>
+                <SessionTokenStatus />
+              </div>
             </div>
           </div>
 

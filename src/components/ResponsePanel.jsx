@@ -236,44 +236,6 @@ function ResponsePanel() {
         </div>
       )}
 
-      {/* ── HISTORY FILTER + SEARCH ── */}
-      <div className="rp-history-bar">
-        <div className="rp-search">
-          <FiSearch size={12} />
-          <input
-            type="text"
-            placeholder="Filter responses…"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <select
-          className="rp-filter-select"
-          value={filterStatus}
-          onChange={e => setFilterStatus(e.target.value)}
-        >
-          <option value="all">All</option>
-          <option value="success">2xx</option>
-          <option value="warning">4xx</option>
-          <option value="error">5xx</option>
-        </select>
-        <div className="rp-history-chips">
-          {filteredResponses.slice(0, 12).map(r => (
-            <button
-              key={r.id}
-              className={`rp-history-chip ${selectedId === r.id ? 'active' : ''} status-${getStatusClass(r.status)}`}
-              onClick={() => setSelectedId(r.id)}
-              title={`${r.method || 'GET'} ${r.endpoint || r.url || ''}`}
-            >
-              <span className={`chip-status-dot status-${getStatusClass(r.status)}`} />
-              <span className="chip-method">{r.method || 'GET'}</span>
-              <span className="chip-endpoint">{(r.endpoint || r.url || '').split('/').pop() || r.apiName || 'Request'}</span>
-              {r.status > 0 && <span className="chip-code">{r.status}</span>}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* ── DETAIL CONTENT ── */}
       {selectedResponse ? (
         <div className="rp-detail">

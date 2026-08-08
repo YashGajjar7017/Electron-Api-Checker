@@ -27,7 +27,7 @@
         "caFile": ""
       },
       "skipOtp": true,
-      "bodyType": "json",
+      "bodyType": "binary",
       "bodyParams": {},
       "automation": {
         "enabled": false,
@@ -46,7 +46,7 @@
       "endpoint": "/api/login",
       "headers": {},
       "params": {},
-      "body": "{ \n    \"username\": \"RMS-3E0C\",\n    \"password\": \"operator_001\" \n}",
+      "body": "{ \n    \"username\": \"RMS-2074\",\n    \"password\": \"operator_001\" \n}",
       "auth": {
         "type": "none",
         "token": "",
@@ -57,7 +57,7 @@
       "serverUrl": "http://192.168.4.1",
       "fullUrl": "http://192.168.4.1/api/login",
       "collectionId": "9mfnk7qmr",
-      "bodyType": "json",
+      "bodyType": "binary",
       "bodyParams": {},
       "skipOtp": false,
       "automation": {
@@ -88,7 +88,7 @@
       "serverUrl": "http://192.168.4.1",
       "fullUrl": "http://192.168.4.1/api/auth/status",
       "collectionId": "9mfnk7qmr",
-      "bodyType": "json",
+      "bodyType": "binary",
       "bodyParams": {},
       "skipOtp": false,
       "automation": {
@@ -119,7 +119,7 @@
       "serverUrl": "http://192.168.4.1",
       "fullUrl": "http://192.168.4.1/api/device/broker/connect",
       "collectionId": "9mfnk7qmr",
-      "bodyType": "json",
+      "bodyType": "x-www-form-urlencoded",
       "bodyParams": {},
       "skipOtp": false,
       "automation": {
@@ -1934,12 +1934,12 @@
     "memoryOptimization": false,
     "githubGistId": ""
   },
-  "sessionToken": "sess-1785938092227",
-  "sessionTokenExpiry": 1785938692236,
+  "sessionToken": "sess-1786173503118",
+  "sessionTokenExpiry": 1786174103134,
   "otpData": {
-    "current": "245615",
-    "cached": "245615",
-    "expiry": 1785938691726,
+    "current": "823331",
+    "cached": "823331",
+    "expiry": 1786174102629,
     "attempts": 0
   },
   "environments": [

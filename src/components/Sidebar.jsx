@@ -600,7 +600,6 @@ function Sidebar() {
                                 )}
                               </div>
                             </div>
-                            <div className="api-item-endpoint">{api.endpoint}</div>
                           </div>
                         );
                       })

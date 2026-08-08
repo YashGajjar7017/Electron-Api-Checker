@@ -7,6 +7,8 @@ import {
   FiPlay,
   FiEye,
   FiEyeOff,
+  FiMoreVertical,
+  FiInfo,
 } from 'react-icons/fi';
 import OTPModal from './OTPModal';
 import DebugPanel from './DebugPanel';
@@ -34,6 +36,7 @@ function RequestBuilder() {
     activeEnvironment,
     collections,
     authToken,
+    securityRole,
   } = useStore();
   const { otpData, setOTPData } = useStore();
 
@@ -68,6 +71,7 @@ function RequestBuilder() {
   const [actionMessage, setActionMessage] = useState('');
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [debugDetails, setDebugDetails] = useState(null);
+  const [showAccessTooltip, setShowAccessTooltip] = useState(false);
   const activeRequestIdRef = useRef(null);
 
   // Split-button dropdown states and refs
@@ -78,6 +82,89 @@ function RequestBuilder() {
   const sendDropdownRef = useRef(null);
   const saveDropdownRef = useRef(null);
   const moreDropdownRef = useRef(null);
+  const accessTooltipRef = useRef(null);
+
+  const getApiAccessStatus = (methodVal, endpointVal) => {
+    const ep = (endpointVal || '').toLowerCase();
+    const m = (methodVal || 'GET').toUpperCase();
+
+    let reqPermission = 'read';
+    let ruleDescription = 'Standard API endpoint (Read access)';
+
+    if (ep.includes('/update')) {
+      reqPermission = 'system_write';
+      ruleDescription = 'Firmware Update endpoint (System Admin & Security Admin only)';
+    } else if (
+      ep.includes('/write') ||
+      ep.includes('filename=') ||
+      ep.includes('rootca') ||
+      ep.includes('client.pem') ||
+      ep.includes('key.pem')
+    ) {
+      reqPermission = 'security';
+      ruleDescription = 'Security & Device Credential upload (Security Admin only)';
+    } else if (
+      (ep.includes('/broker') || ep.includes('/mqtt-server')) &&
+      m === 'POST'
+    ) {
+      reqPermission = 'system';
+      ruleDescription = 'MQTT / Broker configuration (System Admin & Security Admin only)';
+    } else if (ep.includes('/config/isp') && m === 'POST') {
+      reqPermission = 'system';
+      ruleDescription = 'ISP configuration POST (System Admin & Security Admin only)';
+    } else if (ep.includes('/config/remote-server') && m === 'POST') {
+      reqPermission = 'system';
+      ruleDescription = 'Remote config POST (System Admin & Security Admin only)';
+    } else if (ep.includes('/config/parameters') && m === 'POST') {
+      reqPermission = 'write';
+      ruleDescription = 'UUID Parameters configuration POST (Operator, System Admin, Security Admin)';
+    } else if (ep.includes('/inverter-communication') && m === 'POST') {
+      reqPermission = 'write';
+      ruleDescription = 'Inverter communication POST (Operator, System Admin, Security Admin)';
+    } else if (ep.includes('/restart')) {
+      reqPermission = 'system';
+      ruleDescription = 'System Restart endpoint (System Admin & Security Admin only)';
+    } else {
+      if (m === 'GET') {
+        reqPermission = 'read';
+        ruleDescription = 'Read-only query (All roles)';
+      } else {
+        reqPermission = 'write';
+        ruleDescription = 'Configuration modification / Write access (Operator, System Admin, Security Admin)';
+      }
+    }
+
+    const typeLabel = m === 'GET' ? 'R' : 'W';
+
+    const rolePermissions = {
+      viewer:   { read: true,  write: false, system: false, security: false },
+      operator: { read: true,  write: true,  system: false, security: false },
+      sysadmin: { read: true,  write: true,  system: true,  security: false },
+      secadmin: { read: true,  write: true,  system: true,  security: true  },
+    };
+
+    const currentPerms = rolePermissions[securityRole] || rolePermissions['viewer'];
+    let isAllowed = false;
+
+    if (reqPermission === 'read') {
+      isAllowed = currentPerms.read;
+    } else if (reqPermission === 'write') {
+      isAllowed = currentPerms.write;
+    } else if (reqPermission === 'system') {
+      isAllowed = currentPerms.system;
+    } else if (reqPermission === 'security') {
+      isAllowed = currentPerms.security;
+    } else if (reqPermission === 'system_write') {
+      isAllowed = currentPerms.write && currentPerms.system;
+    }
+
+    return {
+      typeLabel,
+      reqPermission,
+      ruleDescription,
+      isAllowed,
+    };
+  };
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -89,6 +176,9 @@ function RequestBuilder() {
       }
       if (moreDropdownRef.current && !moreDropdownRef.current.contains(e.target)) {
         setShowMoreDropdown(false);
+      }
+      if (accessTooltipRef.current && !accessTooltipRef.current.contains(e.target)) {
+        setShowAccessTooltip(false);
       }
     };
     document.addEventListener('mousedown', handleOutsideClick);
@@ -1048,6 +1138,55 @@ function RequestBuilder() {
               onChange={(e) => setEndpoint(e.target.value)}
               placeholder="Enter request URL"
             />
+
+            {/* Access Status Indicator & Popover */}
+            {(() => {
+              const status = getApiAccessStatus(method, endpoint);
+              return (
+                <div className="url-access-indicator-wrapper" ref={accessTooltipRef}>
+                  <span className={`url-access-badge badge-${status.typeLabel.toLowerCase()} ${status.isAllowed ? 'allowed' : 'restricted'}`}>
+                    {status.typeLabel}
+                  </span>
+                  <button
+                    type="button"
+                    className={`url-access-info-btn ${showAccessTooltip ? 'active' : ''}`}
+                    onClick={() => setShowAccessTooltip(!showAccessTooltip)}
+                    title="View API Access Privileges"
+                  >
+                    <FiMoreVertical size={14} />
+                  </button>
+                  {showAccessTooltip && (
+                    <div className="url-access-tooltip glass-lg animate-fadeIn">
+                      <div className="tooltip-header">
+                        <h4>API Access Privileges</h4>
+                        <button type="button" className="tooltip-close" onClick={() => setShowAccessTooltip(false)}>
+                          <FiX size={12} />
+                        </button>
+                      </div>
+                      <div className="tooltip-row">
+                        <span className="tooltip-label">Access Type:</span>
+                        <span className={`tooltip-val type-${status.typeLabel.toLowerCase()}`}>
+                          {status.typeLabel === 'R' ? 'Read (R)' : 'Write (W)'}
+                        </span>
+                      </div>
+                      <div className="tooltip-row">
+                        <span className="tooltip-label">Required Rule:</span>
+                        <span className="tooltip-val rule-desc">{status.ruleDescription}</span>
+                      </div>
+                      <div className="tooltip-row">
+                        <span className="tooltip-label">Your Role:</span>
+                        <span className="tooltip-val role-name">{securityRole || 'viewer'}</span>
+                      </div>
+                      <div className="tooltip-status-banner">
+                        <span className={`status-pill ${status.isAllowed ? 'allowed' : 'restricted'}`}>
+                          {status.isAllowed ? '✓ ACCESS GRANTED' : '✗ ACCESS RESTRICTED'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           <div className="builder-actions">

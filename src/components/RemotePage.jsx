@@ -148,7 +148,7 @@ function RemotePage() {
     }
   };
 
-  // Countdown timer for 10-minute session token
+  // Countdown timer for 10-minute session
   useEffect(() => {
     const updateTimeLeft = () => {
       if (sessionToken && sessionTokenExpiry) {
@@ -278,7 +278,7 @@ function RemotePage() {
         if (isUnauth) {
           clearSessionToken();
           setAuthToken('');
-          setPostError(`❌ Unauthorized (HTTP ${httpStatus}): Session token rejected by device. Please re-authenticate.\n\nDevice response: ${JSON.stringify(responseData, null, 2)}`);
+          setPostError(`❌ Unauthorized (HTTP ${httpStatus}): Session rejected by device. Please re-authenticate.\n\nDevice response: ${JSON.stringify(responseData, null, 2)}`);
         } else if (isHttpError) {
           setPostError(`❌ HTTP ${httpStatus} Error: Device rejected the config.\n\nDevice response: ${JSON.stringify(responseData, null, 2)}`);
         } else if (res.success || httpStatus === 200) {
@@ -412,7 +412,7 @@ function RemotePage() {
                 fontSize: '14px',
                 fontWeight: '600'
               }}>
-                <FiLock /> {hasValidSessionToken ? 'Session Token Active' : 'Manual Session Token Required'}
+                <FiLock /> {hasValidSessionToken ? 'Session Active' : 'Manual Session Required'}
               </h3>
               {hasValidSessionToken && (
                 <span style={{
@@ -442,7 +442,7 @@ function RemotePage() {
                   }
                 }}
                 disabled={hasValidSessionToken}
-                placeholder="Enter authorization token manually..."
+                placeholder="Enter session manually..."
                 style={{
                   flex: 1,
                   padding: '10px 14px',

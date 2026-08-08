@@ -18,7 +18,7 @@
       "caFile": ""
     },
     "skipOtp": true,
-    "bodyType": "json",
+    "bodyType": "binary",
     "bodyParams": {},
     "automation": {
       "enabled": false,
@@ -37,7 +37,7 @@
     "endpoint": "/api/login",
     "headers": {},
     "params": {},
-    "body": "{ \n    \"username\": \"RMS-3E0C\",\n    \"password\": \"operator_001\" \n}",
+    "body": "{ \n    \"username\": \"RMS-2074\",\n    \"password\": \"operator_001\" \n}",
     "auth": {
       "type": "none",
       "token": "",
@@ -48,7 +48,7 @@
     "serverUrl": "http://192.168.4.1",
     "fullUrl": "http://192.168.4.1/api/login",
     "collectionId": "9mfnk7qmr",
-    "bodyType": "json",
+    "bodyType": "binary",
     "bodyParams": {},
     "skipOtp": false,
     "automation": {
@@ -79,7 +79,7 @@
     "serverUrl": "http://192.168.4.1",
     "fullUrl": "http://192.168.4.1/api/auth/status",
     "collectionId": "9mfnk7qmr",
-    "bodyType": "json",
+    "bodyType": "binary",
     "bodyParams": {},
     "skipOtp": false,
     "automation": {
@@ -110,7 +110,7 @@
     "serverUrl": "http://192.168.4.1",
     "fullUrl": "http://192.168.4.1/api/device/broker/connect",
     "collectionId": "9mfnk7qmr",
-    "bodyType": "json",
+    "bodyType": "x-www-form-urlencoded",
     "bodyParams": {},
     "skipOtp": false,
     "automation": {
