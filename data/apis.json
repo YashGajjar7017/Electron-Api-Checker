@@ -18,7 +18,7 @@
       "caFile": ""
     },
     "skipOtp": true,
-    "bodyType": "binary",
+    "bodyType": "json",
     "bodyParams": {},
     "automation": {
       "enabled": false,
@@ -48,7 +48,7 @@
     "serverUrl": "http://192.168.4.1",
     "fullUrl": "http://192.168.4.1/api/login",
     "collectionId": "9mfnk7qmr",
-    "bodyType": "binary",
+    "bodyType": "json",
     "bodyParams": {},
     "skipOtp": false,
     "automation": {
@@ -79,7 +79,7 @@
     "serverUrl": "http://192.168.4.1",
     "fullUrl": "http://192.168.4.1/api/auth/status",
     "collectionId": "9mfnk7qmr",
-    "bodyType": "binary",
+    "bodyType": "json",
     "bodyParams": {},
     "skipOtp": false,
     "automation": {
@@ -236,7 +236,7 @@
     "serverUrl": "http://localhost:5000",
     "fullUrl": "",
     "collectionId": "9mfnk7qmr",
-    "bodyType": "x-www-form-urlencoded",
+    "bodyType": "json",
     "bodyParams": {},
     "skipOtp": false,
     "automation": {

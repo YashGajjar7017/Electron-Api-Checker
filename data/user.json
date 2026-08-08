@@ -27,7 +27,7 @@
         "caFile": ""
       },
       "skipOtp": true,
-      "bodyType": "binary",
+      "bodyType": "json",
       "bodyParams": {},
       "automation": {
         "enabled": false,
@@ -57,7 +57,7 @@
       "serverUrl": "http://192.168.4.1",
       "fullUrl": "http://192.168.4.1/api/login",
       "collectionId": "9mfnk7qmr",
-      "bodyType": "binary",
+      "bodyType": "json",
       "bodyParams": {},
       "skipOtp": false,
       "automation": {
@@ -88,7 +88,7 @@
       "serverUrl": "http://192.168.4.1",
       "fullUrl": "http://192.168.4.1/api/auth/status",
       "collectionId": "9mfnk7qmr",
-      "bodyType": "binary",
+      "bodyType": "json",
       "bodyParams": {},
       "skipOtp": false,
       "automation": {
@@ -245,7 +245,7 @@
       "serverUrl": "http://localhost:5000",
       "fullUrl": "",
       "collectionId": "9mfnk7qmr",
-      "bodyType": "x-www-form-urlencoded",
+      "bodyType": "json",
       "bodyParams": {},
       "skipOtp": false,
       "automation": {
@@ -1934,12 +1934,12 @@
     "memoryOptimization": false,
     "githubGistId": ""
   },
-  "sessionToken": "sess-1786173503118",
-  "sessionTokenExpiry": 1786174103134,
+  "sessionToken": "528d0195efc96575",
+  "sessionTokenExpiry": 1786179217995,
   "otpData": {
-    "current": "823331",
-    "cached": "823331",
-    "expiry": 1786174102629,
+    "current": null,
+    "cached": null,
+    "expiry": null,
     "attempts": 0
   },
   "environments": [

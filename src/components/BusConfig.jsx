@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FiDatabase, FiCpu, FiFileText, FiUpload, FiPlay, FiPlus, FiTrash2, FiSave, FiAlertCircle, FiSettings, FiCheck, FiRefreshCw, FiSliders, FiActivity, FiTerminal, FiInfo } from 'react-icons/fi';
+import useStore from '../store';
 import '../styles/BusConfig.css';
 
 function BusConfig() {
+  const activeSessionToken = useStore((state) => state.sessionToken);
+  const activeAuthToken = useStore((state) => state.authToken);
   const [activeTab, setActiveTab] = useState('dev'); // dev, req, uuid
   const [devCsvContent, setDevCsvContent] = useState('');
   const [reqCsvContent, setReqCsvContent] = useState('');
@@ -1844,26 +1847,47 @@ function BusConfig() {
                   </div>
                 </div>
 
-                <div className="form-group" style={{ marginTop: '12px' }}>
-                  <label>Sync Endpoint URL</label>
-                  <input
-                    type="text"
-                    value={syncUrlVal}
-                    onChange={(e) => setSyncUrlVal(e.target.value)}
-                    placeholder="Enter custom synchronization endpoint..."
-                    style={{ fontFamily: 'monospace' }}
-                  />
-                </div>
+                <div className="form-grid" style={{ marginTop: '12px' }}>
+                  <div className="form-group">
+                    <label style={{ margin: 0 }}>Sync Endpoint URL</label>
+                    <input
+                      type="text"
+                      value={syncUrlVal}
+                      onChange={(e) => setSyncUrlVal(e.target.value)}
+                      placeholder="Enter custom synchronization endpoint..."
+                      style={{ fontFamily: 'monospace' }}
+                    />
+                  </div>
 
-                <div className="form-group" style={{ marginTop: '12px' }}>
-                  <label>Authorization Token (Optional)</label>
-                  <input
-                    type="password"
-                    value={syncToken}
-                    onChange={(e) => setSyncToken(e.target.value)}
-                    placeholder="Enter Bearer/Authorization token for device..."
-                    style={{ fontFamily: 'monospace' }}
-                  />
+                  <div className="form-group">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label style={{ margin: 0 }}>Authorization Token (Optional)</label>
+                      {(activeSessionToken || activeAuthToken) && (
+                        <button
+                          type="button"
+                          onClick={() => setSyncToken(activeSessionToken || activeAuthToken)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--primary-light)',
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                            padding: 0,
+                          }}
+                        >
+                          Use Active
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="password"
+                      value={syncToken}
+                      onChange={(e) => setSyncToken(e.target.value)}
+                      placeholder="Enter Bearer/Authorization token for device..."
+                      style={{ fontFamily: 'monospace' }}
+                    />
+                  </div>
                 </div>
 
                 <div className="form-grid" style={{ marginTop: '12px' }}>

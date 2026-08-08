@@ -393,8 +393,8 @@ function RemotePage() {
             </p>
           </div>
 
-          {/* Token Status / Input Bar */}
-          <div className={`glass-panel token-bar ${hasValidSessionToken ? 'token-active' : 'token-manual'}`}
+          {/* Session Status / Input Bar */}
+          <div className={`glass-panel session-bar ${hasValidSessionToken ? 'session-active' : 'session-manual'}`}
             style={{
               border: hasValidSessionToken ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
               background: hasValidSessionToken ? 'rgba(16, 185, 129, 0.05)' : 'rgba(255, 255, 255, 0.03)',

@@ -535,7 +535,7 @@ function CertificateManager() {
               </select>
             </div>
             <div className="form-group flex-1">
-              <label>Session / Authorization Token (Manual Input)</label>
+              <label>Session / Authorization Token</label>
               <input
                 type="text"
                 placeholder="Paste or enter session token..."

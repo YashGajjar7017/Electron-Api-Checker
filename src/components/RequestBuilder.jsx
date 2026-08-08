@@ -1347,7 +1347,7 @@ function RequestBuilder() {
                   ? (bodyType === 'json' || bodyType === 'raw')
                   : bodyType === type;
                 return (
-                  <label key={type} className="radio-label">
+                  <label key={type} className="body-radio-label">
                     <input
                       type="radio"
                       name="bodyType"
